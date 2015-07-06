@@ -39,8 +39,8 @@ func (n *NameServiceAgent) Find(name string) (locations []string) {
 		if len(ret) <= 0 {
 			return nil
 		}
-		for _, p := range ret {
-			locations = append(locations, p.Input.String())
+		for _, rs := range ret {
+			locations = append(locations, rs.Input.String())
 		}
 	}
 	return locations
