@@ -48,18 +48,24 @@ func Read(r io.Reader) (m *Message, err error) {
 	if count == 0 || err != nil {
 		return nil, err
 	}
+
 	mt := MessageType(buf[0])
+	m = &Message{
+		Type: mt,
+	}
+
 	size := int(util.BytesToUint32(buf[1:]))
 	data := make([]byte, size)
+	if size == 0 {
+		m.Data = data
+		return m, nil
+	}
 	count, err = r.Read(data)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Read %d:", size, err)
 	}
 	if count != size {
 		return nil, fmt.Errorf("Wrong message size: expected %d, actual %d", size, count)
-	}
-	m = &Message{
-		Type: mt,
 	}
 	if mt == ControlType {
 		err = proto.Unmarshal(data, &m.ControlMessage)
@@ -69,5 +75,5 @@ func Read(r io.Reader) (m *Message, err error) {
 	} else {
 		m.Data = data
 	}
-	return nil, nil
+	return m, nil
 }
