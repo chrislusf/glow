@@ -38,6 +38,9 @@ func (tl *TeamLeader) listHandler(c *echo.Context) error {
 			freshRps = append(freshRps, rp)
 		}
 	}
+	for i, j := 0, len(freshRps)-1; i < j; i, j = i+1, j-1 {
+		freshRps[i], freshRps[j] = freshRps[j], freshRps[i]
+	}
 	tl.machines[path] = freshRps
 	c.JSON(http.StatusOK, freshRps)
 	return nil
