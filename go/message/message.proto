@@ -3,12 +3,16 @@ package message;
 message ControlMessage {
   enum MessageType {
     TypeEnd = 0;
-    TypeResetHashing = 1;
+    TypeBegin = 1;
   }
   required MessageType type = 1;
 }
 
-message DataMessage {
+message MapMessage {
   optional bytes key = 1;
-  required bytes data = 2;
+  optional bytes data = 2;
+}
+message ReduceMessage {
+  required bytes key = 1;
+  repeated bytes data = 2;
 }
