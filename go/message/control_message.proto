@@ -1,0 +1,14 @@
+package message;
+
+message ControlMessage {
+  enum MessageType {
+    TypeEnd = 0;
+    TypeResetHashing = 1;
+  }
+  required MessageType type = 1;
+}
+
+message DataMessage {
+  optional bytes key = 1;
+  required bytes data = 2;
+}
