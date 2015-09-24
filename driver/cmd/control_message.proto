@@ -1,0 +1,41 @@
+package cmd;
+
+// protoc -I=$SRC_DIR --cpp_out=$DST_DIR $SRC_DIR/filename.proto
+// protoc --go_out=. *.proto
+
+message ControlMessage {
+	enum Type {
+		NoOp = 1;
+		StartRequest = 2;
+		StartResponse = 3;
+		StopRequest = 4;
+		StopResponse = 5;
+		GetStatusRequest = 6;
+		GetStatusResponse = 7;
+	}
+	required Type type = 1;
+
+	optional StartRequest startRequest = 2;
+	optional StartResponse startResponse = 3;
+}
+
+message NetChan {
+	required string server = 1;
+	required int32 port = 2;
+}
+
+message StartRequest {
+	required string path = 1;
+	repeated string args = 2;
+	repeated string envs = 3;
+	required string dir = 4;
+	repeated string extraFiles = 5;
+	repeated NetChan inputs = 6;
+}
+
+message StartResponse {
+	required int32 pid = 1;
+	optional string error = 2;
+	optional NetChan stderr = 3;
+	repeated NetChan outputs = 4;
+}
