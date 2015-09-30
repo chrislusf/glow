@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/url"
 	"os"
 	"strconv"
 	"sync"
@@ -12,7 +13,7 @@ import (
 	"github.com/chrislusf/glow/agent/store"
 	"github.com/chrislusf/glow/driver/cmd"
 	"github.com/chrislusf/glow/resource"
-	"github.com/chrislusf/glow/service_discovery/client"
+	"github.com/chrislusf/glow/resource/service_discovery/client"
 	"github.com/chrislusf/glow/util"
 	"github.com/golang/protobuf/proto"
 )
@@ -34,7 +35,19 @@ func (ds *LiveDataStore) Destroy() {
 	ds.store.Destroy()
 }
 
+type AgentServerOption struct {
+	Leader      *string
+	Port        *int
+	Dir         *string
+	DataCenter  *string
+	Rack        *string
+	MaxExecutor *int
+	MemoryMB    *int64
+	CPULevel    *int
+}
+
 type AgentServer struct {
+	Option          *AgentServerOption
 	leader          string
 	Port            int
 	name2Store      map[string]*LiveDataStore
@@ -45,18 +58,17 @@ type AgentServer struct {
 	computeResource resource.ComputeResource
 }
 
-func NewAgentServer(dir string, port int, leader string,
-	dataCenter, rack string,
-	maxExecutor int, cpuLevel int, memorySizeMB int) *AgentServer {
+func NewAgentServer(option *AgentServerOption) *AgentServer {
 	as := &AgentServer{
-		leader:     leader,
-		Port:       port,
-		dir:        dir,
+		Option:     option,
+		leader:     *option.Leader,
+		Port:       *option.Port,
+		dir:        *option.Dir,
 		name2Store: make(map[string]*LiveDataStore),
 		computeResource: resource.ComputeResource{
-			CPUCount:     maxExecutor,
-			CPULevel:     cpuLevel,
-			MemorySizeMB: memorySizeMB,
+			CPUCount: *option.MaxExecutor,
+			CPULevel: *option.CPULevel,
+			MemoryMB: *option.MemoryMB,
 		},
 	}
 
@@ -85,7 +97,11 @@ func (r *AgentServer) Init() (err error) {
 func (as *AgentServer) Run() {
 	//register agent
 	killHeartBeaterChan := make(chan bool, 1)
-	go client.NewHeartBeater("a1", as.Port, as.leader).StartHeartBeat(killHeartBeaterChan)
+	go client.NewHeartBeater(as.Port, as.leader).StartAgentHeartBeat(killHeartBeaterChan, func(values url.Values) {
+		as.computeResource.AddToValues(values)
+		values.Add("dataCenter", *as.Option.DataCenter)
+		values.Add("rack", *as.Option.Rack)
+	})
 
 	for {
 		// Listen for an incoming connection.

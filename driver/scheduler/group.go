@@ -3,7 +3,7 @@ package scheduler
 import (
 	"log"
 
-	"github.com/chrislusf/glow/flame"
+	"github.com/chrislusf/glow/flow"
 )
 
 type TaskGroupStatus int
@@ -18,28 +18,28 @@ const (
 
 type TaskGroup struct {
 	Id              int
-	Tasks           []*flame.Task
+	Tasks           []*flow.Task
 	Parents         []*TaskGroup
 	ParentStepGroup *StepGroup
 	Status          TaskGroupStatus
 }
 
 type StepGroup struct {
-	Steps      []*flame.Step
+	Steps      []*flow.Step
 	Parents    []*StepGroup
 	TaskGroups []*TaskGroup
 }
 
-func GroupTasks(fc *flame.FlowContext) []*TaskGroup {
+func GroupTasks(fc *flow.FlowContext) []*TaskGroup {
 	stepGroups := translateToStepGroups(fc)
 	return translateToTaskGroups(stepGroups)
 }
 
-func findAncestorStepId(step *flame.Step) (int, bool) {
+func findAncestorStepId(step *flow.Step) (int, bool) {
 	current := step
 	taskCount := len(step.Tasks)
-	var next *flame.Step
-	for current.Type == flame.Local && taskCount == len(current.Tasks) {
+	var next *flow.Step
+	for current.Type == flow.Local && taskCount == len(current.Tasks) {
 		if len(current.Inputs) > 1 {
 			log.Panic("local step should not have more than 1 input")
 		}
@@ -47,7 +47,7 @@ func findAncestorStepId(step *flame.Step) (int, bool) {
 			break
 		}
 		next = current.Inputs[0].Step
-		if next.Type != flame.Local || taskCount != len(next.Tasks) {
+		if next.Type != flow.Local || taskCount != len(next.Tasks) {
 			break
 		}
 		current = next
@@ -56,7 +56,7 @@ func findAncestorStepId(step *flame.Step) (int, bool) {
 }
 
 // group local steps into one step group
-func translateToStepGroups(fc *flame.FlowContext) []*StepGroup {
+func translateToStepGroups(fc *flow.FlowContext) []*StepGroup {
 	// use array instead of map to ensure consistent ordering
 	stepId2StepGroup := make([]*StepGroup, len(fc.Steps))
 	for _, step := range fc.Steps {
@@ -117,7 +117,7 @@ func translateToTaskGroups(stepId2StepGroup []*StepGroup) (ret []*TaskGroup) {
 	return
 }
 
-func assertSameNumberOfTasks(steps []*flame.Step) {
+func assertSameNumberOfTasks(steps []*flow.Step) {
 	if len(steps) == 0 {
 		return
 	}
@@ -133,7 +133,7 @@ func NewStepGroup() *StepGroup {
 	return &StepGroup{}
 }
 
-func (t *StepGroup) AddStep(Step *flame.Step) *StepGroup {
+func (t *StepGroup) AddStep(Step *flow.Step) *StepGroup {
 	t.Steps = append(t.Steps, Step)
 	return t
 }
@@ -147,7 +147,7 @@ func NewTaskGroup() *TaskGroup {
 	return &TaskGroup{}
 }
 
-func (t *TaskGroup) AddTask(task *flame.Task) *TaskGroup {
+func (t *TaskGroup) AddTask(task *flow.Task) *TaskGroup {
 	t.Tasks = append(t.Tasks, task)
 	return t
 }

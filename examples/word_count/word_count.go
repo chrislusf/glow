@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	_ "github.com/chrislusf/glow/driver"
-	"github.com/chrislusf/glow/flame"
+	"github.com/chrislusf/glow/flow"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 }
 
 func test1() {
-	flame.NewContext().TextFile(
+	flow.NewContext().TextFile(
 		"/etc/passwd", 1,
 	).Filter(func(line string) bool {
 		// println("filter:", line)
@@ -45,7 +45,7 @@ func test1() {
 }
 
 func test2() {
-	flame.NewContext().TextFile(
+	flow.NewContext().TextFile(
 		"/etc/hosts", 7,
 	).Partition(
 		2,
@@ -63,7 +63,7 @@ func test2() {
 }
 
 func test3() {
-	words := flame.NewContext().TextFile(
+	words := flow.NewContext().TextFile(
 		"/etc/passwd", 3,
 	).Filter(func(line string) bool {
 		return !strings.HasPrefix(line, "#")
@@ -92,7 +92,7 @@ func test4() {
 			ch <- strings.ToLower(token)
 		}
 	}
-	ctx := flame.NewContext()
+	ctx := flow.NewContext()
 	leftWords := ctx.TextFile(
 		"/etc/passwd", 3,
 	).Map(tokenizer).Map(func(t string) (string, int) {

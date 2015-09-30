@@ -1,6 +1,7 @@
-package flame
+package flow
 
 import (
+	"fmt"
 	"reflect"
 	"sync"
 )
@@ -65,4 +66,8 @@ func (d *Dataset) RunSelf(stepId int) {
 	wg.Wait()
 	// println("dataset", stepId, "stopped")
 	return
+}
+
+func (s *DatasetShard) Name() string {
+	return fmt.Sprintf("ct-%d-ds-%d-shard-%d", s.Parent.context.Id, s.Parent.Id, s.Id)
 }

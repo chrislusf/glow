@@ -4,8 +4,8 @@ import (
 	"flag"
 	"sync"
 
-	"github.com/chrislusf/glow/receiver"
-	"github.com/chrislusf/glow/sender"
+	"github.com/chrislusf/glow/io/receiver"
+	"github.com/chrislusf/glow/io/sender"
 )
 
 var ()

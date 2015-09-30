@@ -4,13 +4,12 @@ import (
 	"bytes"
 	"encoding/gob"
 	"flag"
-	"fmt"
 	"log"
 	"reflect"
 	"sync"
 
 	"github.com/chrislusf/glow/driver/scheduler"
-	"github.com/chrislusf/glow/flame"
+	"github.com/chrislusf/glow/flow"
 )
 
 type TaskOption struct {
@@ -24,12 +23,12 @@ func init() {
 	flag.IntVar(&taskOption.ContextId, "task.context.id", -1, "context id")
 	flag.IntVar(&taskOption.TaskGroupId, "task.taskGroup.id", -1, "task group id")
 
-	flame.RegisterTaskRunner(NewTaskRunner(&taskOption))
+	flow.RegisterTaskRunner(NewTaskRunner(&taskOption))
 }
 
 type TaskRunner struct {
 	option *TaskOption
-	Tasks  []*flame.Task
+	Tasks  []*flow.Task
 }
 
 func NewTaskRunner(option *TaskOption) *TaskRunner {
@@ -41,7 +40,7 @@ func (tr *TaskRunner) IsTaskMode() bool {
 }
 
 // if this should not run, return false
-func (tr *TaskRunner) Run(fc *flame.FlowContext) {
+func (tr *TaskRunner) Run(fc *flow.FlowContext) {
 
 	taskGroups := scheduler.GroupTasks(fc)
 
@@ -58,7 +57,7 @@ func (tr *TaskRunner) Run(fc *flame.FlowContext) {
 	// 6. starts to run the task locally
 	for _, task := range tr.Tasks {
 		wg.Add(1)
-		go func(task *flame.Task) {
+		go func(task *flow.Task) {
 			defer wg.Done()
 			task.Run()
 		}(task)
@@ -80,7 +79,7 @@ func (tr *TaskRunner) connectInternalInputsAndOutputs(wg *sync.WaitGroup) {
 		}
 		currentShard, nextShard := tr.Tasks[i].Outputs[0], tr.Tasks[i+1].Inputs[0]
 		wg.Add(1)
-		go func(currentShard, nextShard *flame.DatasetShard, i int) {
+		go func(currentShard, nextShard *flow.DatasetShard, i int) {
 			defer wg.Done()
 			for {
 				if t, ok := currentShard.WriteChan.Recv(); ok {
@@ -98,7 +97,7 @@ func (tr *TaskRunner) connectExternalInputs(wg *sync.WaitGroup) {
 	task := tr.Tasks[0]
 	for _, shard := range task.Inputs {
 		d := shard.Parent
-		readChanName := fmt.Sprintf("ct-%d-ds-%d-shard-%d", tr.option.ContextId, d.Id, shard.Id)
+		readChanName := shard.Name()
 		// println("taskGroup", tr.option.TaskGroupId, "step", task.Step.Id, "task", task.Id, "trying to read from:", readChanName)
 		rawChan, err := GetReadChannel(readChanName)
 		if err != nil {
@@ -111,9 +110,7 @@ func (tr *TaskRunner) connectExternalInputs(wg *sync.WaitGroup) {
 func (tr *TaskRunner) connectExternalOutputs(wg *sync.WaitGroup) {
 	task := tr.Tasks[len(tr.Tasks)-1]
 	for _, shard := range task.Outputs {
-		d := shard.Parent
-
-		writeChanName := fmt.Sprintf("ct-%d-ds-%d-shard-%d", tr.option.ContextId, d.Id, shard.Id)
+		writeChanName := shard.Name()
 		// println("taskGroup", tr.option.TaskGroupId, "step", task.Step.Id, "task", task.Id, "writing to:", writeChanName)
 		rawChan, err := GetSendChannel(writeChanName, wg)
 		if err != nil {

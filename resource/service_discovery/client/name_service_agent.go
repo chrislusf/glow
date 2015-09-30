@@ -4,33 +4,29 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
 
-	service "github.com/chrislusf/glow/service_discovery/leader"
+	service "github.com/chrislusf/glow/resource/service_discovery/leader"
 	"github.com/chrislusf/glow/util"
 )
 
-type NameServiceAgent struct {
+type NameServiceProxy struct {
 	Leaders []string
 }
 
-func NewNameServiceAgent(leaders ...string) *NameServiceAgent {
-	n := &NameServiceAgent{
+func NewNameServiceProxy(leaders ...string) *NameServiceProxy {
+	n := &NameServiceProxy{
 		Leaders: leaders,
 	}
 	return n
 }
 
-func (n *NameServiceAgent) Find(name string) (locations []string) {
-	if !strings.HasPrefix(name, "/") {
-		name = "/" + name
-	}
+func (n *NameServiceProxy) Find(name string) (locations []string) {
 	for _, l := range n.Leaders {
-		jsonBlob, err := util.Get("http://" + l + "/list" + name)
+		jsonBlob, err := util.Get("http://" + l + "/channel/" + name)
 		if err != nil {
 			log.Printf("Failed to list from %s:%v", l, err)
 		}
-		var ret []service.RemoteService
+		var ret []service.ChannelInformation
 		err = json.Unmarshal(jsonBlob, &ret)
 		if err != nil {
 			fmt.Printf("%s/list%s unmarshal error:%v, json:%s", l, name, err, string(jsonBlob))
@@ -40,7 +36,7 @@ func (n *NameServiceAgent) Find(name string) (locations []string) {
 			return nil
 		}
 		for _, rs := range ret {
-			locations = append(locations, rs.ServiceLocation.String())
+			locations = append(locations, rs.Location)
 		}
 	}
 	return locations

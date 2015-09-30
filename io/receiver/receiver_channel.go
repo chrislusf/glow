@@ -7,7 +7,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/chrislusf/glow/service_discovery/client"
+	"github.com/chrislusf/glow/resource/service_discovery/client"
 	"github.com/chrislusf/glow/util"
 )
 
@@ -19,7 +19,7 @@ type ReceiveChannel struct {
 }
 
 func (rc *ReceiveChannel) findTarget() (target string) {
-	l := client.NewNameServiceAgent(rc.Leader)
+	l := client.NewNameServiceProxy(rc.Leader)
 	for {
 		locations := l.Find(rc.name)
 		if len(locations) > 0 {

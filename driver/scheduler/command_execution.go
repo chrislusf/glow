@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/chrislusf/glow/driver/cmd"
-	"github.com/chrislusf/glow/service_discovery/client"
+	"github.com/chrislusf/glow/resource/service_discovery/client"
 	"github.com/chrislusf/glow/util"
 	"github.com/golang/protobuf/proto"
 )
@@ -24,12 +24,27 @@ func NewStartRequest(path string, dir string, args ...string) *cmd.ControlMessag
 	}
 }
 
+func RemoteDirectExecute(server string, command *cmd.ControlMessage) error {
+	conn, err := getDirectCommandConnection(server)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	return doExecute(conn, command)
+}
+
 func RemoteExecute(leader string, agentName string, command *cmd.ControlMessage) error {
 	conn, err := getCommandConnection(leader, agentName)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
+
+	return doExecute(conn, command)
+}
+
+func doExecute(conn net.Conn, command *cmd.ControlMessage) error {
 
 	buf := make([]byte, 4)
 
@@ -41,7 +56,7 @@ func RemoteExecute(leader string, agentName string, command *cmd.ControlMessage)
 
 	// send the command
 	if err = util.WriteData(conn, buf, []byte("CMD "), data); err != nil {
-		println("failed to write to", agentName, ":", err.Error())
+		println("failed to write to", conn.RemoteAddr().String(), ":", err.Error())
 		return err
 	}
 
@@ -50,18 +65,17 @@ func RemoteExecute(leader string, agentName string, command *cmd.ControlMessage)
 	// read output and print it to stdout
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
-		fmt.Printf("%s>%s\n", agentName, scanner.Text())
+		fmt.Printf("%s>%s\n", "", scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
 		return fmt.Errorf("Failed to scan output: %v", err)
 	}
 
 	return err
-
 }
 
 func getCommandConnection(leader string, agentName string) (net.Conn, error) {
-	l := client.NewNameServiceAgent(leader)
+	l := client.NewNameServiceProxy(leader)
 
 	// looking for the agentName
 	var target string
@@ -78,6 +92,10 @@ func getCommandConnection(leader string, agentName string) (net.Conn, error) {
 		}
 	}
 
+	return getDirectCommandConnection(target)
+}
+
+func getDirectCommandConnection(target string) (net.Conn, error) {
 	// connect to a TCP server
 	network := "tcp"
 	raddr, err := net.ResolveTCPAddr(network, target)
