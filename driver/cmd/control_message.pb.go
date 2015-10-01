@@ -14,6 +14,7 @@ It has these top-level messages:
 	StartRequest
 	StartResponse
 	DeleteDatasetShardRequest
+	DeleteDatasetShardResponse
 */
 package cmd
 
@@ -27,14 +28,15 @@ var _ = math.Inf
 type ControlMessage_Type int32
 
 const (
-	ControlMessage_NoOp                      ControlMessage_Type = 1
-	ControlMessage_StartRequest              ControlMessage_Type = 2
-	ControlMessage_StartResponse             ControlMessage_Type = 3
-	ControlMessage_StopRequest               ControlMessage_Type = 4
-	ControlMessage_StopResponse              ControlMessage_Type = 5
-	ControlMessage_GetStatusRequest          ControlMessage_Type = 6
-	ControlMessage_GetStatusResponse         ControlMessage_Type = 7
-	ControlMessage_DeleteDatasetShardRequest ControlMessage_Type = 8
+	ControlMessage_NoOp                       ControlMessage_Type = 1
+	ControlMessage_StartRequest               ControlMessage_Type = 2
+	ControlMessage_StartResponse              ControlMessage_Type = 3
+	ControlMessage_StopRequest                ControlMessage_Type = 4
+	ControlMessage_StopResponse               ControlMessage_Type = 5
+	ControlMessage_GetStatusRequest           ControlMessage_Type = 6
+	ControlMessage_GetStatusResponse          ControlMessage_Type = 7
+	ControlMessage_DeleteDatasetShardRequest  ControlMessage_Type = 8
+	ControlMessage_DeleteDatasetShardResponse ControlMessage_Type = 9
 )
 
 var ControlMessage_Type_name = map[int32]string{
@@ -46,16 +48,18 @@ var ControlMessage_Type_name = map[int32]string{
 	6: "GetStatusRequest",
 	7: "GetStatusResponse",
 	8: "DeleteDatasetShardRequest",
+	9: "DeleteDatasetShardResponse",
 }
 var ControlMessage_Type_value = map[string]int32{
-	"NoOp":                      1,
-	"StartRequest":              2,
-	"StartResponse":             3,
-	"StopRequest":               4,
-	"StopResponse":              5,
-	"GetStatusRequest":          6,
-	"GetStatusResponse":         7,
-	"DeleteDatasetShardRequest": 8,
+	"NoOp":                       1,
+	"StartRequest":               2,
+	"StartResponse":              3,
+	"StopRequest":                4,
+	"StopResponse":               5,
+	"GetStatusRequest":           6,
+	"GetStatusResponse":          7,
+	"DeleteDatasetShardRequest":  8,
+	"DeleteDatasetShardResponse": 9,
 }
 
 func (x ControlMessage_Type) Enum() *ControlMessage_Type {
@@ -76,11 +80,12 @@ func (x *ControlMessage_Type) UnmarshalJSON(data []byte) error {
 }
 
 type ControlMessage struct {
-	Type                      *ControlMessage_Type       `protobuf:"varint,1,req,name=type,enum=cmd.ControlMessage_Type" json:"type,omitempty"`
-	StartRequest              *StartRequest              `protobuf:"bytes,2,opt,name=startRequest" json:"startRequest,omitempty"`
-	StartResponse             *StartResponse             `protobuf:"bytes,3,opt,name=startResponse" json:"startResponse,omitempty"`
-	DeleteDatasetShardRequest *DeleteDatasetShardRequest `protobuf:"bytes,4,opt,name=deleteDatasetShardRequest" json:"deleteDatasetShardRequest,omitempty"`
-	XXX_unrecognized          []byte                     `json:"-"`
+	Type                       *ControlMessage_Type        `protobuf:"varint,1,req,name=type,enum=cmd.ControlMessage_Type" json:"type,omitempty"`
+	StartRequest               *StartRequest               `protobuf:"bytes,2,opt,name=startRequest" json:"startRequest,omitempty"`
+	StartResponse              *StartResponse              `protobuf:"bytes,3,opt,name=startResponse" json:"startResponse,omitempty"`
+	DeleteDatasetShardRequest  *DeleteDatasetShardRequest  `protobuf:"bytes,4,opt,name=deleteDatasetShardRequest" json:"deleteDatasetShardRequest,omitempty"`
+	DeleteDatasetShardResponse *DeleteDatasetShardResponse `protobuf:"bytes,5,opt,name=deleteDatasetShardResponse" json:"deleteDatasetShardResponse,omitempty"`
+	XXX_unrecognized           []byte                      `json:"-"`
 }
 
 func (m *ControlMessage) Reset()         { *m = ControlMessage{} }
@@ -111,6 +116,13 @@ func (m *ControlMessage) GetStartResponse() *StartResponse {
 func (m *ControlMessage) GetDeleteDatasetShardRequest() *DeleteDatasetShardRequest {
 	if m != nil {
 		return m.DeleteDatasetShardRequest
+	}
+	return nil
+}
+
+func (m *ControlMessage) GetDeleteDatasetShardResponse() *DeleteDatasetShardResponse {
+	if m != nil {
+		return m.DeleteDatasetShardResponse
 	}
 	return nil
 }
@@ -239,6 +251,22 @@ func (*DeleteDatasetShardRequest) ProtoMessage()    {}
 func (m *DeleteDatasetShardRequest) GetName() string {
 	if m != nil && m.Name != nil {
 		return *m.Name
+	}
+	return ""
+}
+
+type DeleteDatasetShardResponse struct {
+	Error            *string `protobuf:"bytes,1,opt,name=error" json:"error,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (m *DeleteDatasetShardResponse) Reset()         { *m = DeleteDatasetShardResponse{} }
+func (m *DeleteDatasetShardResponse) String() string { return proto.CompactTextString(m) }
+func (*DeleteDatasetShardResponse) ProtoMessage()    {}
+
+func (m *DeleteDatasetShardResponse) GetError() string {
+	if m != nil && m.Error != nil {
+		return *m.Error
 	}
 	return ""
 }

@@ -13,12 +13,14 @@ message ControlMessage {
 		GetStatusRequest = 6;
 		GetStatusResponse = 7;
 		DeleteDatasetShardRequest = 8;
+		DeleteDatasetShardResponse = 9;
 	}
 	required Type type = 1;
 
 	optional StartRequest startRequest = 2;
 	optional StartResponse startResponse = 3;
 	optional DeleteDatasetShardRequest deleteDatasetShardRequest = 4;
+	optional DeleteDatasetShardResponse deleteDatasetShardResponse = 5;
 }
 
 message NetChan {
@@ -43,4 +45,7 @@ message StartResponse {
 
 message DeleteDatasetShardRequest {
 	required string name = 1;
+}
+message DeleteDatasetShardResponse {
+	optional string error = 1;
 }
