@@ -6,7 +6,7 @@ Examples are in this repo https://github.com/chrislusf/glow_examples
 
 Glow is providing a library to easily compute in parallel threads or distributed to clusters of machines.
 
-# 1 minute tutorial
+# One minute tutorial
 
 ## Simple Start
 
@@ -51,21 +51,23 @@ Try it.
 
 It will run the input text file, '/etc/passwd', in 3 go routines, filter/map/map, and then reduced to one number in one goroutine (not exactly correct, but let's skip the details for now.) and print it out. 
 
-This is useful already, saving lots of idiomatic but repetitive code on channels, sync wait. However, there is one more thing.
+This is useful already, saving lots of idiomatic but repetitive code on channels, sync wait, etc.
+
+However, there is one more thing!
 
 ## Scale it out
-We need to setup the cluster first.
+We need to setup the cluster first. We do not need experts on Zookeeper/HDFS/Mesos/YARN etc. Just need to download one binary file.
 
 ### Setup the cluster
 ```
-  // fetch and install
+  // fetch and install via go, or just download it from somewhere
   go get github.com/chrislusf/glow
   // start a leader on one computer
   glow leader
   // run one or more agents on computers
   glow agent --dir . --max.executors=16 --memory=2048 --leader="localhost:8930" --port 8931
 ```
-### start the driver program
+### Start the driver program
 To leap from one computer to clusters of computers, add this line to the import list:
 
 ```
