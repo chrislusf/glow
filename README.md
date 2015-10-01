@@ -17,8 +17,6 @@ package main
 
 import (
 	"flag"
-	"log"
-	"regexp"
 	"strings"
 
 	"github.com/chrislusf/glow/flow"
