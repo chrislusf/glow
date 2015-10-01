@@ -12,11 +12,13 @@ message ControlMessage {
 		StopResponse = 5;
 		GetStatusRequest = 6;
 		GetStatusResponse = 7;
+		DeleteDatasetShardRequest = 8;
 	}
 	required Type type = 1;
 
 	optional StartRequest startRequest = 2;
 	optional StartResponse startResponse = 3;
+	optional DeleteDatasetShardRequest deleteDatasetShardRequest = 4;
 }
 
 message NetChan {
@@ -30,7 +32,6 @@ message StartRequest {
 	repeated string envs = 3;
 	required string dir = 4;
 	repeated string extraFiles = 5;
-	repeated NetChan inputs = 6;
 }
 
 message StartResponse {
@@ -38,4 +39,8 @@ message StartResponse {
 	optional string error = 2;
 	optional NetChan stderr = 3;
 	repeated NetChan outputs = 4;
+}
+
+message DeleteDatasetShardRequest {
+	required string name = 1;
 }
