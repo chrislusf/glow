@@ -18,6 +18,12 @@ type SubmitTaskGroup struct {
 	WaitGroup   *sync.WaitGroup
 }
 
+type ReleaseTaskGroupInputs struct {
+	FlowContext *flow.FlowContext
+	TaskGroup   *TaskGroup
+	WaitGroup   *sync.WaitGroup
+}
+
 /*
 resources are leased to driver, expires every X miniute unless renewed.
 1. request resource
@@ -60,6 +66,18 @@ func (s *Scheduler) EventLoop() {
 					println("exeuction error:", err.Error())
 				} else {
 					s.Market.ReturnSupply(supply)
+				}
+			}()
+		case ReleaseTaskGroupInputs:
+			taskGroup := event.TaskGroup
+			event.WaitGroup.Add(1)
+			go func() {
+				defer event.WaitGroup.Done()
+
+				tasks := event.TaskGroup.Tasks
+				for _, ds := range tasks[0].Inputs {
+					fmt.Printf("delete %s -> %v\n", ds.Name(), allocation.Location)
+					s.datasetShard2Location[ds.Name()] = allocation.Location
 				}
 			}()
 		case *bool:

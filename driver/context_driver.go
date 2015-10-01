@@ -70,4 +70,15 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 	go sched.Market.FetcherLoop()
 
 	wg.Wait()
+
+	// release output data on agents
+	for i, taskGroup := range taskGroups {
+		sched.EventChan <- scheduler.ReleaseTaskGroupInputs{
+			FlowContext: fc,
+			TaskGroup:   taskGroup,
+			Bid:         len(taskGroups) - i,
+			WaitGroup:   &wg,
+		}
+	}
+	wg.Wait()
 }
