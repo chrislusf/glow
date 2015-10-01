@@ -11,7 +11,7 @@ import (
 	"github.com/chrislusf/glow/resource"
 )
 
-type SubmittedTaskGroup struct {
+type SubmitTaskGroup struct {
 	FlowContext *flow.FlowContext
 	TaskGroup   *TaskGroup
 	Bid         int
@@ -28,7 +28,7 @@ func (s *Scheduler) EventLoop() {
 		event := <-s.EventChan
 		switch event := event.(type) {
 		default:
-		case SubmittedTaskGroup:
+		case SubmitTaskGroup:
 			// fmt.Printf("processing %+v\n", event)
 			taskGroup := event.TaskGroup
 			pickedServerChan := make(chan market.Supply, 1)

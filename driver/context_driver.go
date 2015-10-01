@@ -60,7 +60,7 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 	// schedule to run the steps
 	var wg sync.WaitGroup
 	for i, taskGroup := range taskGroups {
-		sched.EventChan <- scheduler.SubmittedTaskGroup{
+		sched.EventChan <- scheduler.SubmitTaskGroup{
 			FlowContext: fc,
 			TaskGroup:   taskGroup,
 			Bid:         len(taskGroups) - i,
