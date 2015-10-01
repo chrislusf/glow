@@ -1,6 +1,6 @@
 # glow
 
-Examples are in this repo https://github.com/chrislusf/glow
+Examples are in this repo https://github.com/chrislusf/glow_examples
 
 # Purpose
 
