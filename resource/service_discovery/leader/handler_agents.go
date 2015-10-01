@@ -15,7 +15,7 @@ import (
 )
 
 func (tl *TeamLeader) listAgentsHandler(c *echo.Context) error {
-	c.JSON(http.StatusAccepted, tl.LeaderResource.Topology.Resource)
+	c.JSON(http.StatusAccepted, tl.LeaderResource.Topology)
 	return nil
 }
 
