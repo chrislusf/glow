@@ -24,6 +24,15 @@ func NewStartRequest(path string, dir string, args ...string) *cmd.ControlMessag
 	}
 }
 
+func NewDeleteDatasetShardRequest(name string) *cmd.ControlMessage {
+	return &cmd.ControlMessage{
+		Type: cmd.ControlMessage_DeleteDatasetShardRequest.Enum(),
+		DeleteDatasetShardRequest: &cmd.DeleteDatasetShardRequest{
+			Name: proto.String(name),
+		},
+	}
+}
+
 func RemoteDirectExecute(server string, command *cmd.ControlMessage) error {
 	conn, err := getDirectCommandConnection(server)
 	if err != nil {

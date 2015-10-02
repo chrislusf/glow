@@ -60,6 +60,7 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 	// schedule to run the steps
 	var wg sync.WaitGroup
 	for i, taskGroup := range taskGroups {
+		wg.Add(1)
 		sched.EventChan <- scheduler.SubmitTaskGroup{
 			FlowContext: fc,
 			TaskGroup:   taskGroup,
@@ -71,14 +72,12 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 
 	wg.Wait()
 
-	// release output data on agents
-	for i, taskGroup := range taskGroups {
-		sched.EventChan <- scheduler.ReleaseTaskGroupInputs{
-			FlowContext: fc,
-			TaskGroup:   taskGroup,
-			Bid:         len(taskGroups) - i,
-			WaitGroup:   &wg,
-		}
+	wg.Add(1)
+	sched.EventChan <- scheduler.ReleaseTaskGroupInputs{
+		FlowContext: fc,
+		TaskGroups:  taskGroups,
+		WaitGroup:   &wg,
 	}
+
 	wg.Wait()
 }

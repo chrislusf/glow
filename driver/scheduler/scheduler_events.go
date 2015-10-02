@@ -1,7 +1,6 @@
 package scheduler
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"sync"
@@ -20,7 +19,7 @@ type SubmitTaskGroup struct {
 
 type ReleaseTaskGroupInputs struct {
 	FlowContext *flow.FlowContext
-	TaskGroup   *TaskGroup
+	TaskGroups  []*TaskGroup
 	WaitGroup   *sync.WaitGroup
 }
 
@@ -39,7 +38,6 @@ func (s *Scheduler) EventLoop() {
 			taskGroup := event.TaskGroup
 			pickedServerChan := make(chan market.Supply, 1)
 			s.Market.AddDemand(market.Requirement(taskGroup), event.Bid, pickedServerChan)
-			event.WaitGroup.Add(1)
 			go func() {
 				defer event.WaitGroup.Done()
 
@@ -50,7 +48,14 @@ func (s *Scheduler) EventLoop() {
 				// remember dataset location
 				tasks := event.TaskGroup.Tasks
 				for _, ds := range tasks[len(tasks)-1].Outputs {
-					fmt.Printf("remember %s -> %v\n", ds.Name(), allocation.Location)
+					if s == nil {
+						println("s", s, "ds2loc", s.datasetShard2Location)
+					}
+					if ds == nil {
+						println("ds", ds, "name", ds.Name())
+					}
+					println("allocation", &allocation, "location", &allocation.Location)
+					// fmt.Printf("remember %s -> %v\n", ds.Name(), allocation.Location)
 					s.datasetShard2Location[ds.Name()] = allocation.Location
 				}
 
@@ -69,15 +74,20 @@ func (s *Scheduler) EventLoop() {
 				}
 			}()
 		case ReleaseTaskGroupInputs:
-			taskGroup := event.TaskGroup
-			event.WaitGroup.Add(1)
 			go func() {
 				defer event.WaitGroup.Done()
 
-				tasks := event.TaskGroup.Tasks
-				for _, ds := range tasks[0].Inputs {
-					fmt.Printf("delete %s -> %v\n", ds.Name(), allocation.Location)
-					s.datasetShard2Location[ds.Name()] = allocation.Location
+				// wierd: directly looping s.datasetShard2Location seems missed some entries
+
+				for _, taskGroup := range event.TaskGroups {
+					tasks := taskGroup.Tasks
+					for _, ds := range tasks[len(tasks)-1].Outputs {
+						location := s.datasetShard2Location[ds.Name()]
+						request := NewDeleteDatasetShardRequest(ds.Name())
+						if err := RemoteDirectExecute(location.URL(), request); err != nil {
+							println("exeuction error:", err.Error())
+						}
+					}
 				}
 			}()
 		case *bool:

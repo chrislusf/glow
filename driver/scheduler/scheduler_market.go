@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/url"
+	"time"
 
 	"github.com/chrislusf/glow/driver/scheduler/market"
 	"github.com/chrislusf/glow/flow"
@@ -49,7 +51,7 @@ func (s *Scheduler) InitMarket() {
 		for _, input := range firstTask.Inputs {
 			dataLocation, found := s.datasetShard2Location[input.Name()]
 			if !found {
-				log.Printf("Strange1: %s not allocated yet.", input.Name())
+				// log.Printf("Strange1: %s not allocated yet.", input.Name())
 				continue
 			}
 			cost += dataLocation.Distance(loc)
@@ -75,6 +77,7 @@ func (s *Scheduler) InitMarket() {
 		} else {
 			if len(result.Allocations) == 0 {
 				log.Printf("%s Failed to allocate any server.", s.Leader)
+				time.Sleep(time.Millisecond * time.Duration(2000+rand.Int63n(1000)))
 			} else {
 				log.Printf("%s allocated %d servers.", s.Leader, len(result.Allocations))
 				for _, allocation := range result.Allocations {
@@ -93,7 +96,7 @@ func (s *Scheduler) findTaskGroupInputs(tg *TaskGroup) (ret []resource.DataResou
 	for _, input := range firstTask.Inputs {
 		dataLocation, found := s.datasetShard2Location[input.Name()]
 		if !found {
-			log.Printf("Strange2: %s not allocated yet.", input.Name())
+			// log.Printf("Strange2: %s not allocated yet.", input.Name())
 			continue
 		}
 		ret = append(ret, resource.DataResource{

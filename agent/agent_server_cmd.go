@@ -16,7 +16,11 @@ func (as *AgentServer) handleCommandConnection(conn net.Conn,
 		reply.Type = cmd.ControlMessage_StartResponse.Enum()
 		reply.StartResponse = as.handleStart(conn, command.StartRequest)
 	}
-	return nil
+	if command.GetType() == cmd.ControlMessage_DeleteDatasetShardRequest {
+		reply.Type = cmd.ControlMessage_DeleteDatasetShardResponse.Enum()
+		reply.DeleteDatasetShardResponse = as.handleDeleteDatasetShard(conn, command.DeleteDatasetShardRequest)
+	}
+	return reply
 }
 
 func (as *AgentServer) handleStart(conn net.Conn,
@@ -44,5 +48,13 @@ func (as *AgentServer) handleStart(conn net.Conn,
 
 	cmd.Wait()
 
-	return nil // this will not reach here until
+	return nil
+}
+
+func (as *AgentServer) handleDeleteDatasetShard(conn net.Conn,
+	deleteRequest *cmd.DeleteDatasetShardRequest) *cmd.DeleteDatasetShardResponse {
+
+	as.handleDelete(*deleteRequest.Name)
+
+	return nil
 }
