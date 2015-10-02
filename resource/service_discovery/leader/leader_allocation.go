@@ -24,26 +24,36 @@ func (tl *TeamLeader) allocate(req *resource.AllocationRequest) (result *resourc
 
 func (tl *TeamLeader) allocateServersOnRack(dc *resource.DataCenter, rack *resource.Rack, requests []*resource.ComputeRequest) (
 	allocated []resource.Allocation, remainingRequests []*resource.ComputeRequest) {
+	var j = -1
 	for _, agent := range rack.Agents {
+		if j >= len(requests) {
+			break
+		}
 		available := agent.Resource.Minus(agent.Allocated)
 		hasAllocation := true
-		for available.GreaterThanZero() && hasAllocation {
+		for available.GreaterThanZero() && hasAllocation && j < len(requests) {
 			hasAllocation = false
-			for _, request := range requests {
-				if available.Covers(request.ComputeResource) {
-					allocated = append(allocated, resource.Allocation{
-						Location:  agent.Location,
-						Allocated: request.ComputeResource,
-					})
-					agent.Allocated = agent.Allocated.Plus(request.ComputeResource)
-					rack.Allocated = rack.Allocated.Plus(request.ComputeResource)
-					dc.Allocated = dc.Allocated.Plus(request.ComputeResource)
-					tl.LeaderResource.Topology.Allocated = tl.LeaderResource.Topology.Allocated.Plus(request.ComputeResource)
-					available = available.Minus(request.ComputeResource)
-					hasAllocation = true
-				} else {
-					remainingRequests = append(remainingRequests, request)
-				}
+
+			j++
+			if j >= len(requests) {
+				break
+			}
+			request := requests[j]
+
+			fmt.Printf("available %v, requested %v\n", available, request.ComputeResource)
+			if available.Covers(request.ComputeResource) {
+				allocated = append(allocated, resource.Allocation{
+					Location:  agent.Location,
+					Allocated: request.ComputeResource,
+				})
+				agent.Allocated = agent.Allocated.Plus(request.ComputeResource)
+				rack.Allocated = rack.Allocated.Plus(request.ComputeResource)
+				dc.Allocated = dc.Allocated.Plus(request.ComputeResource)
+				tl.LeaderResource.Topology.Allocated = tl.LeaderResource.Topology.Allocated.Plus(request.ComputeResource)
+				available = available.Minus(request.ComputeResource)
+				hasAllocation = true
+			} else {
+				remainingRequests = append(remainingRequests, request)
 			}
 		}
 	}
