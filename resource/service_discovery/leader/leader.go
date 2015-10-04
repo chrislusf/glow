@@ -4,12 +4,14 @@ package leader
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/labstack/echo"
 )
 
 type TeamLeader struct {
-	channels map[string][]*ChannelInformation
+	channels     map[string][]*ChannelInformation
+	channelsLock sync.Mutex
 
 	LeaderResource *LeaderResource
 }

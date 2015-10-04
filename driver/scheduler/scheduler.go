@@ -8,12 +8,12 @@ import (
 )
 
 type Scheduler struct {
-	Leader                string
-	EventChan             chan interface{}
-	resourceFetcher       *ResourceFetcher
-	lock                  sync.Mutex
-	datasetShard2Location map[string]resource.Location
-	Market                *market.Market
+	Leader                    string
+	EventChan                 chan interface{}
+	resourceFetcher           *ResourceFetcher
+	Market                    *market.Market
+	datasetShard2Location     map[string]resource.Location
+	datasetShard2LocationLock sync.Mutex
 }
 
 type SchedulerOption struct {
@@ -26,8 +26,8 @@ func NewScheduler(leader string, option *SchedulerOption) *Scheduler {
 		Leader:                leader,
 		EventChan:             make(chan interface{}),
 		resourceFetcher:       NewResourceFetcher(),
-		datasetShard2Location: make(map[string]resource.Location),
 		Market:                market.NewMarket(),
+		datasetShard2Location: make(map[string]resource.Location),
 	}
 	s.InitMarket()
 	return s

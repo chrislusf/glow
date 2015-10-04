@@ -32,7 +32,9 @@ func (tl *TeamLeader) listChannelsHandler(c *echo.Context) error {
 	for i, j := 0, len(freshChannels)-1; i < j; i, j = i+1, j-1 {
 		freshChannels[i], freshChannels[j] = freshChannels[j], freshChannels[i]
 	}
+	tl.channelsLock.Lock()
 	tl.channels[path] = freshChannels
+	tl.channelsLock.Unlock()
 	c.JSON(http.StatusOK, freshChannels)
 	return nil
 }
@@ -66,7 +68,9 @@ func (tl *TeamLeader) updateChannelHandler(c *echo.Context) error {
 			LastHeartBeat: time.Now(),
 		})
 	}
+	tl.channelsLock.Lock()
 	tl.channels[path] = rps
+	tl.channelsLock.Unlock()
 
 	c.JSON(http.StatusAccepted, tl.channels)
 

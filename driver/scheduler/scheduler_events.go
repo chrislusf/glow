@@ -48,24 +48,24 @@ func (s *Scheduler) EventLoop() {
 				// remember dataset location
 				tasks := event.TaskGroup.Tasks
 				for _, ds := range tasks[len(tasks)-1].Outputs {
-					if s == nil {
-						println("s", s, "ds2loc", s.datasetShard2Location)
-					}
-					if ds == nil {
-						println("ds", ds, "name", ds.Name())
-					}
-					println("allocation", &allocation, "location", &allocation.Location)
-					// fmt.Printf("remember %s -> %v\n", ds.Name(), allocation.Location)
-					s.datasetShard2Location[ds.Name()] = allocation.Location
+					name := ds.Name()
+					location := allocation.Location
+					s.datasetShard2LocationLock.Lock()
+					s.datasetShard2Location[name] = location
+					s.datasetShard2LocationLock.Unlock()
 				}
 
 				dir, _ := os.Getwd()
-				request := NewStartRequest(os.Args[0], dir,
-					"-task.context.id",
+				args := []string{
+					"-glow.context.id",
 					strconv.Itoa(event.FlowContext.Id),
-					"-task.taskGroup.id",
+					"-glow.taskGroup.id",
 					strconv.Itoa(taskGroup.Id),
-				)
+				}
+				for _, arg := range os.Args[1:] {
+					args = append(args, arg)
+				}
+				request := NewStartRequest(os.Args[0], dir, args)
 				// fmt.Printf("starting on %s: %v\n", server, request)
 				if err := RemoteDirectExecute(allocation.Location.URL(), request); err != nil {
 					println("exeuction error:", err.Error())
@@ -77,13 +77,12 @@ func (s *Scheduler) EventLoop() {
 			go func() {
 				defer event.WaitGroup.Done()
 
-				// wierd: directly looping s.datasetShard2Location seems missed some entries
-
 				for _, taskGroup := range event.TaskGroups {
 					tasks := taskGroup.Tasks
 					for _, ds := range tasks[len(tasks)-1].Outputs {
 						location := s.datasetShard2Location[ds.Name()]
 						request := NewDeleteDatasetShardRequest(ds.Name())
+						// println("deleting", ds.Name(), "on", location.URL())
 						if err := RemoteDirectExecute(location.URL(), request); err != nil {
 							println("exeuction error:", err.Error())
 						}
