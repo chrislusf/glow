@@ -55,6 +55,7 @@ func HashByKey(input reflect.Value, shard int) int {
 func (d *Dataset) partition_scatter(shard int) (ret *Dataset) {
 	ret = d.context.newNextDataset(len(d.Shards)*shard, d.Type)
 	step := d.context.AddOneToEveryNStep(d, shard, ret)
+	step.Name = "Partition_scatter"
 	step.Function = func(task *Task) {
 		for input := range task.InputChan() {
 			x := HashByKey(input, shard)
@@ -68,6 +69,7 @@ func (d *Dataset) partition_collect(shard int) (ret *Dataset) {
 	m := len(d.Shards) / shard
 	ret = d.context.newNextDataset(shard, d.Type)
 	step := d.context.AddEveryNToOneStep(d, m, ret)
+	step.Name = "Partition_collect"
 	step.Function = func(task *Task) {
 		for input := range task.InputChan() {
 			task.Outputs[0].WriteChan.Send(input)

@@ -51,6 +51,8 @@ digraph G {
 func (fg *FlowGraph) plot() {
 	fg.println("digraph G {")
 	prefix := "  "
+	fg.w(prefix).println("center=true;")
+	fg.w(prefix).println("compound=true;")
 	fg.w(prefix).println("start [shape=Mdiamond];")
 	fg.w(prefix).println("end [shape=Msquare];")
 	for _, tg := range fg.taskGroups {
@@ -94,7 +96,15 @@ func (fg *FlowGraph) i(x int) *FlowGraph {
 	return fg
 }
 func (fg *FlowGraph) t(t *flow.Task) *FlowGraph {
-	fg.w("t").i(t.Step.Id).w("_").i(t.Id)
+	if t.Step.Name != "" {
+		fg.w(t.Step.Name)
+	} else {
+		fg.w("t")
+	}
+	fg.i(t.Step.Id)
+	if len(t.Step.Tasks) > 1 {
+		fg.w("_").i(t.Id).w("_").i(len(t.Step.Tasks))
+	}
 	return fg
 }
 func (fg *FlowGraph) d(dss *flow.DatasetShard) *FlowGraph {

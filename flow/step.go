@@ -18,6 +18,7 @@ type Step struct {
 	Function func(*Task)
 	Tasks    []*Task
 	Type     StepType
+	Name     string
 }
 
 func (s *Step) Run() {

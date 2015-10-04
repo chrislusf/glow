@@ -18,6 +18,7 @@ import (
 func (d *Dataset) Map(f interface{}) *Dataset {
 	outType := guessFunctionOutputType(f)
 	ret, step := add1ShardTo1Step(d, outType)
+	step.Name = "Map"
 	step.Function = func(task *Task) {
 		fn := reflect.ValueOf(f)
 		ft := reflect.TypeOf(f)
@@ -91,6 +92,7 @@ func (d *Dataset) Map(f interface{}) *Dataset {
 // f(A)bool
 func (d *Dataset) Filter(f interface{}) *Dataset {
 	ret, step := add1ShardTo1Step(d, d.Type)
+	step.Name = "Filter"
 	step.Function = func(task *Task) {
 		fn := reflect.ValueOf(f)
 		outChan := task.Outputs[0].WriteChan

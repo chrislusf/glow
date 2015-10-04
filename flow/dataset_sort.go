@@ -16,6 +16,7 @@ func (d *Dataset) Sort(f interface{}) (ret *Dataset) {
 // New Dataset contains K,V
 func (d *Dataset) LocalSort(f interface{}) *Dataset {
 	ret, step := add1ShardTo1Step(d, d.Type)
+	step.Name = "LocalSort"
 	step.Function = func(task *Task) {
 		outChan := task.Outputs[0].WriteChan
 		var kvs []interface{}
@@ -39,6 +40,7 @@ func (d *Dataset) LocalSort(f interface{}) *Dataset {
 func (d *Dataset) MergeSorted(f interface{}) (ret *Dataset) {
 	ret = d.context.newNextDataset(1, d.Type)
 	step := d.context.AddAllToOneStep(d, ret)
+	step.Name = "MergeSorted"
 	step.Function = func(task *Task) {
 		outChan := task.Outputs[0].WriteChan
 

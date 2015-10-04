@@ -60,7 +60,7 @@ func (this *Dataset) JoinHashedSorted(that *Dataset,
 
 	inputs := []*Dataset{this, that}
 	step := this.context.MergeDatasets1ShardTo1Step(inputs, ret)
-
+	step.Name = "JoinHashedSorted"
 	step.Function = func(task *Task) {
 		outChan := task.Outputs[0].WriteChan
 

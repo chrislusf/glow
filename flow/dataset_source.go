@@ -12,6 +12,7 @@ import (
 func (fc *FlowContext) Source(f interface{}, shard int) (ret *Dataset) {
 	ret = fc.newNextDataset(shard, guessFunctionOutputType(f))
 	step := fc.AddOneToAllStep(nil, ret)
+	step.Name = "Source"
 	step.Function = func(task *Task) {
 		ctype := reflect.ChanOf(reflect.BothDir, ret.Type)
 		outChan := reflect.MakeChan(ctype, 0)
