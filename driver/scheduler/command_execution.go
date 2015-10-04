@@ -13,7 +13,7 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-func NewStartRequest(path string, dir string, args ...string) *cmd.ControlMessage {
+func NewStartRequest(path string, dir string, args []string) *cmd.ControlMessage {
 	return &cmd.ControlMessage{
 		Type: cmd.ControlMessage_StartRequest.Enum(),
 		StartRequest: &cmd.StartRequest{
@@ -63,9 +63,11 @@ func doExecute(conn net.Conn, command *cmd.ControlMessage) error {
 		log.Fatal("marshaling error: ", err)
 	}
 
+	remoteAddress := conn.RemoteAddr().String()
+
 	// send the command
 	if err = util.WriteData(conn, buf, []byte("CMD "), data); err != nil {
-		println("failed to write to", conn.RemoteAddr().String(), ":", err.Error())
+		println("failed to write to", remoteAddress, ":", err.Error())
 		return err
 	}
 
@@ -74,7 +76,7 @@ func doExecute(conn net.Conn, command *cmd.ControlMessage) error {
 	// read output and print it to stdout
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
-		fmt.Printf("%s>%s\n", "", scanner.Text())
+		fmt.Printf("%s>%s\n", remoteAddress, scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
 		return fmt.Errorf("Failed to scan output: %v", err)

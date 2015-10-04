@@ -15,6 +15,7 @@ type DriverOption struct {
 	Leader      string
 	DataCenter  string
 	Rack        string
+	PlotOutput  bool
 }
 
 func init() {
@@ -23,6 +24,7 @@ func init() {
 	flag.StringVar(&driverOption.Leader, "driver.leader", "localhost:8930", "leader server")
 	flag.StringVar(&driverOption.DataCenter, "driver.dataCenter", "defaultDataCenter", "preferred data center name")
 	flag.StringVar(&driverOption.Rack, "driver.rack", "defaultRack", "preferred rack name")
+	flag.BoolVar(&driverOption.PlotOutput, "driver.plot.flow", false, "print out task group flow in graphviz dot format")
 
 	flow.RegisterContextRunner(NewFlowContextDriver(&driverOption))
 }
@@ -42,11 +44,15 @@ func (fcd *FlowContextDriver) IsDriverMode() bool {
 // driver runs on local, controlling all tasks
 func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 
+	taskGroups := scheduler.GroupTasks(fc)
+	if fcd.option.PlotOutput {
+		scheduler.PlotGraph(taskGroups)
+		return
+	}
+
 	// rsyncServer :=
 	rsync.NewRsyncServer(os.Args[0])
 	// rsyncServer.Start()
-
-	taskGroups := scheduler.GroupTasks(fc)
 
 	sched := scheduler.NewScheduler(
 		fcd.option.Leader,

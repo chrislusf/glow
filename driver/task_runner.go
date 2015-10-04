@@ -20,8 +20,8 @@ type TaskOption struct {
 var taskOption TaskOption
 
 func init() {
-	flag.IntVar(&taskOption.ContextId, "task.context.id", -1, "context id")
-	flag.IntVar(&taskOption.TaskGroupId, "task.taskGroup.id", -1, "task group id")
+	flag.IntVar(&taskOption.ContextId, "glow.context.id", -1, "context id")
+	flag.IntVar(&taskOption.TaskGroupId, "glow.taskGroup.id", -1, "task group id")
 
 	flow.RegisterTaskRunner(NewTaskRunner(&taskOption))
 }
