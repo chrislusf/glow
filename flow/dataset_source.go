@@ -65,7 +65,6 @@ func (fc *FlowContext) TextFile(fname string, shard int) (ret *Dataset) {
 
 		if err := scanner.Err(); err != nil {
 			log.Printf("Scan file %s: %v", fname, err)
-			ret.ErrorChan <- err
 		}
 	}
 	return fc.Source(fn, shard)

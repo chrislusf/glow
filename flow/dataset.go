@@ -16,9 +16,6 @@ type Dataset struct {
 	Type    reflect.Type
 	Shards  []*DatasetShard
 	Step    *Step
-
-	ErrorChan chan error
-	Generator func()
 }
 
 type DatasetShard struct {
@@ -30,10 +27,9 @@ type DatasetShard struct {
 
 func NewDataset(context *FlowContext, t reflect.Type) *Dataset {
 	d := &Dataset{
-		Id:        len(context.Datasets),
-		context:   context,
-		Type:      t,
-		ErrorChan: make(chan error, 0),
+		Id:      len(context.Datasets),
+		context: context,
+		Type:    t,
 	}
 	context.Datasets = append(context.Datasets, d)
 	return d
@@ -55,13 +51,6 @@ func (d *Dataset) RunSelf(stepId int) {
 			// println("dataset", stepId, "shard", shardId, "close r")
 			close(shard.ReadChan)
 		}(shardId, shard)
-	}
-	if d.Generator != nil {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			d.Generator()
-		}()
 	}
 	wg.Wait()
 	// println("dataset", stepId, "stopped")
