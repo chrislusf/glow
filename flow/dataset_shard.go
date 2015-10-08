@@ -36,6 +36,7 @@ func HashByKey(input reflect.Value, shard int) int {
 	dt := v.Type()
 	if dt.Kind() == reflect.Interface {
 		dt = reflect.TypeOf(v.Interface())
+		v = reflect.ValueOf(v.Interface())
 	}
 
 	var x int

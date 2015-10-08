@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-// f(chan A)
+// Inputs: f(chan A), shardCount
 func (fc *FlowContext) Source(f interface{}, shard int) (ret *Dataset) {
 	ret = fc.newNextDataset(shard, guessFunctionOutputType(f))
 	step := fc.AddOneToAllStep(nil, ret)
@@ -68,4 +68,26 @@ func (fc *FlowContext) TextFile(fname string, shard int) (ret *Dataset) {
 		}
 	}
 	return fc.Source(fn, shard)
+}
+
+func (fc *FlowContext) Channel(ch interface{}, shard int) (ret *Dataset) {
+	chValue, chType := reflect.ValueOf(ch), reflect.TypeOf(ch)
+
+	ret = fc.newNextDataset(shard, chType.Elem())
+	step := fc.AddOneToAllStep(nil, ret)
+	step.Name = "Channel"
+	step.Function = func(task *Task) {
+		var t reflect.Value
+		i := 0
+		for ok := true; ok; {
+			if t, ok = chValue.Recv(); ok {
+				task.Outputs[i].WriteChan.Send(t)
+				i++
+				if i == shard {
+					i = 0
+				}
+			}
+		}
+	}
+	return
 }

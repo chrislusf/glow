@@ -83,7 +83,7 @@ func (tr *TaskRunner) connectInternalInputsAndOutputs(wg *sync.WaitGroup) {
 			defer wg.Done()
 			for {
 				if t, ok := currentShard.WriteChan.Recv(); ok {
-					nextShard.ReadInput(t)
+					nextShard.SendForRead(t)
 				} else {
 					nextShard.CloseRead()
 					break
