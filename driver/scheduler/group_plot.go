@@ -49,7 +49,7 @@ digraph G {
 }
 */
 func (fg *FlowGraph) plot() {
-	fg.println("digraph G {")
+	fg.println("digraph glow {")
 	prefix := "  "
 	fg.w(prefix).println("center=true;")
 	fg.w(prefix).println("compound=true;")
