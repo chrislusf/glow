@@ -7,7 +7,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/chrislusf/glow/agent/store"
+	"github.com/chrislusf/glow/io/store"
 	"github.com/chrislusf/glow/util"
 )
 
