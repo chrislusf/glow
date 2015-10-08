@@ -35,22 +35,41 @@ func GroupTasks(fc *flow.FlowContext) []*TaskGroup {
 	return translateToTaskGroups(stepGroups)
 }
 
+func isMergeableDataset(ds *flow.Dataset, taskCount int) bool {
+	if taskCount != len(ds.Step.Tasks) {
+		return false
+	}
+	if len(ds.ReadingSteps) > 1 {
+		return false
+	}
+	for _, shard := range ds.Shards {
+		if len(shard.ReadingTasks) > 1 {
+			return false
+		}
+	}
+	return true
+}
+
+// find mergeable parent step or itself if parent is not mergeable
 func findAncestorStepId(step *flow.Step) (int, bool) {
 	current := step
-	taskCount := len(step.Tasks)
-	var next *flow.Step
-	for current.Type == flow.Local && taskCount == len(current.Tasks) {
+	taskCount := len(current.Tasks)
+
+	for taskCount == len(current.Tasks) {
 		if len(current.Inputs) > 1 {
-			log.Panic("local step should not have more than 1 input")
+			break
 		}
 		if len(current.Inputs) == 0 {
 			break
 		}
-		next = current.Inputs[0].Step
-		if next.Type != flow.Local || taskCount != len(next.Tasks) {
+
+		if !isMergeableDataset(current.Inputs[0], taskCount) {
 			break
 		}
-		current = next
+
+		current = current.Inputs[0].Step
+		taskCount = len(current.Tasks)
+
 	}
 	return current.Id, true
 }

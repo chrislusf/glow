@@ -11,18 +11,20 @@ func (d *Dataset) GetShards() []*DatasetShard {
 }
 
 type Dataset struct {
-	Id      int
-	context *FlowContext
-	Type    reflect.Type
-	Shards  []*DatasetShard
-	Step    *Step
+	Id           int
+	context      *FlowContext
+	Type         reflect.Type
+	Shards       []*DatasetShard
+	Step         *Step
+	ReadingSteps []*Step
 }
 
 type DatasetShard struct {
-	Id        int
-	Parent    *Dataset
-	ReadChan  chan reflect.Value
-	WriteChan reflect.Value
+	Id           int
+	Parent       *Dataset
+	ReadChan     chan reflect.Value
+	WriteChan    reflect.Value
+	ReadingTasks []*Task
 }
 
 func NewDataset(context *FlowContext, t reflect.Type) *Dataset {
@@ -44,12 +46,10 @@ func (d *Dataset) RunSelf(stepId int) {
 			var t reflect.Value
 			for ok := true; ok; {
 				if t, ok = shard.WriteChan.Recv(); ok {
-					// fmt.Printf("%s -> r\n", t)
-					shard.ReadChan <- t
+					shard.ReadInput(t)
 				}
 			}
-			// println("dataset", stepId, "shard", shardId, "close r")
-			close(shard.ReadChan)
+			shard.CloseRead()
 		}(shardId, shard)
 	}
 	wg.Wait()
@@ -59,4 +59,20 @@ func (d *Dataset) RunSelf(stepId int) {
 
 func (s *DatasetShard) Name() string {
 	return fmt.Sprintf("ct-%d-ds-%d-shard-%d", s.Parent.context.Id, s.Parent.Id, s.Id)
+}
+
+func (s *DatasetShard) ReadInput(t reflect.Value) {
+	s.ReadChan <- t
+}
+
+func (s *DatasetShard) CloseRead() {
+	close(s.ReadChan)
+}
+
+func (d *Dataset) AddReadingStep(s *Step) {
+	d.ReadingSteps = append(d.ReadingSteps, s)
+}
+
+func (s *DatasetShard) AddReadingTask(t *Task) {
+	s.ReadingTasks = append(s.ReadingTasks, t)
 }
