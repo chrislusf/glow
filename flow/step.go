@@ -17,8 +17,8 @@ type Step struct {
 	Output   *Dataset
 	Function func(*Task)
 	Tasks    []*Task
-	Type     StepType
 	Name     string
+	//Type     StepType
 }
 
 func (s *Step) Run() {

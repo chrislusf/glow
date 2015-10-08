@@ -46,7 +46,7 @@ func (d *Dataset) RunSelf(stepId int) {
 			var t reflect.Value
 			for ok := true; ok; {
 				if t, ok = shard.WriteChan.Recv(); ok {
-					shard.ReadInput(t)
+					shard.SendForRead(t)
 				}
 			}
 			shard.CloseRead()
@@ -61,7 +61,7 @@ func (s *DatasetShard) Name() string {
 	return fmt.Sprintf("ct-%d-ds-%d-shard-%d", s.Parent.context.Id, s.Parent.Id, s.Id)
 }
 
-func (s *DatasetShard) ReadInput(t reflect.Value) {
+func (s *DatasetShard) SendForRead(t reflect.Value) {
 	s.ReadChan <- t
 }
 
@@ -69,10 +69,29 @@ func (s *DatasetShard) CloseRead() {
 	close(s.ReadChan)
 }
 
-func (d *Dataset) AddReadingStep(s *Step) {
-	d.ReadingSteps = append(d.ReadingSteps, s)
+func FromStepToDataset(step *Step, output *Dataset) {
+	if output == nil {
+		return
+	}
+	output.Step = step
+	step.Output = output
 }
 
-func (s *DatasetShard) AddReadingTask(t *Task) {
-	s.ReadingTasks = append(s.ReadingTasks, t)
+func FromDatasetToStep(input *Dataset, step *Step) {
+	if input == nil {
+		return
+	}
+	step.Inputs = append(step.Inputs, input)
+	input.ReadingSteps = append(input.ReadingSteps, step)
+}
+
+func FromDatasetShardToTask(shard *DatasetShard, task *Task) {
+	shard.ReadingTasks = append(shard.ReadingTasks, task)
+	task.Inputs = append(task.Inputs, shard)
+}
+
+func FromTaskToDatasetShard(task *Task, shard *DatasetShard) {
+	if shard != nil {
+		task.Outputs = append(task.Outputs, shard)
+	}
 }

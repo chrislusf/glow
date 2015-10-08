@@ -12,6 +12,12 @@ type Task struct {
 	Step    *Step
 }
 
+func (step *Step) NewTask() (task *Task) {
+	task = &Task{Step: step, Id: len(step.Tasks)}
+	step.Tasks = append(step.Tasks, task)
+	return
+}
+
 // source ->w:ds:r -> task -> w:ds:r
 // source close next ds' w chan
 // ds close its own r chan
