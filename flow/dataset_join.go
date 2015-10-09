@@ -8,7 +8,7 @@ import (
 func (d *Dataset) Join(other *Dataset) *Dataset {
 	sorted_d := d.Partition(len(d.Shards)).LocalSort(nil)
 	if d == other {
-		// return sorted_d.SelfJoin(nil)
+		return sorted_d.SelfJoin(nil)
 	}
 	sorted_other := other.Partition(len(d.Shards)).LocalSort(nil)
 	return sorted_d.JoinHashedSorted(sorted_other, nil, false, false)
