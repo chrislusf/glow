@@ -4,13 +4,6 @@ import (
 	"sync"
 )
 
-type StepType int
-
-const (
-	Local StepType = 1 + iota
-	Network
-)
-
 type Step struct {
 	Id       int
 	Inputs   []*Dataset
@@ -18,7 +11,6 @@ type Step struct {
 	Function func(*Task)
 	Tasks    []*Task
 	Name     string
-	//Type     StepType
 }
 
 func (s *Step) Run() {
