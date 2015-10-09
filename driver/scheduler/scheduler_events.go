@@ -61,6 +61,8 @@ func (s *Scheduler) EventLoop() {
 					strconv.Itoa(event.FlowContext.Id),
 					"-glow.taskGroup.id",
 					strconv.Itoa(taskGroup.Id),
+					"-glow.task.name",
+					tasks[0].Name(),
 				}
 				for _, arg := range os.Args[1:] {
 					args = append(args, arg)

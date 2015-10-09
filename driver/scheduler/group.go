@@ -36,6 +36,9 @@ func GroupTasks(fc *flow.FlowContext) []*TaskGroup {
 }
 
 func isMergeableDataset(ds *flow.Dataset, taskCount int) bool {
+	if taskCount != len(ds.Shards) {
+		return false
+	}
 	if taskCount != len(ds.Step.Tasks) {
 		return false
 	}
@@ -57,9 +60,11 @@ func findAncestorStepId(step *flow.Step) (int, bool) {
 
 	for taskCount == len(current.Tasks) {
 		if len(current.Inputs) > 1 {
+			// more than 2 dataset inputs
 			break
 		}
 		if len(current.Inputs) == 0 {
+			// no dataset inputs
 			break
 		}
 

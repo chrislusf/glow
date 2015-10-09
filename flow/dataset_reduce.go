@@ -44,7 +44,7 @@ func (d *Dataset) MergeReduce(f interface{}) (ret *Dataset) {
 		isFirst := true
 		var localResult reflect.Value
 		fn := reflect.ValueOf(f)
-		for input := range task.InputChan() {
+		for input := range task.MergedInputChan() {
 			if isFirst {
 				isFirst = false
 				localResult = input

@@ -1,53 +1,14 @@
 package flow
 
 import (
-	"log"
 	"reflect"
 )
-
-func DefaultStringComparator(a, b string) int64 {
-	switch {
-	case a == b:
-		return 0
-	case a < b:
-		return -1
-	default:
-		return 1
-	}
-}
-func DefaultInt64Comparator(a, b int64) int64 {
-	return a - b
-}
-func DefaultFloat64Comparator(a, b float64) int64 {
-	switch {
-	case a == b:
-		return 0
-	case a < b:
-		return -1
-	default:
-		return 1
-	}
-}
-
-func getComparator(dt reflect.Type) (funcPointer interface{}) {
-	switch dt.Kind() {
-	case reflect.Int:
-		funcPointer = DefaultInt64Comparator
-	case reflect.Float64:
-		funcPointer = DefaultFloat64Comparator
-	case reflect.String:
-		funcPointer = DefaultStringComparator
-	default:
-		log.Panicf("No default comparator for %s:%s", dt.String(), dt.Kind().String())
-	}
-	return
-}
 
 // assume nothing about these two dataset
 func (d *Dataset) Join(other *Dataset) *Dataset {
 	sorted_d := d.Partition(len(d.Shards)).LocalSort(nil)
 	if d == other {
-		return sorted_d.SelfJoin(nil)
+		// return sorted_d.SelfJoin(nil)
 	}
 	sorted_other := other.Partition(len(d.Shards)).LocalSort(nil)
 	return sorted_d.JoinHashedSorted(sorted_other, nil, false, false)
@@ -66,8 +27,8 @@ func (this *Dataset) JoinHashedSorted(that *Dataset,
 	step.Function = func(task *Task) {
 		outChan := task.Outputs[0].WriteChan
 
-		leftChan := task.Inputs[0].ReadChan
-		rightChan := task.Inputs[1].ReadChan
+		leftChan := task.InputChans[0]
+		rightChan := task.InputChans[1]
 
 		// get first value from both channels
 		leftKey, leftValue, leftHasValue := getKeyValue(leftChan)
@@ -90,19 +51,22 @@ func (this *Dataset) JoinHashedSorted(that *Dataset,
 		}
 
 		var leftValues, rightValues []interface{}
+		var leftNextKey, leftNextValue, rightNextKey, rightNextValue interface{}
 		for leftHasValue && rightHasValue {
 			x := comparator(leftKey, rightKey)
 			switch {
 			case x == 0:
-				leftKey, leftValue, leftValues, leftHasValue = getSameKeyValues(leftChan, comparator, leftKey, leftValue)
-				rightKey, rightValue, rightValues, rightHasValue = getSameKeyValues(rightChan, comparator, rightKey, rightValue)
+				leftNextKey, leftNextValue, leftValues, leftHasValue = getSameKeyValues(leftChan, comparator, leftKey, leftValue, leftHasValue)
+				rightNextKey, rightNextValue, rightValues, rightHasValue = getSameKeyValues(rightChan, comparator, rightKey, rightValue, rightHasValue)
 
+				// fmt.Printf("left %+v, %v ============ right %+v %v\n", leftKey, leftValues, rightKey, rightValues)
 				// left and right cartician join
 				for _, a := range leftValues {
 					for _, b := range rightValues {
 						send(outChan, leftKey, a, b)
 					}
 				}
+				leftKey, leftValue, rightKey, rightValue = leftNextKey, leftNextValue, rightNextKey, rightNextValue
 			case x < 0:
 				if isLeftOuterJoin {
 					send(outChan, leftKey, leftValue, nil)
@@ -142,8 +106,9 @@ func (this *Dataset) JoinHashedSorted(that *Dataset,
 	return ret
 }
 
-func getSameKeyValues(ch chan reflect.Value, comparator func(a, b interface{}) int64, theKey, firstValue interface{}) (nextKey, nextValue interface{}, theValues []interface{}, hasValue bool) {
+func getSameKeyValues(ch chan reflect.Value, comparator func(a, b interface{}) int64, theKey, firstValue interface{}, hasFirstValue bool) (nextKey, nextValue interface{}, theValues []interface{}, hasValue bool) {
 	theValues = append(theValues, firstValue)
+	hasValue = hasFirstValue
 	for {
 		nextKey, nextValue, hasValue = getKeyValue(ch)
 		if hasValue && comparator(theKey, nextKey) == 0 {
@@ -151,7 +116,6 @@ func getSameKeyValues(ch chan reflect.Value, comparator func(a, b interface{}) i
 		} else {
 			return
 		}
-
 	}
 	return
 }
@@ -176,7 +140,7 @@ func (d *Dataset) SelfJoin(compareFunc interface{}) (ret *Dataset) {
 	step.Function = func(task *Task) {
 		outChan := task.Outputs[0].WriteChan
 
-		leftChan := task.Inputs[0].ReadChan
+		leftChan := task.InputChans[0]
 
 		// get first value from both channels
 		leftKey, leftValue, leftHasValue := getKeyValue(leftChan)
@@ -198,7 +162,7 @@ func (d *Dataset) SelfJoin(compareFunc interface{}) (ret *Dataset) {
 
 		var leftValues []interface{}
 		for leftHasValue {
-			leftKey, leftValue, leftValues, leftHasValue = getSameKeyValues(leftChan, comparator, leftKey, leftValue)
+			leftKey, leftValue, leftValues, leftHasValue = getSameKeyValues(leftChan, comparator, leftKey, leftValue, leftHasValue)
 
 			// cartician join
 			if leftHasValue {

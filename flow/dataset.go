@@ -22,9 +22,10 @@ type Dataset struct {
 type DatasetShard struct {
 	Id           int
 	Parent       *Dataset
-	ReadChan     chan reflect.Value
 	WriteChan    reflect.Value
 	ReadingTasks []*Task
+
+	readingChans []chan reflect.Value
 }
 
 func NewDataset(context *FlowContext, t reflect.Type) *Dataset {
@@ -39,10 +40,13 @@ func NewDataset(context *FlowContext, t reflect.Type) *Dataset {
 
 func (d *Dataset) RunSelf(stepId int) {
 	var wg sync.WaitGroup
-	for shardId, shard := range d.Shards {
+	for _, shard := range d.Shards {
 		wg.Add(1)
-		go func(shardId int, shard *DatasetShard) {
+		go func(shard *DatasetShard) {
 			defer wg.Done()
+			shard.SetupReadingChans()
+
+			// start to run
 			var t reflect.Value
 			for ok := true; ok; {
 				if t, ok = shard.WriteChan.Recv(); ok {
@@ -50,7 +54,7 @@ func (d *Dataset) RunSelf(stepId int) {
 				}
 			}
 			shard.CloseRead()
-		}(shardId, shard)
+		}(shard)
 	}
 	wg.Wait()
 	// println("dataset", stepId, "stopped")
@@ -61,12 +65,26 @@ func (s *DatasetShard) Name() string {
 	return fmt.Sprintf("ct-%d-ds-%d-shard-%d", s.Parent.context.Id, s.Parent.Id, s.Id)
 }
 
+func (shard *DatasetShard) SetupReadingChans() {
+	for _, task := range shard.ReadingTasks {
+		for i, s := range task.Inputs {
+			if s == shard {
+				shard.readingChans = append(shard.readingChans, task.InputChans[i])
+			}
+		}
+	}
+}
+
 func (s *DatasetShard) SendForRead(t reflect.Value) {
-	s.ReadChan <- t
+	for _, c := range s.readingChans {
+		c <- t
+	}
 }
 
 func (s *DatasetShard) CloseRead() {
-	close(s.ReadChan)
+	for _, c := range s.readingChans {
+		close(c)
+	}
 }
 
 func FromStepToDataset(step *Step, output *Dataset) {
@@ -88,6 +106,7 @@ func FromDatasetToStep(input *Dataset, step *Step) {
 func FromDatasetShardToTask(shard *DatasetShard, task *Task) {
 	shard.ReadingTasks = append(shard.ReadingTasks, task)
 	task.Inputs = append(task.Inputs, shard)
+	task.InputChans = append(task.InputChans, make(chan reflect.Value))
 }
 
 func FromTaskToDatasetShard(task *Task, shard *DatasetShard) {

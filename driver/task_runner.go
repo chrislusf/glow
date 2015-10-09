@@ -13,8 +13,9 @@ import (
 )
 
 type TaskOption struct {
-	ContextId   int
-	TaskGroupId int
+	ContextId    int
+	TaskGroupId  int
+	FistTaskName string
 }
 
 var taskOption TaskOption
@@ -22,6 +23,7 @@ var taskOption TaskOption
 func init() {
 	flag.IntVar(&taskOption.ContextId, "glow.context.id", -1, "context id")
 	flag.IntVar(&taskOption.TaskGroupId, "glow.taskGroup.id", -1, "task group id")
+	flag.StringVar(&taskOption.FistTaskName, "glow.task.name", "", "name of first task in the task group")
 
 	flow.RegisterTaskRunner(NewTaskRunner(&taskOption))
 }
@@ -78,6 +80,9 @@ func (tr *TaskRunner) connectInternalInputsAndOutputs(wg *sync.WaitGroup) {
 			continue
 		}
 		currentShard, nextShard := tr.Tasks[i].Outputs[0], tr.Tasks[i+1].Inputs[0]
+
+		currentShard.SetupReadingChans()
+
 		wg.Add(1)
 		go func(currentShard, nextShard *flow.DatasetShard, i int) {
 			defer wg.Done()
@@ -95,15 +100,15 @@ func (tr *TaskRunner) connectInternalInputsAndOutputs(wg *sync.WaitGroup) {
 
 func (tr *TaskRunner) connectExternalInputs(wg *sync.WaitGroup) {
 	task := tr.Tasks[0]
-	for _, shard := range task.Inputs {
+	for i, shard := range task.Inputs {
 		d := shard.Parent
 		readChanName := shard.Name()
-		// println("taskGroup", tr.option.TaskGroupId, "step", task.Step.Id, "task", task.Id, "trying to read from:", readChanName)
+		// println("taskGroup", tr.option.TaskGroupId, "task", task.Name(), "trying to read from:", readChanName, len(task.InputChans))
 		rawChan, err := GetReadChannel(readChanName)
 		if err != nil {
 			log.Panic(err)
 		}
-		shard.ReadChan = rawReadChannelToTyped(rawChan, d.Type, wg)
+		task.InputChans[i] = rawReadChannelToTyped(rawChan, d.Type, wg)
 	}
 }
 
