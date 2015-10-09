@@ -26,11 +26,10 @@ func (shard *DatasetShard) SetupReadingChans() {
 			}
 		}
 	}
-	fmt.Printf("shard %s has reading channel #: %d\n", shard.Name(), len(shard.readingChans))
+	// fmt.Printf("shard %s has reading channel #: %d\n", shard.Name(), len(shard.readingChans))
 }
 
 func (s *DatasetShard) SendForRead(t reflect.Value) {
-	fmt.Printf("%s send to %d channels: %v\n", s.Name(), len(s.readingChans), t)
 	for _, c := range s.readingChans {
 		c <- t
 	}
