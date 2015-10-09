@@ -139,3 +139,31 @@ func (f *FlowContext) MergeDatasets1ShardTo1Step(inputs []*Dataset, output *Data
 	}
 	return
 }
+
+func FromStepToDataset(step *Step, output *Dataset) {
+	if output == nil {
+		return
+	}
+	output.Step = step
+	step.Output = output
+}
+
+func FromDatasetToStep(input *Dataset, step *Step) {
+	if input == nil {
+		return
+	}
+	step.Inputs = append(step.Inputs, input)
+	input.ReadingSteps = append(input.ReadingSteps, step)
+}
+
+func FromDatasetShardToTask(shard *DatasetShard, task *Task) {
+	shard.ReadingTasks = append(shard.ReadingTasks, task)
+	task.Inputs = append(task.Inputs, shard)
+	task.InputChans = append(task.InputChans, make(chan reflect.Value))
+}
+
+func FromTaskToDatasetShard(task *Task, shard *DatasetShard) {
+	if shard != nil {
+		task.Outputs = append(task.Outputs, shard)
+	}
+}
