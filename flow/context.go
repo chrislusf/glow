@@ -102,18 +102,17 @@ func (f *FlowContext) AddOneToEveryNStep(input *Dataset, n int, output *Dataset)
 	return
 }
 
-func (f *FlowContext) AddEveryNToOneStep(input *Dataset, m int, output *Dataset) (step *Step) {
+func (f *FlowContext) AddLinkedNToOneStep(input *Dataset, m int, output *Dataset) (step *Step) {
 	step = f.NewStep()
 	FromStepToDataset(step, output)
 	FromDatasetToStep(input, step)
 
 	// setup the network
-	n := len(output.GetShards())
 	for i, outShard := range output.GetShards() {
 		task := step.NewTask()
 		FromTaskToDatasetShard(task, outShard)
 		for k := 0; k < m; k++ {
-			FromDatasetShardToTask(input.GetShards()[k*n+i], task)
+			FromDatasetShardToTask(input.GetShards()[i*m+k], task)
 		}
 	}
 	return
