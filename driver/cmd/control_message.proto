@@ -28,12 +28,19 @@ message NetChan {
 	required int32 port = 2;
 }
 
+message ComputeResource {
+	required int32 cpuCount = 1;
+	required int32 cpuLevel = 2;
+	required int32 memory = 3;
+}
+
 message StartRequest {
 	required string path = 1;
 	repeated string args = 2;
 	repeated string envs = 3;
 	required string dir = 4;
 	repeated string extraFiles = 5;
+	required ComputeResource resource = 6;
 }
 
 message StartResponse {
