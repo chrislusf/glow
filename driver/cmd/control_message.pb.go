@@ -11,6 +11,7 @@ It is generated from these files:
 It has these top-level messages:
 	ControlMessage
 	NetChan
+	ComputeResource
 	StartRequest
 	StartResponse
 	DeleteDatasetShardRequest
@@ -151,13 +152,46 @@ func (m *NetChan) GetPort() int32 {
 	return 0
 }
 
+type ComputeResource struct {
+	CpuCount         *int32 `protobuf:"varint,1,req,name=cpuCount" json:"cpuCount,omitempty"`
+	CpuLevel         *int32 `protobuf:"varint,2,req,name=cpuLevel" json:"cpuLevel,omitempty"`
+	Memory           *int32 `protobuf:"varint,3,req,name=memory" json:"memory,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
+}
+
+func (m *ComputeResource) Reset()         { *m = ComputeResource{} }
+func (m *ComputeResource) String() string { return proto.CompactTextString(m) }
+func (*ComputeResource) ProtoMessage()    {}
+
+func (m *ComputeResource) GetCpuCount() int32 {
+	if m != nil && m.CpuCount != nil {
+		return *m.CpuCount
+	}
+	return 0
+}
+
+func (m *ComputeResource) GetCpuLevel() int32 {
+	if m != nil && m.CpuLevel != nil {
+		return *m.CpuLevel
+	}
+	return 0
+}
+
+func (m *ComputeResource) GetMemory() int32 {
+	if m != nil && m.Memory != nil {
+		return *m.Memory
+	}
+	return 0
+}
+
 type StartRequest struct {
-	Path             *string  `protobuf:"bytes,1,req,name=path" json:"path,omitempty"`
-	Args             []string `protobuf:"bytes,2,rep,name=args" json:"args,omitempty"`
-	Envs             []string `protobuf:"bytes,3,rep,name=envs" json:"envs,omitempty"`
-	Dir              *string  `protobuf:"bytes,4,req,name=dir" json:"dir,omitempty"`
-	ExtraFiles       []string `protobuf:"bytes,5,rep,name=extraFiles" json:"extraFiles,omitempty"`
-	XXX_unrecognized []byte   `json:"-"`
+	Path             *string          `protobuf:"bytes,1,req,name=path" json:"path,omitempty"`
+	Args             []string         `protobuf:"bytes,2,rep,name=args" json:"args,omitempty"`
+	Envs             []string         `protobuf:"bytes,3,rep,name=envs" json:"envs,omitempty"`
+	Dir              *string          `protobuf:"bytes,4,req,name=dir" json:"dir,omitempty"`
+	ExtraFiles       []string         `protobuf:"bytes,5,rep,name=extraFiles" json:"extraFiles,omitempty"`
+	Resource         *ComputeResource `protobuf:"bytes,6,req,name=resource" json:"resource,omitempty"`
+	XXX_unrecognized []byte           `json:"-"`
 }
 
 func (m *StartRequest) Reset()         { *m = StartRequest{} }
@@ -195,6 +229,13 @@ func (m *StartRequest) GetDir() string {
 func (m *StartRequest) GetExtraFiles() []string {
 	if m != nil {
 		return m.ExtraFiles
+	}
+	return nil
+}
+
+func (m *StartRequest) GetResource() *ComputeResource {
+	if m != nil {
+		return m.Resource
 	}
 	return nil
 }
