@@ -2,6 +2,7 @@ package leader
 
 import (
 	"fmt"
+	"math/rand"
 	"sort"
 
 	"github.com/chrislusf/glow/resource"
@@ -91,6 +92,7 @@ func (tl *TeamLeader) findDataCenter(req *resource.AllocationRequest) (*resource
 	}
 
 	// check preferred data center
+	// TODO: assign for each data center, instead of just the last data center
 	dcName := ""
 	for _, cr := range req.Requests {
 		for _, input := range cr.Inputs {
@@ -105,25 +107,28 @@ func (tl *TeamLeader) findDataCenter(req *resource.AllocationRequest) (*resource
 		return dc, nil
 	}
 
-	// ensure one data center has enough resources
-	found := false
-	for _, dc := range tl.LeaderResource.Topology.DataCenters {
-		if dc.Resource.Covers(totalComputeResource) {
-			found = true
-		}
-	}
-	if !found {
-		return nil, fmt.Errorf("Total compute resource is too big for any data center:%s", totalComputeResource)
+	if len(tl.LeaderResource.Topology.DataCenters) == 0 {
+		return nil, fmt.Errorf("No data centers found.")
 	}
 
-	// find a data center with unallocated resources
+	// weighted reservior sampling
+	var selectedDc *resource.DataCenter
+	var seenWeight int64
 	for _, dc := range tl.LeaderResource.Topology.DataCenters {
-		// fmt.Printf("dc has: %+v, used:%+v, totalComputeResource: %+v\n", dc.Resource, dc.Allocated, totalComputeResource)
-		if dc.Resource.Minus(dc.Allocated).Covers(totalComputeResource) {
-			return dc, nil
+		available := dc.Resource.Minus(dc.Allocated)
+		weight := available.MemoryMB
+		if weight > 0 {
+			seenWeight += weight
+			if rand.Int63n(seenWeight) < weight {
+				selectedDc = dc
+			}
 		}
 	}
-	return nil, fmt.Errorf("All data centers are busy for:%v", totalComputeResource)
+	if seenWeight == 0 {
+		return nil, fmt.Errorf("No data center is free.")
+	}
+
+	return selectedDc, nil
 }
 
 type ByAvailableResources []*resource.Rack
