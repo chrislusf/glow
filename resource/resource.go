@@ -83,25 +83,6 @@ func (l *Location) URL() string {
 	return l.Server + ":" + strconv.Itoa(l.Port)
 }
 
-func (cr *ComputeRequest) MatchScore(ro *ResourceOffer) (score float64, ok bool) {
-	c := cr.ComputeResource
-	r := ro.ComputeResource
-	if c.CPUCount > r.CPUCount ||
-		c.CPULevel > r.CPULevel ||
-		c.MemoryMB > r.MemoryMB {
-		return 0, false
-	}
-	totalCost := float64(1)
-	for _, input := range cr.Inputs {
-		if input.DataSizeMB > 0 {
-			cost := float64(10000) / float64(input.DataSizeMB)
-			cost /= input.Location.Distance(ro.ServerLocation)
-			totalCost += cost
-		}
-	}
-	return 100 / totalCost, true
-}
-
 // the distance is a relative value, similar to network lantency
 func (a Location) Distance(b Location) float64 {
 	if a.DataCenter != b.DataCenter {
