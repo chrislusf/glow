@@ -2,7 +2,6 @@ package leader
 
 import (
 	"fmt"
-	"log"
 	"sort"
 
 	"github.com/chrislusf/glow/resource"
@@ -101,12 +100,9 @@ func (tl *TeamLeader) findDataCenter(req *resource.AllocationRequest) (*resource
 	if dcName != "" {
 		dc, hasDc := tl.LeaderResource.Topology.DataCenters[dcName]
 		if !hasDc {
-			log.Fatalf("Failed to find existing data center: %s", dcName)
+			return nil, fmt.Errorf("Failed to find existing data center: %s", dcName)
 		}
-		if dc.Resource.Minus(dc.Allocated).Covers(totalComputeResource) {
-			return dc, nil
-		}
-		return nil, fmt.Errorf("Data center %s is busy for:%v", dcName, totalComputeResource)
+		return dc, nil
 	}
 
 	// ensure one data center has enough resources
