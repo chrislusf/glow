@@ -64,6 +64,7 @@ func (m *Market) AddDemand(r Requirement, bid int, retChan chan Supply) {
 
 	if len(m.Supplies) > 0 {
 		retChan <- m.pickBestSupplyFor(r)
+		close(retChan)
 		return
 	}
 	m.Demands = append(m.Demands, Demand{
@@ -97,6 +98,7 @@ func (m *Market) AddSupply(supply Supply) {
 	if len(m.Demands) > 0 {
 		demand := m.pickBestDemandFor(supply)
 		demand.ReturnChan <- supply
+		close(demand.ReturnChan)
 		return
 	}
 

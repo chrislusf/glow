@@ -10,7 +10,6 @@ import (
 type Scheduler struct {
 	Leader                    string
 	EventChan                 chan interface{}
-	resourceFetcher           *ResourceFetcher
 	Market                    *market.Market
 	datasetShard2Location     map[string]resource.Location
 	datasetShard2LocationLock sync.Mutex
@@ -25,10 +24,9 @@ func NewScheduler(leader string, option *SchedulerOption) *Scheduler {
 	s := &Scheduler{
 		Leader:                leader,
 		EventChan:             make(chan interface{}),
-		resourceFetcher:       NewResourceFetcher(),
 		Market:                market.NewMarket(),
 		datasetShard2Location: make(map[string]resource.Location),
 	}
-	s.InitMarket()
+	s.Market.SetScoreFunction(s.Score).SetFetchFunction(s.Fetch)
 	return s
 }
