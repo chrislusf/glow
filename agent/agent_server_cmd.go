@@ -36,7 +36,8 @@ func (as *AgentServer) handleStart(conn net.Conn,
 		MemoryMB: int64(startRequest.Resource.GetMemory()),
 	}
 
-	*as.allocatedResource = as.allocatedResource.Plus(allocated)
+	as.plusAllocated(allocated)
+	defer as.minusAllocated(allocated)
 
 	cmd := exec.Command(
 		*startRequest.Path,
@@ -56,9 +57,20 @@ func (as *AgentServer) handleStart(conn net.Conn,
 	}
 
 	cmd.Wait()
-	*as.allocatedResource = as.allocatedResource.Minus(allocated)
 
 	return reply
+}
+
+func (as *AgentServer) plusAllocated(allocated resource.ComputeResource) {
+	as.allocatedResourceLock.Lock()
+	defer as.allocatedResourceLock.Unlock()
+	*as.allocatedResource = as.allocatedResource.Plus(allocated)
+}
+
+func (as *AgentServer) minusAllocated(allocated resource.ComputeResource) {
+	as.allocatedResourceLock.Lock()
+	defer as.allocatedResourceLock.Unlock()
+	*as.allocatedResource = as.allocatedResource.Minus(allocated)
 }
 
 func (as *AgentServer) handleDeleteDatasetShard(conn net.Conn,

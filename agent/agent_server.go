@@ -47,16 +47,17 @@ type AgentServerOption struct {
 }
 
 type AgentServer struct {
-	Option            *AgentServerOption
-	leader            string
-	Port              int
-	name2Store        map[string]*LiveDataStore
-	dir               string
-	name2StoreLock    sync.Mutex
-	wg                sync.WaitGroup
-	l                 net.Listener
-	computeResource   *resource.ComputeResource
-	allocatedResource *resource.ComputeResource
+	Option                *AgentServerOption
+	leader                string
+	Port                  int
+	name2Store            map[string]*LiveDataStore
+	dir                   string
+	name2StoreLock        sync.Mutex
+	wg                    sync.WaitGroup
+	l                     net.Listener
+	computeResource       *resource.ComputeResource
+	allocatedResource     *resource.ComputeResource
+	allocatedResourceLock sync.Mutex
 }
 
 func NewAgentServer(option *AgentServerOption) *AgentServer {
