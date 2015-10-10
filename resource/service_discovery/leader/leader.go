@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/labstack/echo"
+	"github.com/chrislusf/glow/util"
 )
 
 type TeamLeader struct {
@@ -16,12 +16,10 @@ type TeamLeader struct {
 	LeaderResource *LeaderResource
 }
 
-func (tl *TeamLeader) statusHandler(c *echo.Context) error {
+func (tl *TeamLeader) statusHandler(w http.ResponseWriter, r *http.Request) {
 	infos := make(map[string]interface{})
 	infos["Version"] = "0.001"
-	// utils.WriteJson(c, http.StatusOK, infos)
-	c.String(http.StatusOK, "Hello World")
-	return nil
+	util.Json(w, r, http.StatusOK, infos)
 }
 
 func RunLeader(listenOn string) {
@@ -29,12 +27,12 @@ func RunLeader(listenOn string) {
 	tl.channels = make(map[string][]*ChannelInformation)
 	tl.LeaderResource = NewLeaderResource()
 
-	e := echo.New()
-	e.Get("/", tl.statusHandler)
-	e.Post("/agent/assign", tl.requestAgentHandler)
-	e.Post("/agent/update", tl.updateAgentHandler)
-	e.Get("/agent/*", tl.listAgentsHandler)
-	e.Post("/channel/*", tl.updateChannelHandler)
-	e.Get("/channel/*", tl.listChannelsHandler)
-	e.Run(listenOn)
+	http.HandleFunc("/", tl.statusHandler)
+	http.HandleFunc("/agent/assign", tl.requestAgentHandler)
+	http.HandleFunc("/agent/update", tl.updateAgentHandler)
+	http.HandleFunc("/agent/", tl.listAgentsHandler)
+	http.HandleFunc("/channel/", tl.handleChannel)
+
+	http.ListenAndServe(listenOn, nil)
+
 }

@@ -11,51 +11,51 @@ import (
 	"strings"
 
 	"github.com/chrislusf/glow/resource"
-	"github.com/labstack/echo"
+	"github.com/chrislusf/glow/util"
 )
 
-func (tl *TeamLeader) listAgentsHandler(c *echo.Context) error {
-	c.JSON(http.StatusAccepted, tl.LeaderResource.Topology)
-	return nil
+func (tl *TeamLeader) listAgentsHandler(w http.ResponseWriter, r *http.Request) {
+	util.Json(w, r, http.StatusAccepted, tl.LeaderResource.Topology)
 }
 
-func (tl *TeamLeader) requestAgentHandler(c *echo.Context) error {
-	requestBlob := []byte(c.Request().FormValue("request"))
+func (tl *TeamLeader) requestAgentHandler(w http.ResponseWriter, r *http.Request) {
+	requestBlob := []byte(r.FormValue("request"))
 	var request resource.AllocationRequest
 	err := json.Unmarshal(requestBlob, &request)
 	if err != nil {
-		return fmt.Errorf("request JSON unmarshal error:%v, json:%s", err, string(requestBlob))
+		util.Error(w, r, http.StatusBadRequest, fmt.Sprintf("request JSON unmarshal error:%v, json:%s", err, string(requestBlob)))
+		return
 	}
 
-	fmt.Printf("request:\n%+v\n", request)
+	// fmt.Printf("request:\n%+v\n", request)
 
 	result := tl.allocate(&request)
-	fmt.Printf("result: %v\n%+v\n", result.Error, result.Allocations)
+	// fmt.Printf("result: %v\n%+v\n", result.Error, result.Allocations)
 	if result.Error != "" {
-		c.JSON(http.StatusNotFound, result)
+		util.Json(w, r, http.StatusNotFound, result)
+		return
 	}
 
-	c.JSON(http.StatusAccepted, result)
+	util.Json(w, r, http.StatusAccepted, result)
 
-	return nil
 }
 
-func (tl *TeamLeader) updateAgentHandler(c *echo.Context) error {
-	servicePortString := c.Request().FormValue("servicePort")
+func (tl *TeamLeader) updateAgentHandler(w http.ResponseWriter, r *http.Request) {
+	servicePortString := r.FormValue("servicePort")
 	servicePort, err := strconv.Atoi(servicePortString)
 	if err != nil {
 		log.Printf("Strange: servicePort not found: %s, %v", servicePortString, err)
 	}
-	host := c.Request().Host
+	host := r.Host
 	if strings.Contains(host, ":") {
 		host = host[0:strings.Index(host, ":")]
 	}
 	// println("received agent update from", host+":"+servicePort)
-	res, alloc := resource.NewComputeResourceFromRequest(c.Request())
+	res, alloc := resource.NewComputeResourceFromRequest(r)
 	ai := &resource.AgentInformation{
 		Location: resource.Location{
-			DataCenter: c.Request().FormValue("dataCenter"),
-			Rack:       c.Request().FormValue("rack"),
+			DataCenter: r.FormValue("dataCenter"),
+			Rack:       r.FormValue("rack"),
 			Server:     host,
 			Port:       servicePort,
 		},
@@ -67,7 +67,5 @@ func (tl *TeamLeader) updateAgentHandler(c *echo.Context) error {
 
 	tl.LeaderResource.UpdateAgentInformation(ai)
 
-	c.NoContent(http.StatusAccepted)
-
-	return nil
+	w.WriteHeader(http.StatusAccepted)
 }

@@ -40,7 +40,7 @@ func (tl *TeamLeader) allocateServersOnRack(dc *resource.DataCenter, rack *resou
 			}
 			request := requests[j]
 
-			fmt.Printf("available %v, requested %v\n", available, request.ComputeResource)
+			// fmt.Printf("available %v, requested %v\n", available, request.ComputeResource)
 			if available.Covers(request.ComputeResource) {
 				allocated = append(allocated, resource.Allocation{
 					Location:  agent.Location,
@@ -117,7 +117,7 @@ func (tl *TeamLeader) findDataCenter(req *resource.AllocationRequest) (*resource
 		}
 	}
 	if !found {
-		return nil, fmt.Errorf("Total compute resource is too big for any data center:%+v", totalComputeResource)
+		return nil, fmt.Errorf("Total compute resource is too big for any data center:%s", totalComputeResource)
 	}
 
 	// find a data center with unallocated resources

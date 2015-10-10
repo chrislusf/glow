@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -10,6 +11,10 @@ type ComputeResource struct {
 	CPUCount int   `json:"cpuCount,omitempty"`
 	CPULevel int   `json:"cpuLevel,omitempty"` // higher number means higher compute power
 	MemoryMB int64 `json:"memoryMB,omitempty"`
+}
+
+func (a ComputeResource) String() string {
+	return fmt.Sprintf("CPUCount %d Level %d Memory %d MB", a.CPUCount, a.CPULevel, a.MemoryMB)
 }
 
 func (a ComputeResource) Minus(b ComputeResource) ComputeResource {
