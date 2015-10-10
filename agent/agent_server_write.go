@@ -11,6 +11,7 @@ import (
 )
 
 func (as *AgentServer) handleWriteConnection(r io.Reader, name string) {
+
 	as.name2StoreLock.Lock()
 	ds, ok := as.name2Store[name]
 	if !ok {
@@ -48,9 +49,11 @@ func (as *AgentServer) handleWriteConnection(r io.Reader, name string) {
 }
 
 func (as *AgentServer) handleDelete(name string) {
+
 	as.name2StoreLock.Lock()
 	ds, ok := as.name2Store[name]
 	if !ok {
+		as.name2StoreLock.Unlock()
 		return
 	}
 

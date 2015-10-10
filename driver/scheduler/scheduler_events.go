@@ -1,6 +1,8 @@
 package scheduler
 
 import (
+	// "fmt"
+	"log"
 	"os"
 	"strconv"
 	"sync"
@@ -55,6 +57,8 @@ func (s *Scheduler) EventLoop() {
 					s.datasetShard2LocationLock.Unlock()
 				}
 
+				// fmt.Printf("allocated %s on %v\n", tasks[0].Name(), allocation.Location)
+
 				dir, _ := os.Getwd()
 				args := []string{
 					"-glow.context.id",
@@ -63,15 +67,20 @@ func (s *Scheduler) EventLoop() {
 					strconv.Itoa(taskGroup.Id),
 					"-glow.task.name",
 					tasks[0].Name(),
+					"-glow.agent.port",
+					strconv.Itoa(allocation.Location.Port),
+					"-glow.leader.address",
+					s.Leader,
 				}
 				for _, arg := range os.Args[1:] {
 					args = append(args, arg)
 				}
 				request := NewStartRequest(os.Args[0], dir, args, allocation.Allocated)
-				// fmt.Printf("starting on %s: %v\n", server, request)
+				// fmt.Printf("starting on %s: %v\n", allocation.Allocated, request)
 				if err := RemoteDirectExecute(allocation.Location.URL(), request); err != nil {
-					println("exeuction error:", err.Error())
+					log.Printf("exeuction error %v: %v", err, request)
 				} else {
+					// fmt.Printf("Closing and returning resources on %s: %v\n", allocation.Allocated, request)
 					s.Market.ReturnSupply(supply)
 				}
 			}()
@@ -90,6 +99,7 @@ func (s *Scheduler) EventLoop() {
 						}
 					}
 				}
+
 			}()
 		}
 	}

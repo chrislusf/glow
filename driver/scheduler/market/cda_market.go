@@ -76,25 +76,25 @@ func (m *Market) AddDemand(r Requirement, bid int, retChan chan Supply) {
 }
 
 func (m *Market) FetcherLoop() {
-	m.Lock.Lock()
-	defer m.Lock.Unlock()
-
 	for {
+		m.Lock.Lock()
 		for len(m.Demands) == 0 {
 			m.hasDemands.Wait()
 		}
+		m.Lock.Unlock()
+
 		m.FetchFn(m.Demands)
 	}
 }
 
 func (m *Market) ReturnSupply(s Supply) {
-	m.Lock.Lock()
-	defer m.Lock.Unlock()
-
 	m.AddSupply(s)
 }
 
 func (m *Market) AddSupply(supply Supply) {
+	m.Lock.Lock()
+	defer m.Lock.Unlock()
+
 	if len(m.Demands) > 0 {
 		demand := m.pickBestDemandFor(supply)
 		demand.ReturnChan <- supply

@@ -58,6 +58,8 @@ func (as *AgentServer) handleStart(conn net.Conn,
 
 	cmd.Wait()
 
+	// log.Printf("Finish command %v", cmd)
+
 	return reply
 }
 

@@ -18,8 +18,8 @@ type NetworkContext struct {
 var networkContext NetworkContext
 
 func init() {
-	flag.IntVar(&networkContext.AgentPort, "task.agent.port", 8931, "agent port")
-	flag.StringVar(&networkContext.LeaderAddress, "task.leader.address", "localhost:8930", "leader address, as host:port")
+	flag.IntVar(&networkContext.AgentPort, "glow.agent.port", 8931, "agent port")
+	flag.StringVar(&networkContext.LeaderAddress, "glow.leader.address", "localhost:8930", "leader address, as host:port")
 }
 
 func GetSendChannel(name string, wg *sync.WaitGroup) (chan []byte, error) {
