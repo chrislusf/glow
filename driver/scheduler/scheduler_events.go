@@ -67,7 +67,7 @@ func (s *Scheduler) EventLoop() {
 				for _, arg := range os.Args[1:] {
 					args = append(args, arg)
 				}
-				request := NewStartRequest(os.Args[0], dir, args)
+				request := NewStartRequest(os.Args[0], dir, args, allocation.Allocated)
 				// fmt.Printf("starting on %s: %v\n", server, request)
 				if err := RemoteDirectExecute(allocation.Location.URL(), request); err != nil {
 					println("exeuction error:", err.Error())
@@ -91,8 +91,6 @@ func (s *Scheduler) EventLoop() {
 					}
 				}
 			}()
-		case *bool:
-		case *int:
 		}
 	}
 }

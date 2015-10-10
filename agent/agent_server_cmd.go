@@ -6,6 +6,7 @@ import (
 	"os/exec"
 
 	"github.com/chrislusf/glow/driver/cmd"
+	"github.com/chrislusf/glow/resource"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -30,6 +31,13 @@ func (as *AgentServer) handleStart(conn net.Conn,
 
 	// println("received command:", *startRequest.Path)
 
+	allocated := resource.ComputeResource{
+		CPUCount: int(startRequest.Resource.GetCpuCount()),
+		MemoryMB: int64(startRequest.Resource.GetMemory()),
+	}
+
+	*as.allocatedResource = as.allocatedResource.Plus(allocated)
+
 	cmd := exec.Command(
 		*startRequest.Path,
 		startRequest.Args...,
@@ -48,6 +56,7 @@ func (as *AgentServer) handleStart(conn net.Conn,
 	}
 
 	cmd.Wait()
+	*as.allocatedResource = as.allocatedResource.Minus(allocated)
 
 	return reply
 }

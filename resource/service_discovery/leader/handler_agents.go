@@ -51,6 +51,7 @@ func (tl *TeamLeader) updateAgentHandler(c *echo.Context) error {
 		host = host[0:strings.Index(host, ":")]
 	}
 	// println("received agent update from", host+":"+servicePort)
+	res, alloc := resource.NewComputeResourceFromRequest(c.Request())
 	ai := &resource.AgentInformation{
 		Location: resource.Location{
 			DataCenter: c.Request().FormValue("dataCenter"),
@@ -58,8 +59,11 @@ func (tl *TeamLeader) updateAgentHandler(c *echo.Context) error {
 			Server:     host,
 			Port:       servicePort,
 		},
-		Resource: resource.NewComputeResourceFromRequest(c.Request()),
+		Resource:  res,
+		Allocated: alloc,
 	}
+
+	// fmt.Printf("reported allocated: %v\n", alloc)
 
 	tl.LeaderResource.UpdateAgentInformation(ai)
 

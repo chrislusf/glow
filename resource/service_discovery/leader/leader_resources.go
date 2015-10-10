@@ -90,6 +90,8 @@ func (l *LeaderResource) UpdateAgentInformation(ai *resource.AgentInformation) {
 
 	if hasOldInfo {
 		deltaAllocated := ai.Allocated.Minus(oldInfo.Allocated)
+		oldInfo.Allocated = ai.Allocated
+		// fmt.Printf("deltaAllocated %+v\n", deltaAllocated)
 		if !deltaAllocated.IsZero() {
 			rack.Allocated = rack.Allocated.Plus(deltaAllocated)
 			dc.Allocated = dc.Allocated.Plus(deltaAllocated)

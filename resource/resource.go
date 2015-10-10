@@ -111,19 +111,29 @@ func (a Location) Distance(b Location) float64 {
 	return 1
 }
 
-func (c *ComputeResource) AddToValues(values url.Values) {
+func AddToValues(values url.Values, c *ComputeResource, allocated *ComputeResource) {
 	values.Add("CPUCount", strconv.Itoa(c.CPUCount))
 	values.Add("CPULevel", strconv.Itoa(c.CPULevel))
 	values.Add("MemoryMB", strconv.FormatInt(c.MemoryMB, 10))
+	values.Add("allocated.CPUCount", strconv.Itoa(allocated.CPUCount))
+	values.Add("allocated.CPULevel", strconv.Itoa(allocated.CPULevel))
+	values.Add("allocated.MemoryMB", strconv.FormatInt(allocated.MemoryMB, 10))
 }
 
-func NewComputeResourceFromRequest(r *http.Request) ComputeResource {
+func NewComputeResourceFromRequest(r *http.Request) (ComputeResource, ComputeResource) {
 	cpuCount, _ := strconv.ParseInt(r.FormValue("CPUCount"), 10, 32)
 	cpuLevel, _ := strconv.ParseInt(r.FormValue("CPULevel"), 10, 32)
 	memoryMB, _ := strconv.ParseInt(r.FormValue("MemoryMB"), 10, 64)
+	availableCpuCount, _ := strconv.ParseInt(r.FormValue("allocated.CPUCount"), 10, 32)
+	availableCpuLevel, _ := strconv.ParseInt(r.FormValue("allocated.CPULevel"), 10, 32)
+	availableMemoryMB, _ := strconv.ParseInt(r.FormValue("allocated.MemoryMB"), 10, 64)
 	return ComputeResource{
-		CPUCount: int(cpuCount),
-		CPULevel: int(cpuLevel),
-		MemoryMB: memoryMB,
-	}
+			CPUCount: int(cpuCount),
+			CPULevel: int(cpuLevel),
+			MemoryMB: memoryMB,
+		}, ComputeResource{
+			CPUCount: int(availableCpuCount),
+			CPULevel: int(availableCpuLevel),
+			MemoryMB: availableMemoryMB,
+		}
 }

@@ -47,15 +47,16 @@ type AgentServerOption struct {
 }
 
 type AgentServer struct {
-	Option          *AgentServerOption
-	leader          string
-	Port            int
-	name2Store      map[string]*LiveDataStore
-	dir             string
-	name2StoreLock  sync.Mutex
-	wg              sync.WaitGroup
-	l               net.Listener
-	computeResource resource.ComputeResource
+	Option            *AgentServerOption
+	leader            string
+	Port              int
+	name2Store        map[string]*LiveDataStore
+	dir               string
+	name2StoreLock    sync.Mutex
+	wg                sync.WaitGroup
+	l                 net.Listener
+	computeResource   *resource.ComputeResource
+	allocatedResource *resource.ComputeResource
 }
 
 func NewAgentServer(option *AgentServerOption) *AgentServer {
@@ -65,11 +66,12 @@ func NewAgentServer(option *AgentServerOption) *AgentServer {
 		Port:       *option.Port,
 		dir:        *option.Dir,
 		name2Store: make(map[string]*LiveDataStore),
-		computeResource: resource.ComputeResource{
+		computeResource: &resource.ComputeResource{
 			CPUCount: *option.MaxExecutor,
 			CPULevel: *option.CPULevel,
 			MemoryMB: *option.MemoryMB,
 		},
+		allocatedResource: &resource.ComputeResource{},
 	}
 
 	err := as.Init()
@@ -98,7 +100,7 @@ func (as *AgentServer) Run() {
 	//register agent
 	killHeartBeaterChan := make(chan bool, 1)
 	go client.NewHeartBeater(as.Port, as.leader).StartAgentHeartBeat(killHeartBeaterChan, func(values url.Values) {
-		as.computeResource.AddToValues(values)
+		resource.AddToValues(values, as.computeResource, as.allocatedResource)
 		values.Add("dataCenter", *as.Option.DataCenter)
 		values.Add("rack", *as.Option.Rack)
 	})
