@@ -11,22 +11,20 @@ import (
 var ()
 
 type NetworkContext struct {
-	LeaderAddress string
-	AgentPort     int
+	AgentPort int
 }
 
 var networkContext NetworkContext
 
 func init() {
 	flag.IntVar(&networkContext.AgentPort, "glow.agent.port", 8931, "agent port")
-	flag.StringVar(&networkContext.LeaderAddress, "glow.leader.address", "localhost:8930", "leader address, as host:port")
 }
 
 func GetSendChannel(name string, wg *sync.WaitGroup) (chan []byte, error) {
 	return sender.NewChannel(name, networkContext.AgentPort, wg)
 }
 
-func GetReadChannel(name string) (chan []byte, error) {
-	rc := receiver.NewReceiveChannel(name, networkContext.LeaderAddress, 0)
-	return rc.GetChannel()
+func GetDirectReadChannel(name, location string) (chan []byte, error) {
+	rc := receiver.NewReceiveChannel(name, 0)
+	return rc.GetDirectChannel(location)
 }

@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"bytes"
 	// "fmt"
 	"log"
 	"os"
@@ -31,6 +32,7 @@ resources are leased to driver, expires every X miniute unless renewed.
 2. release resource
 */
 func (s *Scheduler) EventLoop() {
+	waitForAllInputs := sync.NewCond(&s.datasetShard2LocationLock)
 	for {
 		event := <-s.EventChan
 		switch event := event.(type) {
@@ -39,21 +41,32 @@ func (s *Scheduler) EventLoop() {
 			// fmt.Printf("processing %+v\n", event)
 			taskGroup := event.TaskGroup
 			pickedServerChan := make(chan market.Supply, 1)
-			s.Market.AddDemand(market.Requirement(taskGroup), event.Bid, pickedServerChan)
 			go func() {
 				defer event.WaitGroup.Done()
+				tasks := event.TaskGroup.Tasks
+
+				// wait until inputs are registed
+				s.datasetShard2LocationLock.Lock()
+				for !s.allInputsAreRegistered(tasks[0]) {
+					// fmt.Printf("inputs of %s is not ready\n", tasks[0].Name())
+					waitForAllInputs.Wait()
+				}
+				s.datasetShard2LocationLock.Unlock()
+				// fmt.Printf("inputs of %s is %s\n", tasks[0].Name(), s.allInputLocations(tasks[0]))
+
+				s.Market.AddDemand(market.Requirement(taskGroup), event.Bid, pickedServerChan)
 
 				// get assigned executor
 				supply := <-pickedServerChan
 				allocation := supply.Object.(resource.Allocation)
 
 				// remember dataset location
-				tasks := event.TaskGroup.Tasks
 				for _, ds := range tasks[len(tasks)-1].Outputs {
 					name := ds.Name()
 					location := allocation.Location
 					s.datasetShard2LocationLock.Lock()
 					s.datasetShard2Location[name] = location
+					waitForAllInputs.Broadcast()
 					s.datasetShard2LocationLock.Unlock()
 				}
 
@@ -69,8 +82,8 @@ func (s *Scheduler) EventLoop() {
 					tasks[0].Name(),
 					"-glow.agent.port",
 					strconv.Itoa(allocation.Location.Port),
-					"-glow.leader.address",
-					s.Leader,
+					"-glow.taskGroup.inputs",
+					s.allInputLocations(tasks[0]),
 				}
 				for _, arg := range os.Args[1:] {
 					args = append(args, arg)
@@ -103,4 +116,31 @@ func (s *Scheduler) EventLoop() {
 			}()
 		}
 	}
+}
+
+func (s *Scheduler) allInputsAreRegistered(task *flow.Task) bool {
+	for _, input := range task.Inputs {
+		if _, hasValue := s.datasetShard2Location[input.Name()]; !hasValue {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *Scheduler) allInputLocations(task *flow.Task) string {
+	var buf bytes.Buffer
+	for i, input := range task.Inputs {
+		name := input.Name()
+		location, hasValue := s.datasetShard2Location[name]
+		if !hasValue {
+			panic("hmmm, we just checked all inputs are registered!")
+		}
+		if i != 0 {
+			buf.WriteString(",")
+		}
+		buf.WriteString(name)
+		buf.WriteString("@")
+		buf.WriteString(location.URL())
+	}
+	return buf.String()
 }

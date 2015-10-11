@@ -25,14 +25,15 @@ var (
 
 	agent       = app.Command("agent", "Channel Agent")
 	agentOption = &a.AgentServerOption{
-		Dir:         agent.Flag("dir", "agent folder to store computed data").Default(os.TempDir()).String(),
-		Port:        agent.Flag("port", "agent listening port").Default("8931").Int(),
-		Leader:      agent.Flag("leader", "leader address").Default("localhost:8930").String(),
-		DataCenter:  agent.Flag("dataCenter", "data center name").Default("defaultDataCenter").String(),
-		Rack:        agent.Flag("rack", "rack name").Default("defaultRack").String(),
-		MaxExecutor: agent.Flag("max.executors", "upper limit of executors").Default(strconv.Itoa(runtime.NumCPU())).Int(),
-		CPULevel:    agent.Flag("cpu.level", "relative computing power of single cpu core").Default("1").Int(),
-		MemoryMB:    agent.Flag("memory", "memory size in MB").Default("1024").Int64(),
+		Dir:          agent.Flag("dir", "agent folder to store computed data").Default(os.TempDir()).String(),
+		Port:         agent.Flag("port", "agent listening port").Default("8931").Int(),
+		Leader:       agent.Flag("leader", "leader address").Default("localhost:8930").String(),
+		DataCenter:   agent.Flag("dataCenter", "data center name").Default("defaultDataCenter").String(),
+		Rack:         agent.Flag("rack", "rack name").Default("defaultRack").String(),
+		MaxExecutor:  agent.Flag("max.executors", "upper limit of executors").Default(strconv.Itoa(runtime.NumCPU())).Int(),
+		CPULevel:     agent.Flag("cpu.level", "relative computing power of single cpu core").Default("1").Int(),
+		MemoryMB:     agent.Flag("memory", "memory size in MB").Default("1024").Int64(),
+		CleanRestart: agent.Flag("clean.restart", "clean up previous dataset files").Default("true").Bool(),
 	}
 
 	sender          = app.Command("send", "Send data to a channel")
