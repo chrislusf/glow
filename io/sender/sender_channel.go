@@ -32,9 +32,11 @@ func NewChannel(name string, port int, wg *sync.WaitGroup) (chan []byte, error) 
 		defer conn.Close()
 		buf := make([]byte, 4)
 		util.WriteBytes(conn, buf, util.NewMessage(util.Data, []byte("PUT "+name)))
+
 		for data := range ch {
 			util.WriteBytes(conn, buf, util.NewMessage(util.Data, data))
 		}
+
 		util.WriteBytes(conn, buf, util.NewMessage(util.CloseChannel, nil))
 	}()
 

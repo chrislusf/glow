@@ -26,6 +26,8 @@ func (as *AgentServer) handleLocalReadConnection(conn net.Conn, name string, off
 	}
 	as.name2StoreLock.Unlock()
 
+	// println(name, "start reading from:", offset)
+
 	closeSignal := make(chan bool, 1)
 
 	go func() {
@@ -74,7 +76,6 @@ func (as *AgentServer) handleLocalReadConnection(conn net.Conn, name string, off
 		offset += int64(size)
 
 		m := util.LoadMessage(messageBytes)
-		// println(name, "sent:", len(messageBytes), ":", string(m.Data()))
 		util.WriteBytes(conn, buf, m)
 
 		if m.Flag() != util.Data {

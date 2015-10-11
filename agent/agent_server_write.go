@@ -30,6 +30,8 @@ func (as *AgentServer) handleWriteConnection(r io.Reader, name string) {
 
 	as.name2StoreLock.Unlock()
 
+	// println(name, "start writing.")
+
 	buf := make([]byte, 4)
 	for {
 		_, message, err := util.ReadBytes(r, buf)
