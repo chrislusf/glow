@@ -3,11 +3,13 @@ package agent
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/chrislusf/glow/driver/cmd"
@@ -36,14 +38,15 @@ func (ds *LiveDataStore) Destroy() {
 }
 
 type AgentServerOption struct {
-	Leader      *string
-	Port        *int
-	Dir         *string
-	DataCenter  *string
-	Rack        *string
-	MaxExecutor *int
-	MemoryMB    *int64
-	CPULevel    *int
+	Leader       *string
+	Port         *int
+	Dir          *string
+	DataCenter   *string
+	Rack         *string
+	MaxExecutor  *int
+	MemoryMB     *int64
+	CPULevel     *int
+	CleanRestart *bool
 }
 
 type AgentServer struct {
@@ -94,6 +97,19 @@ func (r *AgentServer) Init() (err error) {
 
 	r.Port = r.l.Addr().(*net.TCPAddr).Port
 	fmt.Println("AgentServer starts on:", r.Port)
+
+	if *r.Option.CleanRestart {
+		if fileInfos, err := ioutil.ReadDir(r.dir); err == nil {
+			for _, fi := range fileInfos {
+				name := fi.Name()
+				if !fi.IsDir() && strings.HasSuffix(name, ".dat") {
+					println("removing old dat file:", name)
+					os.Remove(name)
+				}
+			}
+		}
+	}
+
 	return
 }
 
