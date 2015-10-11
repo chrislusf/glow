@@ -11,19 +11,21 @@ import (
 )
 
 type DriverOption struct {
-	ShouldStart bool
-	Leader      string
-	DataCenter  string
-	Rack        string
-	PlotOutput  bool
+	ShouldStart  bool
+	Leader       string
+	DataCenter   string
+	Rack         string
+	PlotOutput   bool
+	TaskMemoryMB int
 }
 
 func init() {
 	var driverOption DriverOption
 	flag.BoolVar(&driverOption.ShouldStart, "driver", false, "start in driver mode")
 	flag.StringVar(&driverOption.Leader, "driver.leader", "localhost:8930", "leader server")
-	flag.StringVar(&driverOption.DataCenter, "driver.dataCenter", "defaultDataCenter", "preferred data center name")
-	flag.StringVar(&driverOption.Rack, "driver.rack", "defaultRack", "preferred rack name")
+	flag.StringVar(&driverOption.DataCenter, "driver.dataCenter", "", "preferred data center name")
+	flag.StringVar(&driverOption.Rack, "driver.rack", "", "preferred rack name")
+	flag.IntVar(&driverOption.TaskMemoryMB, "driver.task.memoryMB", 64, "request one task memory size in MB")
 	flag.BoolVar(&driverOption.PlotOutput, "driver.plot.flow", false, "print out task group flow in graphviz dot format")
 
 	flow.RegisterContextRunner(NewFlowContextDriver(&driverOption))
@@ -57,8 +59,9 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 	sched := scheduler.NewScheduler(
 		fcd.option.Leader,
 		&scheduler.SchedulerOption{
-			DataCenter: fcd.option.DataCenter,
-			Rack:       fcd.option.Rack,
+			DataCenter:   fcd.option.DataCenter,
+			Rack:         fcd.option.Rack,
+			TaskMemoryMB: fcd.option.TaskMemoryMB,
 		},
 	)
 	go sched.EventLoop()

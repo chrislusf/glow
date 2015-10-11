@@ -23,7 +23,7 @@ func (s *Scheduler) Fetch(demands []market.Demand) {
 			ComputeResource: resource.ComputeResource{
 				CPUCount: 1,
 				CPULevel: 1,
-				MemoryMB: 64,
+				MemoryMB: int64(s.option.TaskMemoryMB),
 			},
 			Inputs: s.findTaskGroupInputs(demand),
 		})
