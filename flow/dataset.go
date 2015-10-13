@@ -96,7 +96,7 @@ func assertChannelOf(ch interface{}, dsType reflect.Type) {
 	panic(fmt.Sprintf("chan %s should have element type %s", chType, dsType))
 }
 
-func (d *Dataset) AddOutputChannel(ch interface{}) {
+func (d *Dataset) AddOutput(ch interface{}) {
 	assertChannelOf(ch, d.Type)
 	d.OutputChans = append(d.OutputChans, reflect.Indirect(reflect.ValueOf(ch)))
 }
