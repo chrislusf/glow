@@ -51,13 +51,10 @@ digraph G {
 func (fg *FlowGraph) plot() {
 	fg.println("digraph glow {")
 	prefix := "  "
-	fg.w(prefix).println("center=true;")
-	fg.w(prefix).println("compound=true;")
-	fg.w(prefix).println("start [shape=Mdiamond];")
-	fg.w(prefix).println("end [shape=Msquare];")
 	for _, tg := range fg.taskGroups {
 		fg.printTaskGroup(tg, prefix)
 	}
+	hasEnd := false
 	for _, tg := range fg.taskGroups {
 		firstTask, lastTask := tg.Tasks[0], tg.Tasks[len(tg.Tasks)-1]
 		if firstTask.Inputs == nil {
@@ -68,6 +65,7 @@ func (fg *FlowGraph) plot() {
 			}
 		}
 		if lastTask.Outputs == nil {
+			hasEnd = true
 			fg.w(prefix).t(lastTask).println(" -> end;")
 		} else {
 			for _, dss := range lastTask.Outputs {
@@ -75,6 +73,14 @@ func (fg *FlowGraph) plot() {
 			}
 		}
 	}
+
+	fg.w(prefix).println("center=true;")
+	fg.w(prefix).println("compound=true;")
+	fg.w(prefix).println("start [shape=Mdiamond];")
+	if hasEnd {
+		fg.w(prefix).println("end [shape=Msquare];")
+	}
+
 	fg.println("}")
 }
 
