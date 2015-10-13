@@ -19,9 +19,9 @@ func NewContext() (fc *FlowContext) {
 	return
 }
 
-func (fc *FlowContext) newNextDataset(shardSize int, task reflect.Type) (ret *Dataset) {
-	if task != nil {
-		ret = NewDataset(fc, task)
+func (fc *FlowContext) newNextDataset(shardSize int, dType reflect.Type) (ret *Dataset) {
+	if dType != nil {
+		ret = NewDataset(fc, dType)
 		ret.SetupShard(shardSize)
 	}
 	return
