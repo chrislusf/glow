@@ -43,6 +43,15 @@ func (fcd *FlowContextDriver) IsDriverMode() bool {
 	return fcd.option.ShouldStart
 }
 
+func (fcd *FlowContextDriver) IsDriverPlotMode() bool {
+	return fcd.option.PlotOutput
+}
+
+func (fcd *FlowContextDriver) Plot(fc *flow.FlowContext) {
+	taskGroups := scheduler.GroupTasks(fc)
+	scheduler.PlotGraph(taskGroups)
+}
+
 // driver runs on local, controlling all tasks
 func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 

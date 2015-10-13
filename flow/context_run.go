@@ -1,6 +1,7 @@
 package flow
 
 import (
+	"os"
 	"sync"
 )
 
@@ -25,13 +26,29 @@ func RegisterTaskRunner(r TaskRunner) {
 }
 
 type ContextRunner interface {
-	Run(fc *FlowContext)
+	Run(*FlowContext)
 	IsDriverMode() bool
+	IsDriverPlotMode() bool
+	Plot(*FlowContext)
 }
 
 type TaskRunner interface {
 	Run(fc *FlowContext)
 	IsTaskMode() bool
+}
+
+func Ready() {
+	if taskRunner.IsTaskMode() {
+		os.Exit(0)
+	} else if contextRunner.IsDriverMode() {
+		if contextRunner.IsDriverPlotMode() {
+			for _, fc := range Contexts {
+				contextRunner.Plot(fc)
+			}
+			os.Exit(0)
+		}
+	} else {
+	}
 }
 
 func (fc *FlowContext) Run() {
