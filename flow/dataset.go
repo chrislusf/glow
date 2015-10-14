@@ -64,7 +64,7 @@ func (d *Dataset) Run() {
 func (d *Dataset) sendToOutputChans(t reflect.Value) {
 	for _, ch := range d.OutputChans {
 		elemType := ch.Type().Elem()
-		t = io.CleanObject(t, elemType, d.Type)
+		t = io.CleanObject(t, d.Type, elemType)
 		ch.Send(t)
 	}
 }

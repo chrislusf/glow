@@ -20,8 +20,8 @@ func NewContext() (fc *FlowContext) {
 }
 
 func (fc *FlowContext) newNextDataset(shardSize int, dType reflect.Type) (ret *Dataset) {
+	ret = NewDataset(fc, dType)
 	if dType != nil {
-		ret = NewDataset(fc, dType)
 		ret.SetupShard(shardSize)
 	}
 	return
@@ -42,7 +42,7 @@ func (f *FlowContext) AddOneToOneStep(input *Dataset, output *Dataset) (step *St
 	// setup the network
 	for i, shard := range input.GetShards() {
 		task := step.NewTask()
-		if output != nil {
+		if output != nil && output.Shards != nil {
 			FromTaskToDatasetShard(task, output.GetShards()[i])
 		}
 		FromDatasetShardToTask(shard, task)

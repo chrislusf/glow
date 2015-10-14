@@ -83,9 +83,6 @@ func (d *Dataset) Map(f interface{}) *Dataset {
 		}
 		// println("exiting d:", d.Id, "step:", step.Id, "task:", task.Id)
 	}
-	if ret == nil {
-		d.context.Run()
-	}
 	return ret
 }
 
