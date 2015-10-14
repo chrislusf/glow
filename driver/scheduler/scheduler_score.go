@@ -5,7 +5,7 @@ import (
 	"github.com/chrislusf/glow/resource"
 )
 
-func (s *Scheduler) Score(r market.Requirement, bid int, obj market.Object) float64 {
+func (s *Scheduler) Score(r market.Requirement, bid float64, obj market.Object) float64 {
 	tg, loc := r.(*TaskGroup), obj.(resource.Allocation).Location
 	firstTask := tg.Tasks[0]
 	cost := float64(1)

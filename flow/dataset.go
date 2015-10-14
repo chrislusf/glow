@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+
+	"github.com/chrislusf/glow/io"
 )
 
 func (d *Dataset) GetShards() []*DatasetShard {
@@ -62,17 +64,8 @@ func (d *Dataset) Run() {
 func (d *Dataset) sendToOutputChans(t reflect.Value) {
 	for _, ch := range d.OutputChans {
 		elemType := ch.Type().Elem()
-		if elemType == d.Type {
-			// fmt.Printf("sending1 %v to output chan\n", t)
-			ch.Send(t)
-		} else {
-			// fmt.Printf("sending %d %v to output chan\n", elemType.NumField(), t)
-			x := reflect.New(elemType).Elem()
-			for i := 0; i < elemType.NumField(); i++ {
-				x.Field(i).Set(reflect.Indirect(t.Index(i).Elem()))
-			}
-			ch.Send(x)
-		}
+		t = io.CleanObject(t, elemType, d.Type)
+		ch.Send(t)
 	}
 }
 
@@ -96,7 +89,8 @@ func assertChannelOf(ch interface{}, dsType reflect.Type) {
 	panic(fmt.Sprintf("chan %s should have element type %s", chType, dsType))
 }
 
-func (d *Dataset) AddOutput(ch interface{}) {
+func (d *Dataset) AddOutput(ch interface{}) *Dataset {
 	assertChannelOf(ch, d.Type)
 	d.OutputChans = append(d.OutputChans, reflect.Indirect(reflect.ValueOf(ch)))
+	return d
 }

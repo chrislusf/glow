@@ -17,6 +17,7 @@ type DriverOption struct {
 	Rack         string
 	PlotOutput   bool
 	TaskMemoryMB int
+	FlowBid      float64
 }
 
 func init() {
@@ -26,6 +27,7 @@ func init() {
 	flag.StringVar(&driverOption.DataCenter, "driver.dataCenter", "", "preferred data center name")
 	flag.StringVar(&driverOption.Rack, "driver.rack", "", "preferred rack name")
 	flag.IntVar(&driverOption.TaskMemoryMB, "driver.task.memoryMB", 64, "request one task memory size in MB")
+	flag.Float64Var(&driverOption.FlowBid, "driver.flow.bid", 100.0, "total bid price in a flow to compete for resources")
 	flag.BoolVar(&driverOption.PlotOutput, "driver.plot.flow", false, "print out task group flow in graphviz dot format")
 
 	flow.RegisterContextRunner(NewFlowContextDriver(&driverOption))
@@ -49,7 +51,7 @@ func (fcd *FlowContextDriver) IsDriverPlotMode() bool {
 
 func (fcd *FlowContextDriver) Plot(fc *flow.FlowContext) {
 	taskGroups := scheduler.GroupTasks(fc)
-	scheduler.PlotGraph(taskGroups)
+	scheduler.PlotGraph(taskGroups, fc)
 }
 
 // driver runs on local, controlling all tasks
@@ -57,7 +59,7 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 
 	taskGroups := scheduler.GroupTasks(fc)
 	if fcd.option.PlotOutput {
-		scheduler.PlotGraph(taskGroups)
+		scheduler.PlotGraph(taskGroups, fc)
 		return
 	}
 
@@ -73,16 +75,18 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 			TaskMemoryMB: fcd.option.TaskMemoryMB,
 		},
 	)
+	defer fcd.Cleanup(sched, fc, taskGroups)
+
 	go sched.EventLoop()
 
 	// schedule to run the steps
 	var wg sync.WaitGroup
-	for i, taskGroup := range taskGroups {
+	for _, taskGroup := range taskGroups {
 		wg.Add(1)
 		sched.EventChan <- scheduler.SubmitTaskGroup{
 			FlowContext: fc,
 			TaskGroup:   taskGroup,
-			Bid:         len(taskGroups) - i,
+			Bid:         fcd.option.FlowBid / float64(len(taskGroups)),
 			WaitGroup:   &wg,
 		}
 	}
@@ -90,6 +94,17 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 
 	wg.Wait()
 
+	for _, ds := range fc.Datasets {
+		if len(ds.OutputChans) > 0 {
+			for _, ch := range ds.OutputChans {
+				ch.Close()
+			}
+		}
+	}
+}
+
+func (fcd *FlowContextDriver) Cleanup(sched *scheduler.Scheduler, fc *flow.FlowContext, taskGroups []*scheduler.TaskGroup) {
+	var wg sync.WaitGroup
 	wg.Add(1)
 	sched.EventChan <- scheduler.ReleaseTaskGroupInputs{
 		FlowContext: fc,

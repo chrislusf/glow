@@ -9,13 +9,14 @@ import (
 )
 
 type FlowGraph struct {
-	taskGroups []*TaskGroup
-	out        *bytes.Buffer
+	flowContext *flow.FlowContext
+	taskGroups  []*TaskGroup
+	out         *bytes.Buffer
 }
 
-func PlotGraph(taskGroups []*TaskGroup) {
+func PlotGraph(taskGroups []*TaskGroup, fc *flow.FlowContext) {
 	var buffer bytes.Buffer
-	fg := &FlowGraph{taskGroups, &buffer}
+	fg := &FlowGraph{fc, taskGroups, &buffer}
 	fg.plot()
 
 	fmt.Println(buffer.String())
@@ -74,6 +75,15 @@ func (fg *FlowGraph) plot() {
 		}
 	}
 
+	for _, ds := range fg.flowContext.Datasets {
+		if len(ds.OutputChans) > 0 {
+			fg.w(prefix).output(ds).println(" [shape=doublecircle];")
+			for _, dss := range ds.Shards {
+				fg.w(prefix).d(dss).w(" -> ").output(ds).println(";")
+			}
+		}
+	}
+
 	fg.w(prefix).println("center=true;")
 	fg.w(prefix).println("compound=true;")
 	fg.w(prefix).println("start [shape=Mdiamond];")
@@ -115,6 +125,10 @@ func (fg *FlowGraph) t(t *flow.Task) *FlowGraph {
 }
 func (fg *FlowGraph) d(dss *flow.DatasetShard) *FlowGraph {
 	fg.w("d").i(dss.Parent.Id).w("_").i(dss.Id)
+	return fg
+}
+func (fg *FlowGraph) output(ds *flow.Dataset) *FlowGraph {
+	fg.w("output").i(ds.Id)
 	return fg
 }
 

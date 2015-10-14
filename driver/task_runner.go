@@ -1,16 +1,14 @@
 package driver
 
 import (
-	"bytes"
-	"encoding/gob"
 	"flag"
 	"log"
-	"reflect"
 	"strings"
 	"sync"
 
 	"github.com/chrislusf/glow/driver/scheduler"
 	"github.com/chrislusf/glow/flow"
+	"github.com/chrislusf/glow/io"
 )
 
 type TaskOption struct {
@@ -62,6 +60,7 @@ func (tr *TaskRunner) Run(fc *flow.FlowContext) {
 	tr.connectInputsAndOutputs(&wg)
 	// 6. starts to run the task locally
 	for _, task := range tr.Tasks {
+		// println("run task", task.Name())
 		wg.Add(1)
 		go func(task *flow.Task) {
 			defer wg.Done()
@@ -117,11 +116,11 @@ func (tr *TaskRunner) connectExternalInputs(wg *sync.WaitGroup, name2Location ma
 		d := shard.Parent
 		readChanName := shard.Name()
 		// println("taskGroup", tr.option.TaskGroupId, "task", task.Name(), "trying to read from:", readChanName, len(task.InputChans))
-		rawChan, err := GetDirectReadChannel(readChanName, name2Location[readChanName])
+		rawChan, err := io.GetDirectReadChannel(readChanName, name2Location[readChanName])
 		if err != nil {
 			log.Panic(err)
 		}
-		task.InputChans[i] = rawReadChannelToTyped(rawChan, d.Type, wg)
+		io.ConnectRawReadChannelToTyped(rawChan, task.InputChans[i], d.Type, wg)
 	}
 }
 
@@ -134,53 +133,6 @@ func (tr *TaskRunner) connectExternalOutputs(wg *sync.WaitGroup) {
 		if err != nil {
 			log.Panic(err)
 		}
-		connectTypedWriteChannelToRaw(shard.WriteChan, rawChan, wg)
+		io.ConnectTypedWriteChannelToRaw(shard.WriteChan, rawChan, wg)
 	}
-}
-
-func rawReadChannelToTyped(c chan []byte, t reflect.Type, wg *sync.WaitGroup) chan reflect.Value {
-
-	out := make(chan reflect.Value)
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		for data := range c {
-			dec := gob.NewDecoder(bytes.NewBuffer(data))
-			v := reflect.New(t)
-			if err := dec.DecodeValue(v); err != nil {
-				log.Fatal("data type:", v.Kind(), " decode error:", err)
-			} else {
-				out <- reflect.Indirect(v)
-			}
-		}
-
-		close(out)
-	}()
-
-	return out
-
-}
-
-func connectTypedWriteChannelToRaw(writeChan reflect.Value, c chan []byte, wg *sync.WaitGroup) {
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		var t reflect.Value
-		for ok := true; ok; {
-			if t, ok = writeChan.Recv(); ok {
-				var buf bytes.Buffer
-				enc := gob.NewEncoder(&buf)
-				if err := enc.EncodeValue(t); err != nil {
-					log.Fatal("data type:", t.Type().String(), " ", t.Kind(), " encode error:", err)
-				}
-				c <- buf.Bytes()
-			}
-		}
-		close(c)
-
-	}()
-
 }

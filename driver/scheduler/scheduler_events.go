@@ -5,18 +5,20 @@ import (
 	// "fmt"
 	"log"
 	"os"
+	"reflect"
 	"strconv"
 	"sync"
 
 	"github.com/chrislusf/glow/driver/scheduler/market"
 	"github.com/chrislusf/glow/flow"
+	"github.com/chrislusf/glow/io"
 	"github.com/chrislusf/glow/resource"
 )
 
 type SubmitTaskGroup struct {
 	FlowContext *flow.FlowContext
 	TaskGroup   *TaskGroup
-	Bid         int
+	Bid         float64
 	WaitGroup   *sync.WaitGroup
 }
 
@@ -61,8 +63,8 @@ func (s *Scheduler) EventLoop() {
 				allocation := supply.Object.(resource.Allocation)
 
 				// remember dataset location
-				for _, ds := range tasks[len(tasks)-1].Outputs {
-					name := ds.Name()
+				for _, dss := range tasks[len(tasks)-1].Outputs {
+					name := dss.Name()
 					location := allocation.Location
 					s.datasetShard2LocationLock.Lock()
 					s.datasetShard2Location[name] = location
@@ -70,8 +72,35 @@ func (s *Scheduler) EventLoop() {
 					s.datasetShard2LocationLock.Unlock()
 				}
 
-				// fmt.Printf("allocated %s on %v\n", tasks[0].Name(), allocation.Location)
+				// setup output channel
+				for _, shard := range tasks[len(tasks)-1].Outputs {
+					ds := shard.Parent
+					if len(ds.OutputChans) == 0 {
+						continue
+					}
+					// connect remote raw ran to local typed chan
+					readChanName := shard.Name()
+					location := s.datasetShard2Location[readChanName]
+					rawChan, err := io.GetDirectReadChannel(readChanName, location.URL())
+					if err != nil {
+						log.Panic(err)
+					}
+					for _, out := range ds.OutputChans {
+						ch := make(chan reflect.Value)
+						io.ConnectRawReadChannelToTyped(rawChan, ch, ds.Type, event.WaitGroup)
+						event.WaitGroup.Add(1)
+						go func() {
+							defer event.WaitGroup.Done()
+							for v := range ch {
+								v = io.CleanObject(v, ds.Type, out.Type().Elem())
+								out.Send(v)
+							}
+						}()
+					}
+				}
 
+				// fmt.Printf("allocated %s on %v\n", tasks[0].Name(), allocation.Location)
+				// create reqeust
 				dir, _ := os.Getwd()
 				args := []string{
 					"-glow.context.id",
@@ -89,6 +118,7 @@ func (s *Scheduler) EventLoop() {
 					args = append(args, arg)
 				}
 				request := NewStartRequest(os.Args[0], dir, args, allocation.Allocated)
+
 				// fmt.Printf("starting on %s: %v\n", allocation.Allocated, request)
 				if err := RemoteDirectExecute(allocation.Location.URL(), request); err != nil {
 					log.Printf("exeuction error %v: %v", err, request)

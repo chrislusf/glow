@@ -5,7 +5,8 @@ import (
 	"log"
 	"reflect"
 	"strconv"
-	"sync"
+
+	"github.com/chrislusf/glow/io"
 )
 
 type Task struct {
@@ -72,27 +73,5 @@ func (t *Task) MergedInputChan() chan reflect.Value {
 	for _, c := range t.InputChans {
 		prevChans = append(prevChans, c)
 	}
-	return merge(prevChans)
-}
-
-func merge(cs []chan reflect.Value) (out chan reflect.Value) {
-	var wg sync.WaitGroup
-
-	out = make(chan reflect.Value)
-
-	for _, c := range cs {
-		wg.Add(1)
-		go func(c chan reflect.Value) {
-			defer wg.Done()
-			for n := range c {
-				out <- n
-			}
-		}(c)
-	}
-
-	go func() {
-		wg.Wait()
-		close(out)
-	}()
-	return
+	return io.MergeChannel(prevChans)
 }
