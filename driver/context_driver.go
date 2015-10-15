@@ -94,13 +94,8 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 
 	wg.Wait()
 
-	for _, ds := range fc.Datasets {
-		if len(ds.OutputChans) > 0 {
-			for _, ch := range ds.OutputChans {
-				ch.Close()
-			}
-		}
-	}
+	fcd.CloseOutputChannels(fc)
+
 }
 
 func (fcd *FlowContextDriver) Cleanup(sched *scheduler.Scheduler, fc *flow.FlowContext, taskGroups []*scheduler.TaskGroup) {
@@ -113,4 +108,12 @@ func (fcd *FlowContextDriver) Cleanup(sched *scheduler.Scheduler, fc *flow.FlowC
 	}
 
 	wg.Wait()
+}
+
+func (fcd *FlowContextDriver) CloseOutputChannels(fc *flow.FlowContext) {
+	for _, ds := range fc.Datasets {
+		for _, ch := range ds.ExternalOutputChans {
+			ch.Close()
+		}
+	}
 }
