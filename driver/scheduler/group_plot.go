@@ -76,7 +76,7 @@ func (fg *FlowGraph) plot() {
 	}
 
 	for _, ds := range fg.flowContext.Datasets {
-		if len(ds.OutputChans) > 0 {
+		if len(ds.ExternalOutputChans) > 0 {
 			fg.w(prefix).output(ds).println(" [shape=doublecircle];")
 			for _, dss := range ds.Shards {
 				fg.w(prefix).d(dss).w(" -> ").output(ds).println(";")

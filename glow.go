@@ -54,7 +54,7 @@ func main() {
 		l.RunLeader((*leaderIp) + ":" + strconv.Itoa(*leaderPort))
 	case sender.FullCommand():
 		var wg sync.WaitGroup
-		sendChan, err := s.NewChannel(*sendToChanName, *senderAgentPort, &wg)
+		sendChan, err := s.NewSendChannel(*sendToChanName, *senderAgentPort, &wg)
 		if err != nil {
 			panic(err)
 		}

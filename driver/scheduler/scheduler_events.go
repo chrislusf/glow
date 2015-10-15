@@ -34,7 +34,6 @@ resources are leased to driver, expires every X miniute unless renewed.
 2. release resource
 */
 func (s *Scheduler) EventLoop() {
-	waitForAllInputs := sync.NewCond(&s.datasetShard2LocationLock)
 	for {
 		event := <-s.EventChan
 		switch event := event.(type) {
@@ -48,56 +47,22 @@ func (s *Scheduler) EventLoop() {
 				tasks := event.TaskGroup.Tasks
 
 				// wait until inputs are registed
-				s.datasetShard2LocationLock.Lock()
-				for !s.allInputsAreRegistered(tasks[0]) {
-					// fmt.Printf("inputs of %s is not ready\n", tasks[0].Name())
-					waitForAllInputs.Wait()
-				}
-				s.datasetShard2LocationLock.Unlock()
+				s.waitForInputDatasetShardLocations(tasks[0])
 				// fmt.Printf("inputs of %s is %s\n", tasks[0].Name(), s.allInputLocations(tasks[0]))
 
 				s.Market.AddDemand(market.Requirement(taskGroup), event.Bid, pickedServerChan)
 
-				// get assigned executor
+				// get assigned executor location
 				supply := <-pickedServerChan
 				allocation := supply.Object.(resource.Allocation)
+				defer s.Market.ReturnSupply(supply)
 
-				// remember dataset location
-				for _, dss := range tasks[len(tasks)-1].Outputs {
-					name := dss.Name()
-					location := allocation.Location
-					s.datasetShard2LocationLock.Lock()
-					s.datasetShard2Location[name] = location
-					waitForAllInputs.Broadcast()
-					s.datasetShard2LocationLock.Unlock()
-				}
+				s.setupInputChannels(tasks[0], allocation.Location, event.WaitGroup)
 
-				// setup output channel
 				for _, shard := range tasks[len(tasks)-1].Outputs {
-					ds := shard.Parent
-					if len(ds.OutputChans) == 0 {
-						continue
-					}
-					// connect remote raw ran to local typed chan
-					readChanName := shard.Name()
-					location := s.datasetShard2Location[readChanName]
-					rawChan, err := io.GetDirectReadChannel(readChanName, location.URL())
-					if err != nil {
-						log.Panic(err)
-					}
-					for _, out := range ds.OutputChans {
-						ch := make(chan reflect.Value)
-						io.ConnectRawReadChannelToTyped(rawChan, ch, ds.Type, event.WaitGroup)
-						event.WaitGroup.Add(1)
-						go func() {
-							defer event.WaitGroup.Done()
-							for v := range ch {
-								v = io.CleanObject(v, ds.Type, out.Type().Elem())
-								out.Send(v)
-							}
-						}()
-					}
+					s.registerDatasetShardLocation(shard, allocation.Location)
 				}
+				s.setupOutputChannels(tasks[len(tasks)-1].Outputs, event.WaitGroup)
 
 				// fmt.Printf("allocated %s on %v\n", tasks[0].Name(), allocation.Location)
 				// create reqeust
@@ -122,9 +87,6 @@ func (s *Scheduler) EventLoop() {
 				// fmt.Printf("starting on %s: %v\n", allocation.Allocated, request)
 				if err := RemoteDirectExecute(allocation.Location.URL(), request); err != nil {
 					log.Printf("exeuction error %v: %v", err, request)
-				} else {
-					// fmt.Printf("Closing and returning resources on %s: %v\n", allocation.Allocated, request)
-					s.Market.ReturnSupply(supply)
 				}
 			}()
 		case ReleaseTaskGroupInputs:
@@ -155,6 +117,73 @@ func (s *Scheduler) allInputsAreRegistered(task *flow.Task) bool {
 		}
 	}
 	return true
+}
+
+func (s *Scheduler) waitForInputDatasetShardLocations(task *flow.Task) {
+	s.datasetShard2LocationLock.Lock()
+	defer s.datasetShard2LocationLock.Unlock()
+
+	for !s.allInputsAreRegistered(task) {
+		// fmt.Printf("inputs of %s is not ready\n", tasks[0].Name())
+		s.waitForAllInputs.Wait()
+	}
+}
+
+func (s *Scheduler) setupInputChannels(task *flow.Task, location resource.Location, waitGroup *sync.WaitGroup) {
+	for _, shard := range task.Inputs {
+		ds := shard.Parent
+		if len(ds.ExternalInputChans) == 0 {
+			continue
+		}
+		// connect local typed chan to remote raw chan
+		// write to the dataset location in the cluster so that the task can be retried if needed.
+		s.registerDatasetShardLocation(shard, location)
+		inputChanName := shard.Name()
+		rawChan, err := io.GetDirectSendChannel(inputChanName, location.URL(), waitGroup)
+		if err != nil {
+			log.Panic(err)
+		}
+		for _, inChan := range ds.ExternalInputChans {
+			io.ConnectTypedWriteChannelToRaw(inChan, rawChan, waitGroup)
+		}
+	}
+}
+
+func (s *Scheduler) registerDatasetShardLocation(shard *flow.DatasetShard, location resource.Location) {
+	s.datasetShard2LocationLock.Lock()
+	defer s.datasetShard2LocationLock.Unlock()
+
+	name := shard.Name()
+	s.datasetShard2Location[name] = location
+	s.waitForAllInputs.Broadcast()
+}
+
+func (s *Scheduler) setupOutputChannels(shards []*flow.DatasetShard, waitGroup *sync.WaitGroup) {
+	for _, shard := range shards {
+		ds := shard.Parent
+		if len(ds.ExternalOutputChans) == 0 {
+			continue
+		}
+		// connect remote raw chan to local typed chan
+		readChanName := shard.Name()
+		location := s.datasetShard2Location[readChanName]
+		rawChan, err := io.GetDirectReadChannel(readChanName, location.URL())
+		if err != nil {
+			log.Panic(err)
+		}
+		for _, out := range ds.ExternalOutputChans {
+			ch := make(chan reflect.Value)
+			io.ConnectRawReadChannelToTyped(rawChan, ch, ds.Type, waitGroup)
+			waitGroup.Add(1)
+			go func() {
+				defer waitGroup.Done()
+				for v := range ch {
+					v = io.CleanObject(v, ds.Type, out.Type().Elem())
+					out.Send(v)
+				}
+			}()
+		}
+	}
 }
 
 func (s *Scheduler) allInputLocations(task *flow.Task) string {

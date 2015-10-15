@@ -129,7 +129,7 @@ func (tr *TaskRunner) connectExternalOutputs(wg *sync.WaitGroup) {
 	for _, shard := range task.Outputs {
 		writeChanName := shard.Name()
 		// println("taskGroup", tr.option.TaskGroupId, "step", task.Step.Id, "task", task.Id, "writing to:", writeChanName)
-		rawChan, err := GetSendChannel(writeChanName, wg)
+		rawChan, err := io.GetLocalSendChannel(writeChanName, wg)
 		if err != nil {
 			log.Panic(err)
 		}

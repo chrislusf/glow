@@ -14,6 +14,7 @@ type Scheduler struct {
 	option                    *SchedulerOption
 	datasetShard2Location     map[string]resource.Location
 	datasetShard2LocationLock sync.Mutex
+	waitForAllInputs          *sync.Cond
 }
 
 type SchedulerOption struct {
@@ -31,5 +32,6 @@ func NewScheduler(leader string, option *SchedulerOption) *Scheduler {
 		option:                option,
 	}
 	s.Market.SetScoreFunction(s.Score).SetFetchFunction(s.Fetch)
+	s.waitForAllInputs = sync.NewCond(&s.datasetShard2LocationLock)
 	return s
 }

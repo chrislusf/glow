@@ -10,12 +10,12 @@ import (
 )
 
 // Talk with local agent
-func NewChannel(name string, port int, wg *sync.WaitGroup) (chan []byte, error) {
+func NewDirectSendChannel(name string, target string, wg *sync.WaitGroup) (chan []byte, error) {
+
 	ch := make(chan []byte)
 
 	// connect to a TCP server
 	network := "tcp"
-	target := "localhost:" + strconv.Itoa(port)
 	raddr, err := net.ResolveTCPAddr(network, target)
 	if err != nil {
 		return ch, fmt.Errorf("Fail to resolve %s: %v", target, err)
@@ -41,4 +41,8 @@ func NewChannel(name string, port int, wg *sync.WaitGroup) (chan []byte, error) 
 	}()
 
 	return ch, nil
+}
+
+func NewSendChannel(name string, port int, wg *sync.WaitGroup) (chan []byte, error) {
+	return NewDirectSendChannel(name, "localhost:"+strconv.Itoa(port), wg)
 }

@@ -3,12 +3,37 @@ package io
 import (
 	"bytes"
 	"encoding/gob"
+	"flag"
 	"log"
 	"reflect"
 	"sync"
 
 	"github.com/chrislusf/glow/io/receiver"
+	"github.com/chrislusf/glow/io/sender"
 )
+
+type NetworkContext struct {
+	AgentPort int
+}
+
+var networkContext NetworkContext
+
+func init() {
+	flag.IntVar(&networkContext.AgentPort, "glow.agent.port", 8931, "agent port")
+}
+
+func GetLocalSendChannel(name string, wg *sync.WaitGroup) (chan []byte, error) {
+	return sender.NewSendChannel(name, networkContext.AgentPort, wg)
+}
+
+func GetDirectReadChannel(name, location string) (chan []byte, error) {
+	rc := receiver.NewReceiveChannel(name, 0)
+	return rc.GetDirectChannel(location)
+}
+
+func GetDirectSendChannel(name string, target string, wg *sync.WaitGroup) (chan []byte, error) {
+	return sender.NewDirectSendChannel(name, target, wg)
+}
 
 func ConnectRawReadChannelToTyped(c chan []byte, out chan reflect.Value, t reflect.Type, wg *sync.WaitGroup) chan reflect.Value {
 
@@ -53,11 +78,6 @@ func ConnectTypedWriteChannelToRaw(writeChan reflect.Value, c chan []byte, wg *s
 
 	}()
 
-}
-
-func GetDirectReadChannel(name, location string) (chan []byte, error) {
-	rc := receiver.NewReceiveChannel(name, 0)
-	return rc.GetDirectChannel(location)
 }
 
 func MergeChannel(cs []chan reflect.Value) (out chan reflect.Value) {

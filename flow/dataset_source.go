@@ -74,6 +74,7 @@ func (fc *FlowContext) Channel(ch interface{}, shard int) (ret *Dataset) {
 	chValue, chType := reflect.ValueOf(ch), reflect.TypeOf(ch)
 
 	ret = fc.newNextDataset(shard, chType.Elem())
+	ret.ExternalInputChans = append(ret.ExternalInputChans, reflect.Indirect(reflect.ValueOf(ch)))
 	step := fc.AddOneToAllStep(nil, ret)
 	step.Name = "Channel"
 	step.Function = func(task *Task) {

@@ -13,13 +13,14 @@ func (d *Dataset) GetShards() []*DatasetShard {
 }
 
 type Dataset struct {
-	Id           int
-	context      *FlowContext
-	Type         reflect.Type
-	Shards       []*DatasetShard
-	Step         *Step
-	ReadingSteps []*Step
-	OutputChans  []reflect.Value
+	Id                  int
+	context             *FlowContext
+	Type                reflect.Type
+	Shards              []*DatasetShard
+	Step                *Step
+	ReadingSteps        []*Step
+	ExternalInputChans  []reflect.Value
+	ExternalOutputChans []reflect.Value
 }
 
 func NewDataset(context *FlowContext, t reflect.Type) *Dataset {
@@ -45,14 +46,15 @@ func (d *Dataset) RunSelf(stepId int) {
 			for ok := true; ok; {
 				if t, ok = shard.WriteChan.Recv(); ok {
 					shard.SendForRead(t)
-					d.sendToOutputChans(t)
+					// hookup output channels
+					d.sendToExternalOutputChans(t)
 				}
 			}
 			shard.CloseRead()
 		}(shard)
 	}
 	wg.Wait()
-	d.closeOutputChans()
+	d.closeExternalOutputChans()
 	// println("dataset", stepId, "stopped")
 	return
 }
@@ -61,16 +63,16 @@ func (d *Dataset) Run() {
 	d.context.Run()
 }
 
-func (d *Dataset) sendToOutputChans(t reflect.Value) {
-	for _, ch := range d.OutputChans {
+func (d *Dataset) sendToExternalOutputChans(t reflect.Value) {
+	for _, ch := range d.ExternalOutputChans {
 		elemType := ch.Type().Elem()
 		t = io.CleanObject(t, d.Type, elemType)
 		ch.Send(t)
 	}
 }
 
-func (d *Dataset) closeOutputChans() {
-	for _, ch := range d.OutputChans {
+func (d *Dataset) closeExternalOutputChans() {
+	for _, ch := range d.ExternalOutputChans {
 		ch.Close()
 	}
 }
@@ -91,6 +93,6 @@ func assertChannelOf(ch interface{}, dsType reflect.Type) {
 
 func (d *Dataset) AddOutput(ch interface{}) *Dataset {
 	assertChannelOf(ch, d.Type)
-	d.OutputChans = append(d.OutputChans, reflect.Indirect(reflect.ValueOf(ch)))
+	d.ExternalOutputChans = append(d.ExternalOutputChans, reflect.Indirect(reflect.ValueOf(ch)))
 	return d
 }
