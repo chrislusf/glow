@@ -40,12 +40,17 @@ func (f *FlowContext) AddOneToOneStep(input *Dataset, output *Dataset) (step *St
 	FromDatasetToStep(input, step)
 
 	// setup the network
-	for i, shard := range input.GetShards() {
+	if output != nil && len(output.ExternalInputChans) > 0 {
 		task := step.NewTask()
-		if output != nil && output.Shards != nil {
-			FromTaskToDatasetShard(task, output.GetShards()[i])
+		FromTaskToDatasetShard(task, output.GetShards()[0])
+	} else {
+		for i, shard := range input.GetShards() {
+			task := step.NewTask()
+			if output != nil && output.Shards != nil {
+				FromTaskToDatasetShard(task, output.GetShards()[i])
+			}
+			FromDatasetShardToTask(shard, task)
 		}
-		FromDatasetShardToTask(shard, task)
 	}
 	return
 }

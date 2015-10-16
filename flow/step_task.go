@@ -28,13 +28,14 @@ func (step *Step) NewTask() (task *Task) {
 // ds close its own r chan
 // task closes its own channel to next ds' w:ds
 
-func (t *Task) Run() {
-	// println("run  step", t.Step.Id, "task", t.Id)
+func (t *Task) RunTask() {
+	// println("start", t.Name())
 	t.Step.Function(t)
 	for _, out := range t.Outputs {
+		// println(t.Name(), "close WriteChan of", out.Name())
 		out.WriteChan.Close()
 	}
-	// println("stop step", t.Step.Id, "task", t.Id)
+	// println("stop", t.Name())
 }
 
 func (t *Task) Name() string {

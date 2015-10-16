@@ -2,7 +2,7 @@ package scheduler
 
 import (
 	"bytes"
-	// "fmt"
+	"fmt"
 	"log"
 	"os"
 	"reflect"
@@ -57,10 +57,10 @@ func (s *Scheduler) EventLoop() {
 				allocation := supply.Object.(resource.Allocation)
 				defer s.Market.ReturnSupply(supply)
 
-				s.setupInputChannels(tasks[0], allocation.Location, event.WaitGroup)
+				s.setupInputChannels(event.FlowContext, tasks[0], allocation.Location, event.WaitGroup)
 
 				for _, shard := range tasks[len(tasks)-1].Outputs {
-					s.registerDatasetShardLocation(shard, allocation.Location)
+					s.registerDatasetShardLocation(shard.Name(), allocation.Location)
 				}
 				s.setupOutputChannels(tasks[len(tasks)-1].Outputs, event.WaitGroup)
 
@@ -113,6 +113,7 @@ func (s *Scheduler) EventLoop() {
 func (s *Scheduler) allInputsAreRegistered(task *flow.Task) bool {
 	for _, input := range task.Inputs {
 		if _, hasValue := s.datasetShard2Location[input.Name()]; !hasValue {
+			fmt.Printf("%s's input %s is not ready\n", task.Name(), input.Name())
 			return false
 		}
 	}
@@ -124,36 +125,38 @@ func (s *Scheduler) waitForInputDatasetShardLocations(task *flow.Task) {
 	defer s.datasetShard2LocationLock.Unlock()
 
 	for !s.allInputsAreRegistered(task) {
-		// fmt.Printf("inputs of %s is not ready\n", tasks[0].Name())
 		s.waitForAllInputs.Wait()
 	}
 }
 
-func (s *Scheduler) setupInputChannels(task *flow.Task, location resource.Location, waitGroup *sync.WaitGroup) {
-	for _, shard := range task.Inputs {
-		ds := shard.Parent
-		if len(ds.ExternalInputChans) == 0 {
-			continue
-		}
-		// connect local typed chan to remote raw chan
-		// write to the dataset location in the cluster so that the task can be retried if needed.
-		s.registerDatasetShardLocation(shard, location)
-		inputChanName := shard.Name()
+func (s *Scheduler) setupInputChannels(fc *flow.FlowContext, task *flow.Task, location resource.Location, waitGroup *sync.WaitGroup) {
+	if len(task.Inputs) > 0 {
+		return
+	}
+	ds := task.Outputs[0].Parent
+	if len(ds.ExternalInputChans) == 0 {
+		return
+	}
+	println("setup input channel for", task.Name())
+	// connect local typed chan to remote raw chan
+	// write to the dataset location in the cluster so that the task can be retried if needed.
+	for i, inChan := range ds.ExternalInputChans {
+		inputChanName := fmt.Sprintf("ct-%d-input-%d-p-%d", fc.Id, ds.Id, i)
+		s.registerDatasetShardLocation(inputChanName, location)
 		rawChan, err := io.GetDirectSendChannel(inputChanName, location.URL(), waitGroup)
 		if err != nil {
 			log.Panic(err)
 		}
-		for _, inChan := range ds.ExternalInputChans {
-			io.ConnectTypedWriteChannelToRaw(inChan, rawChan, waitGroup)
-		}
+		println("writing", inputChanName, "to", location.URL())
+		io.ConnectTypedWriteChannelToRaw(inChan, rawChan, waitGroup)
 	}
 }
 
-func (s *Scheduler) registerDatasetShardLocation(shard *flow.DatasetShard, location resource.Location) {
+func (s *Scheduler) registerDatasetShardLocation(name string, location resource.Location) {
 	s.datasetShard2LocationLock.Lock()
 	defer s.datasetShard2LocationLock.Unlock()
 
-	name := shard.Name()
+	fmt.Printf("shard %s is at %s\n", name, location.URL())
 	s.datasetShard2Location[name] = location
 	s.waitForAllInputs.Broadcast()
 }

@@ -2,7 +2,9 @@ package driver
 
 import (
 	"flag"
+	"fmt"
 	"log"
+	"reflect"
 	"strings"
 	"sync"
 
@@ -64,7 +66,7 @@ func (tr *TaskRunner) Run(fc *flow.FlowContext) {
 		wg.Add(1)
 		go func(task *flow.Task) {
 			defer wg.Done()
-			task.Run()
+			task.RunTask()
 		}(task)
 	}
 	// 7. need to close connected output channels
@@ -81,6 +83,7 @@ func (tr *TaskRunner) connectInputsAndOutputs(wg *sync.WaitGroup) {
 			name2Location[nl[0]] = nl[1]
 		}
 	}
+	tr.connectExternalInputChannels(wg)
 	tr.connectExternalInputs(wg, name2Location)
 	tr.connectInternalInputsAndOutputs(wg)
 	tr.connectExternalOutputs(wg)
@@ -121,6 +124,25 @@ func (tr *TaskRunner) connectExternalInputs(wg *sync.WaitGroup, name2Location ma
 			log.Panic(err)
 		}
 		io.ConnectRawReadChannelToTyped(rawChan, task.InputChans[i], d.Type, wg)
+	}
+}
+
+func (tr *TaskRunner) connectExternalInputChannels(wg *sync.WaitGroup) {
+	// this is only for Channel dataset
+	firstTask := tr.Tasks[0]
+	if firstTask.Inputs != nil {
+		return
+	}
+	ds := firstTask.Outputs[0].Parent
+	for i, _ := range ds.ExternalInputChans {
+		inputChanName := fmt.Sprintf("ct-%d-input-%d-p-%d", tr.option.ContextId, ds.Id, i)
+		rawChan, err := io.GetDirectReadChannel(inputChanName, "localhost:8932")
+		if err != nil {
+			log.Panic(err)
+		}
+		typedInputChan := make(chan reflect.Value)
+		io.ConnectRawReadChannelToTyped(rawChan, typedInputChan, ds.Type, wg)
+		firstTask.InputChans = append(firstTask.InputChans, typedInputChan)
 	}
 }
 

@@ -70,24 +70,16 @@ func (fc *FlowContext) TextFile(fname string, shard int) (ret *Dataset) {
 	return fc.Source(fn, shard)
 }
 
-func (fc *FlowContext) Channel(ch interface{}, shard int) (ret *Dataset) {
+func (fc *FlowContext) Channel(ch interface{}) (ret *Dataset) {
 	chValue, chType := reflect.ValueOf(ch), reflect.TypeOf(ch)
 
-	ret = fc.newNextDataset(shard, chType.Elem())
-	ret.ExternalInputChans = append(ret.ExternalInputChans, reflect.Indirect(reflect.ValueOf(ch)))
-	step := fc.AddOneToAllStep(nil, ret)
-	step.Name = "Channel"
+	ret = fc.newNextDataset(1, chType.Elem())
+	ret.ExternalInputChans = append(ret.ExternalInputChans, reflect.Indirect(chValue))
+	step := fc.AddOneToOneStep(nil, ret)
+	step.Name = "Input"
 	step.Function = func(task *Task) {
-		var t reflect.Value
-		i := 0
-		for ok := true; ok; {
-			if t, ok = chValue.Recv(); ok {
-				task.Outputs[i].WriteChan.Send(t)
-				i++
-				if i == shard {
-					i = 0
-				}
-			}
+		for t := range task.MergedInputChan() {
+			task.Outputs[0].WriteChan.Send(t)
 		}
 	}
 	return

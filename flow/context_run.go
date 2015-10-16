@@ -61,41 +61,45 @@ func (fc *FlowContext) Run() {
 	} else if contextRunner.IsDriverMode() {
 		contextRunner.Run(fc)
 	} else {
-		fc.run_standalone()
+		fc.runFlowContextInStandAloneMode()
 	}
 }
 
-func (fc *FlowContext) run_standalone() {
+func (fc *FlowContext) runFlowContextInStandAloneMode() {
 
 	var wg sync.WaitGroup
 
+	isDatasetStarted := make(map[int]bool)
+
 	// start all task edges
-	for i, step := range fc.Steps {
-		if i == 0 {
-			wg.Add(1)
-			go func(step *Step) {
-				defer wg.Done()
-				// println("start dataset", step.Id)
-				for _, input := range step.Inputs {
-					if input != nil {
-						input.RunSelf(step.Id)
-					}
-				}
-			}(step)
+	for _, step := range fc.Steps {
+		for _, input := range step.Inputs {
+			if _, ok := isDatasetStarted[input.Id]; !ok {
+				wg.Add(1)
+				go func(step *Step) {
+					defer wg.Done()
+					input.RunDatasetInStandAloneMode()
+				}(step)
+				isDatasetStarted[input.Id] = true
+			}
 		}
 		wg.Add(1)
 		go func(step *Step) {
 			defer wg.Done()
-			step.Run()
+			step.RunStep()
 		}(step)
-		wg.Add(1)
-		go func(step *Step) {
-			defer wg.Done()
-			// println("start dataset", step.Id+1)
-			if step.Output != nil {
-				step.Output.RunSelf(step.Id + 1)
+
+		if step.Output != nil {
+			if _, ok := isDatasetStarted[step.Output.Id]; !ok {
+				wg.Add(1)
+				go func(step *Step) {
+					defer wg.Done()
+					// println(step.Name, "start output dataset", step.Output.Id)
+					step.Output.RunDatasetInStandAloneMode()
+				}(step)
+				isDatasetStarted[step.Output.Id] = true
 			}
-		}(step)
+		}
 	}
 	wg.Wait()
 }
