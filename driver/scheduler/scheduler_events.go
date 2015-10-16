@@ -113,7 +113,7 @@ func (s *Scheduler) EventLoop() {
 func (s *Scheduler) allInputsAreRegistered(task *flow.Task) bool {
 	for _, input := range task.Inputs {
 		if _, hasValue := s.datasetShard2Location[input.Name()]; !hasValue {
-			fmt.Printf("%s's input %s is not ready\n", task.Name(), input.Name())
+			// fmt.Printf("%s's input %s is not ready\n", task.Name(), input.Name())
 			return false
 		}
 	}
@@ -137,7 +137,7 @@ func (s *Scheduler) setupInputChannels(fc *flow.FlowContext, task *flow.Task, lo
 	if len(ds.ExternalInputChans) == 0 {
 		return
 	}
-	println("setup input channel for", task.Name())
+	// println("setup input channel for", task.Name())
 	// connect local typed chan to remote raw chan
 	// write to the dataset location in the cluster so that the task can be retried if needed.
 	for i, inChan := range ds.ExternalInputChans {
@@ -147,7 +147,7 @@ func (s *Scheduler) setupInputChannels(fc *flow.FlowContext, task *flow.Task, lo
 		if err != nil {
 			log.Panic(err)
 		}
-		println("writing", inputChanName, "to", location.URL())
+		// println("writing", inputChanName, "to", location.URL())
 		io.ConnectTypedWriteChannelToRaw(inChan, rawChan, waitGroup)
 	}
 }
@@ -156,7 +156,7 @@ func (s *Scheduler) registerDatasetShardLocation(name string, location resource.
 	s.datasetShard2LocationLock.Lock()
 	defer s.datasetShard2LocationLock.Unlock()
 
-	fmt.Printf("shard %s is at %s\n", name, location.URL())
+	// fmt.Printf("shard %s is at %s\n", name, location.URL())
 	s.datasetShard2Location[name] = location
 	s.waitForAllInputs.Broadcast()
 }

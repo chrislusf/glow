@@ -128,7 +128,7 @@ func translateToTaskGroups(stepId2StepGroup []*StepGroup) (ret []*TaskGroup) {
 	for _, stepGroup := range stepId2StepGroup {
 		assertSameNumberOfTasks(stepGroup.Steps)
 		count := len(stepGroup.Steps[0].Tasks)
-		println("dealing with", stepGroup.Steps[0].Name, "tasks:", len(stepGroup.Steps[0].Tasks))
+		// println("dealing with", stepGroup.Steps[0].Name, "tasks:", len(stepGroup.Steps[0].Tasks))
 		for i := 0; i < count; i++ {
 			tg := NewTaskGroup()
 			for _, step := range stepGroup.Steps {
