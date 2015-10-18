@@ -13,21 +13,21 @@ import (
 	a "github.com/chrislusf/glow/agent"
 	r "github.com/chrislusf/glow/io/receiver"
 	s "github.com/chrislusf/glow/io/sender"
-	l "github.com/chrislusf/glow/resource/service_discovery/leader"
+	m "github.com/chrislusf/glow/resource/service_discovery/master"
 )
 
 var (
 	app = kingpin.New("glow", "A command-line net channel.")
 
-	leader     = app.Command("leader", "Start a leader process")
-	leaderPort = leader.Flag("port", "listening port").Default("8930").Int()
-	leaderIp   = leader.Flag("ip", "listening IP adress").Default("localhost").String()
+	master     = app.Command("master", "Start a master process")
+	masterPort = master.Flag("port", "listening port").Default("8930").Int()
+	masterIp   = master.Flag("ip", "listening IP adress").Default("localhost").String()
 
 	agent       = app.Command("agent", "Channel Agent")
 	agentOption = &a.AgentServerOption{
 		Dir:          agent.Flag("dir", "agent folder to store computed data").Default(os.TempDir()).String(),
 		Port:         agent.Flag("port", "agent listening port").Default("8931").Int(),
-		Leader:       agent.Flag("leader", "leader address").Default("localhost:8930").String(),
+		Master:       agent.Flag("master", "master address").Default("localhost:8930").String(),
 		DataCenter:   agent.Flag("dataCenter", "data center name").Default("defaultDataCenter").String(),
 		Rack:         agent.Flag("rack", "rack name").Default("defaultRack").String(),
 		MaxExecutor:  agent.Flag("max.executors", "upper limit of executors").Default(strconv.Itoa(runtime.NumCPU())).Int(),
@@ -44,14 +44,14 @@ var (
 
 	receiver            = app.Command("receive", "Receive data from a channel")
 	receiveFromChanName = receiver.Flag("from", "Name of a source channel").Required().String()
-	receiverLeader      = receiver.Flag("leader", "ip:port format").Default("localhost:8930").String()
+	receiverMaster      = receiver.Flag("master", "ip:port format").Default("localhost:8930").String()
 )
 
 func main() {
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
-	case leader.FullCommand():
-		println("listening on", (*leaderIp)+":"+strconv.Itoa(*leaderPort))
-		l.RunLeader((*leaderIp) + ":" + strconv.Itoa(*leaderPort))
+	case master.FullCommand():
+		println("listening on", (*masterIp)+":"+strconv.Itoa(*masterPort))
+		m.RunMaster((*masterIp) + ":" + strconv.Itoa(*masterPort))
 	case sender.FullCommand():
 		var wg sync.WaitGroup
 		sendChan, err := s.NewSendChannel(*sendToChanName, *senderAgentPort, &wg)
@@ -82,7 +82,7 @@ func main() {
 
 	case receiver.FullCommand():
 		rc := r.NewReceiveChannel(*receiveFromChanName, 0)
-		recvChan, err := rc.GetDirectChannel(*receiverLeader)
+		recvChan, err := rc.GetDirectChannel(*receiverMaster)
 		if err != nil {
 			panic(err)
 		}

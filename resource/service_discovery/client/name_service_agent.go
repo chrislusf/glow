@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	service "github.com/chrislusf/glow/resource/service_discovery/leader"
+	"github.com/chrislusf/glow/resource/service_discovery/master"
 	"github.com/chrislusf/glow/util"
 )
 
@@ -26,7 +26,7 @@ func (n *NameServiceProxy) Find(name string) (locations []string) {
 		if err != nil {
 			log.Printf("Failed to list from %s:%v", l, err)
 		}
-		var ret []service.ChannelInformation
+		var ret []master.ChannelInformation
 		err = json.Unmarshal(jsonBlob, &ret)
 		if err != nil {
 			fmt.Printf("%s/list%s unmarshal error:%v, json:%s", l, name, err, string(jsonBlob))

@@ -1,4 +1,4 @@
-package leader
+package master
 
 import (
 	// "fmt"
@@ -16,15 +16,15 @@ type ResourceUpdateEvent struct {
 	Rack       string
 }
 
-type LeaderResource struct {
+type MasterResource struct {
 	Topology      resource.Topology
 	EventChan     chan interface{}
 	lock          sync.Mutex
 	EvictionQueue *util.PriorityQueue
 }
 
-func NewLeaderResource() *LeaderResource {
-	l := &LeaderResource{
+func NewMasterResource() *MasterResource {
+	l := &MasterResource{
 		Topology: resource.Topology{
 			DataCenters: make(map[string]*resource.DataCenter),
 		},
@@ -41,7 +41,7 @@ func NewLeaderResource() *LeaderResource {
 	return l
 }
 
-func (l *LeaderResource) UpdateAgentInformation(ai *resource.AgentInformation) {
+func (l *MasterResource) UpdateAgentInformation(ai *resource.AgentInformation) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
@@ -101,7 +101,7 @@ func (l *LeaderResource) UpdateAgentInformation(ai *resource.AgentInformation) {
 
 }
 
-func (l *LeaderResource) deleteAgentInformation(ai *resource.AgentInformation) {
+func (l *MasterResource) deleteAgentInformation(ai *resource.AgentInformation) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
@@ -138,7 +138,7 @@ func (l *LeaderResource) deleteAgentInformation(ai *resource.AgentInformation) {
 
 }
 
-func (l *LeaderResource) findAgentInformation(location resource.Location) (*resource.AgentInformation, bool) {
+func (l *MasterResource) findAgentInformation(location resource.Location) (*resource.AgentInformation, bool) {
 	d, hasDc := l.Topology.DataCenters[location.DataCenter]
 	if !hasDc {
 		return nil, false
@@ -153,7 +153,7 @@ func (l *LeaderResource) findAgentInformation(location resource.Location) (*reso
 	return ai, ok
 }
 
-func (l *LeaderResource) BackgroundEvictionLoop() {
+func (l *MasterResource) BackgroundEvictionLoop() {
 	for {
 		if l.EvictionQueue.Len() == 0 {
 			// println("eviction: sleep for", TimeOutLimit, "seconds")
@@ -181,7 +181,7 @@ func (l *LeaderResource) BackgroundEvictionLoop() {
 	}
 }
 
-func (l *LeaderResource) BackgroundEventLoop() {
+func (l *MasterResource) BackgroundEventLoop() {
 	for {
 		event := <-l.EventChan
 		switch event.(type) {

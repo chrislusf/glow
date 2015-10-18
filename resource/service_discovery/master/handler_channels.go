@@ -1,6 +1,4 @@
-// Leader acts as a transient team leader
-// It register each service's active locations.
-package leader
+package master
 
 import (
 	"net/http"
@@ -15,7 +13,7 @@ type ChannelInformation struct {
 	LastHeartBeat time.Time
 }
 
-func (tl *TeamLeader) handleChannel(w http.ResponseWriter, r *http.Request) {
+func (tl *TeamMaster) handleChannel(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		tl.updateChannelHandler(w, r)
 	} else {
@@ -23,7 +21,7 @@ func (tl *TeamLeader) handleChannel(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (tl *TeamLeader) listChannelsHandler(w http.ResponseWriter, r *http.Request) {
+func (tl *TeamMaster) listChannelsHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path[len("/channel/"):]
 
 	freshChannels := make([]*ChannelInformation, 0)
@@ -47,7 +45,7 @@ func (tl *TeamLeader) listChannelsHandler(w http.ResponseWriter, r *http.Request
 }
 
 // put agent information list under a path
-func (tl *TeamLeader) updateChannelHandler(w http.ResponseWriter, r *http.Request) {
+func (tl *TeamMaster) updateChannelHandler(w http.ResponseWriter, r *http.Request) {
 	servicePort := r.FormValue("servicePort")
 	host := r.Host
 	if strings.Contains(host, ":") {

@@ -1,6 +1,4 @@
-// Leader acts as a transient team leader
-// It register each service's active locations.
-package leader
+package master
 
 import (
 	"encoding/json"
@@ -14,11 +12,11 @@ import (
 	"github.com/chrislusf/glow/util"
 )
 
-func (tl *TeamLeader) listAgentsHandler(w http.ResponseWriter, r *http.Request) {
-	util.Json(w, r, http.StatusAccepted, tl.LeaderResource.Topology)
+func (tl *TeamMaster) listAgentsHandler(w http.ResponseWriter, r *http.Request) {
+	util.Json(w, r, http.StatusAccepted, tl.MasterResource.Topology)
 }
 
-func (tl *TeamLeader) requestAgentHandler(w http.ResponseWriter, r *http.Request) {
+func (tl *TeamMaster) requestAgentHandler(w http.ResponseWriter, r *http.Request) {
 	requestBlob := []byte(r.FormValue("request"))
 	var request resource.AllocationRequest
 	err := json.Unmarshal(requestBlob, &request)
@@ -40,7 +38,7 @@ func (tl *TeamLeader) requestAgentHandler(w http.ResponseWriter, r *http.Request
 
 }
 
-func (tl *TeamLeader) updateAgentHandler(w http.ResponseWriter, r *http.Request) {
+func (tl *TeamMaster) updateAgentHandler(w http.ResponseWriter, r *http.Request) {
 	servicePortString := r.FormValue("servicePort")
 	servicePort, err := strconv.Atoi(servicePortString)
 	if err != nil {
@@ -65,7 +63,7 @@ func (tl *TeamLeader) updateAgentHandler(w http.ResponseWriter, r *http.Request)
 
 	// fmt.Printf("reported allocated: %v\n", alloc)
 
-	tl.LeaderResource.UpdateAgentInformation(ai)
+	tl.MasterResource.UpdateAgentInformation(ai)
 
 	w.WriteHeader(http.StatusAccepted)
 }

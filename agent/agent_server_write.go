@@ -28,7 +28,7 @@ func (as *AgentServer) handleWriteConnection(r io.Reader, name string) {
 	as.name2StoreLock.Unlock()
 
 	//register stream
-	go client.NewHeartBeater(as.Port, *as.Option.Leader).StartChannelHeartBeat(ds.killHeartBeater, name)
+	go client.NewHeartBeater(as.Port, *as.Option.Master).StartChannelHeartBeat(ds.killHeartBeater, name)
 
 	// println(name, "start writing.")
 

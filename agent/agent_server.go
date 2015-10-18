@@ -38,7 +38,7 @@ func (ds *LiveDataStore) Destroy() {
 }
 
 type AgentServerOption struct {
-	Leader       *string
+	Master       *string
 	Port         *int
 	Dir          *string
 	DataCenter   *string
@@ -51,7 +51,7 @@ type AgentServerOption struct {
 
 type AgentServer struct {
 	Option                *AgentServerOption
-	leader                string
+	Master                string
 	Port                  int
 	name2Store            map[string]*LiveDataStore
 	dir                   string
@@ -66,7 +66,7 @@ type AgentServer struct {
 func NewAgentServer(option *AgentServerOption) *AgentServer {
 	as := &AgentServer{
 		Option:     option,
-		leader:     *option.Leader,
+		Master:     *option.Master,
 		Port:       *option.Port,
 		dir:        *option.Dir,
 		name2Store: make(map[string]*LiveDataStore),
@@ -116,7 +116,7 @@ func (r *AgentServer) Init() (err error) {
 func (as *AgentServer) Run() {
 	//register agent
 	killHeartBeaterChan := make(chan bool, 1)
-	go client.NewHeartBeater(as.Port, as.leader).StartAgentHeartBeat(killHeartBeaterChan, func(values url.Values) {
+	go client.NewHeartBeater(as.Port, as.Master).StartAgentHeartBeat(killHeartBeaterChan, func(values url.Values) {
 		resource.AddToValues(values, as.computeResource, as.allocatedResource)
 		values.Add("dataCenter", *as.Option.DataCenter)
 		values.Add("rack", *as.Option.Rack)

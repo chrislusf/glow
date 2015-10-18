@@ -1,4 +1,4 @@
-package leader
+package master
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 
 func TestAllocation1(t *testing.T) {
 
-	lr := NewLeaderResource()
+	lr := NewMasterResource()
 	lr.UpdateAgentInformation(&resource.AgentInformation{
 		Location: resource.Location{
 			DataCenter: "dc1",
@@ -71,9 +71,9 @@ func TestAllocation1(t *testing.T) {
 		},
 	}
 
-	tl := &TeamLeader{}
+	tl := &TeamMaster{}
 	tl.channels = make(map[string][]*ChannelInformation)
-	tl.LeaderResource = lr
+	tl.MasterResource = lr
 
 	result := tl.allocate(req)
 	t.Logf("Result: %+v", result)
@@ -122,7 +122,7 @@ func TestAllocation1(t *testing.T) {
 
 func TestAllocation2(t *testing.T) {
 
-	lr := NewLeaderResource()
+	lr := NewMasterResource()
 	lr.UpdateAgentInformation(&resource.AgentInformation{
 		Location: resource.Location{
 			DataCenter: "dc1",
@@ -137,9 +137,9 @@ func TestAllocation2(t *testing.T) {
 		},
 	})
 
-	tl := &TeamLeader{}
+	tl := &TeamMaster{}
 	tl.channels = make(map[string][]*ChannelInformation)
-	tl.LeaderResource = lr
+	tl.MasterResource = lr
 
 	req := &resource.AllocationRequest{
 		Requests: []resource.ComputeRequest{
