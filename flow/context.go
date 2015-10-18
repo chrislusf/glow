@@ -13,7 +13,7 @@ type FlowContext struct {
 	Datasets []*Dataset
 }
 
-func NewContext() (fc *FlowContext) {
+func New() (fc *FlowContext) {
 	fc = &FlowContext{Id: len(Contexts)}
 	Contexts = append(Contexts, fc)
 	return
