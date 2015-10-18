@@ -56,9 +56,9 @@ func Ready() {
 
 func (fc *FlowContext) Run() {
 
-	if taskRunner.IsTaskMode() {
+	if taskRunner != nil && taskRunner.IsTaskMode() {
 		taskRunner.Run(fc)
-	} else if contextRunner.IsDriverMode() {
+	} else if contextRunner != nil && contextRunner.IsDriverMode() {
 		contextRunner.Run(fc)
 	} else {
 		fc.runFlowContextInStandAloneMode()
