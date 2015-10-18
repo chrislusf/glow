@@ -25,7 +25,7 @@ import (
 func main() {
 	flag.Parse()
 
-	flow.NewContext().TextFile(
+	flow.New().TextFile(
 		"/etc/passwd", 3,
 	).Filter(func(line string) bool {
 		return !strings.HasPrefix(line, "#")
@@ -39,7 +39,7 @@ func main() {
 		return x + y
 	}).Map(func(x int) {
 		println("count:", x)
-	})
+	}).Run()
 }
 
 ```
@@ -56,7 +56,7 @@ This is useful already, saving lots of idiomatic but repetitive code on channels
 However, there is one more thing!
 
 ## Scale it out
-We need to setup the cluster first. We do not need experts on Zookeeper/HDFS/Mesos/YARN etc. Just need to download one binary file.
+We need to setup the cluster first. We do not need experts on Zookeeper/HDFS/Mesos/YARN etc. Just need to build or download one binary file.
 
 ### Setup the cluster
 ```
