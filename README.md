@@ -25,7 +25,7 @@ import (
 func main() {
 	flag.Parse()
 
-	flow.NewContext().TextFile(
+	flow.New().TextFile(
 		"/etc/passwd", 3,
 	).Filter(func(line string) bool {
 		return !strings.HasPrefix(line, "#")
@@ -39,7 +39,7 @@ func main() {
 		return x + y
 	}).Map(func(x int) {
 		println("count:", x)
-	})
+	}).Run()
 }
 
 ```
@@ -56,16 +56,16 @@ This is useful already, saving lots of idiomatic but repetitive code on channels
 However, there is one more thing!
 
 ## Scale it out
-We need to setup the cluster first. We do not need experts on Zookeeper/HDFS/Mesos/YARN etc. Just need to download one binary file.
+We need to setup the cluster first. We do not need experts on Zookeeper/HDFS/Mesos/YARN etc. Just need to build or download one binary file.
 
 ### Setup the cluster
 ```
   // fetch and install via go, or just download it from somewhere
   go get github.com/chrislusf/glow
-  // start a leader on one computer
-  glow leader
+  // start a master on one computer
+  glow master
   // run one or more agents on computers
-  glow agent --dir . --max.executors=16 --memory=2048 --leader="localhost:8930" --port 8931
+  glow agent --dir . --max.executors=16 --memory=2048 --master="localhost:8930" --port 8931
 ```
 ### Start the driver program
 To leap from one computer to clusters of computers, add this line to the import list:

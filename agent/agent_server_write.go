@@ -11,6 +11,7 @@ import (
 )
 
 func (as *AgentServer) handleWriteConnection(r io.Reader, name string) {
+
 	as.name2StoreLock.Lock()
 	ds, ok := as.name2Store[name]
 	if !ok {
@@ -24,10 +25,12 @@ func (as *AgentServer) handleWriteConnection(r io.Reader, name string) {
 		ds = as.name2Store[name]
 
 	}
-	//register stream
-	go client.NewHeartBeater(as.Port, "localhost:8930").StartChannelHeartBeat(ds.killHeartBeater, name)
-
 	as.name2StoreLock.Unlock()
+
+	//register stream
+	go client.NewHeartBeater(as.Port, *as.Option.Master).StartChannelHeartBeat(ds.killHeartBeater, name)
+
+	// println(name, "start writing.")
 
 	buf := make([]byte, 4)
 	for {
@@ -48,9 +51,11 @@ func (as *AgentServer) handleWriteConnection(r io.Reader, name string) {
 }
 
 func (as *AgentServer) handleDelete(name string) {
+
 	as.name2StoreLock.Lock()
 	ds, ok := as.name2Store[name]
 	if !ok {
+		as.name2StoreLock.Unlock()
 		return
 	}
 

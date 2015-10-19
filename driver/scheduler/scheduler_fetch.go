@@ -23,7 +23,7 @@ func (s *Scheduler) Fetch(demands []market.Demand) {
 			ComputeResource: resource.ComputeResource{
 				CPUCount: 1,
 				CPULevel: 1,
-				MemoryMB: 64,
+				MemoryMB: int64(s.option.TaskMemoryMB),
 			},
 			Inputs: s.findTaskGroupInputs(demand),
 		})
@@ -32,6 +32,7 @@ func (s *Scheduler) Fetch(demands []market.Demand) {
 	result, err := Assign(s.Leader, &request)
 	if err != nil {
 		log.Printf("%s Failed to allocate: %v", s.Leader, err)
+		time.Sleep(time.Millisecond * time.Duration(15000+rand.Int63n(5000)))
 	} else {
 		if len(result.Allocations) == 0 {
 			log.Printf("%s Failed to allocate any server.", s.Leader)
@@ -77,7 +78,7 @@ func Assign(leader string, request *resource.AllocationRequest) (*resource.Alloc
 		return nil, fmt.Errorf("/agent/assign result JSON unmarshal error:%v, json:%s", err, string(jsonBlob))
 	}
 	if ret.Error != "" {
-		return nil, fmt.Errorf("/agent/assign error:%v, json:%s", ret.Error, string(jsonBlob))
+		return nil, fmt.Errorf("/agent/assign error:%v", ret.Error)
 	}
 	return &ret, nil
 }

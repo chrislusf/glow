@@ -24,7 +24,7 @@ type Requirement interface{}
 
 type Demand struct {
 	Requirement Requirement
-	Bid         int
+	Bid         float64
 	ReturnChan  chan Supply
 }
 
@@ -36,7 +36,7 @@ type Market struct {
 	Demands    []Demand
 	Supplies   []Supply
 	Lock       sync.Mutex
-	ScoreFn    func(Requirement, int, Object) float64
+	ScoreFn    func(Requirement, float64, Object) float64
 	FetchFn    func([]Demand)
 	hasDemands *sync.Cond
 }
@@ -47,7 +47,7 @@ func NewMarket() *Market {
 	return m
 }
 
-func (m *Market) SetScoreFunction(scorer func(Requirement, int, Object) float64) *Market {
+func (m *Market) SetScoreFunction(scorer func(Requirement, float64, Object) float64) *Market {
 	m.ScoreFn = scorer
 	return m
 }
@@ -58,7 +58,7 @@ func (m *Market) SetFetchFunction(fn func([]Demand)) *Market {
 }
 
 // retChan should be a buffered channel
-func (m *Market) AddDemand(r Requirement, bid int, retChan chan Supply) {
+func (m *Market) AddDemand(r Requirement, bid float64, retChan chan Supply) {
 	m.Lock.Lock()
 	defer m.Lock.Unlock()
 
@@ -76,25 +76,25 @@ func (m *Market) AddDemand(r Requirement, bid int, retChan chan Supply) {
 }
 
 func (m *Market) FetcherLoop() {
-	m.Lock.Lock()
-	defer m.Lock.Unlock()
-
 	for {
+		m.Lock.Lock()
 		for len(m.Demands) == 0 {
 			m.hasDemands.Wait()
 		}
+		m.Lock.Unlock()
+
 		m.FetchFn(m.Demands)
 	}
 }
 
 func (m *Market) ReturnSupply(s Supply) {
-	m.Lock.Lock()
-	defer m.Lock.Unlock()
-
 	m.AddSupply(s)
 }
 
 func (m *Market) AddSupply(supply Supply) {
+	m.Lock.Lock()
+	defer m.Lock.Unlock()
+
 	if len(m.Demands) > 0 {
 		demand := m.pickBestDemandFor(supply)
 		demand.ReturnChan <- supply

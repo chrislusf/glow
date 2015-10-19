@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -10,6 +11,10 @@ type ComputeResource struct {
 	CPUCount int   `json:"cpuCount,omitempty"`
 	CPULevel int   `json:"cpuLevel,omitempty"` // higher number means higher compute power
 	MemoryMB int64 `json:"memoryMB,omitempty"`
+}
+
+func (a ComputeResource) String() string {
+	return fmt.Sprintf("CPUCount %d Level %d Memory %d MB", a.CPUCount, a.CPULevel, a.MemoryMB)
 }
 
 func (a ComputeResource) Minus(b ComputeResource) ComputeResource {
@@ -78,25 +83,6 @@ func (l *Location) URL() string {
 	return l.Server + ":" + strconv.Itoa(l.Port)
 }
 
-func (cr *ComputeRequest) MatchScore(ro *ResourceOffer) (score float64, ok bool) {
-	c := cr.ComputeResource
-	r := ro.ComputeResource
-	if c.CPUCount > r.CPUCount ||
-		c.CPULevel > r.CPULevel ||
-		c.MemoryMB > r.MemoryMB {
-		return 0, false
-	}
-	totalCost := float64(1)
-	for _, input := range cr.Inputs {
-		if input.DataSizeMB > 0 {
-			cost := float64(10000) / float64(input.DataSizeMB)
-			cost /= input.Location.Distance(ro.ServerLocation)
-			totalCost += cost
-		}
-	}
-	return 100 / totalCost, true
-}
-
 // the distance is a relative value, similar to network lantency
 func (a Location) Distance(b Location) float64 {
 	if a.DataCenter != b.DataCenter {
@@ -111,19 +97,29 @@ func (a Location) Distance(b Location) float64 {
 	return 1
 }
 
-func (c *ComputeResource) AddToValues(values url.Values) {
+func AddToValues(values url.Values, c *ComputeResource, allocated *ComputeResource) {
 	values.Add("CPUCount", strconv.Itoa(c.CPUCount))
 	values.Add("CPULevel", strconv.Itoa(c.CPULevel))
 	values.Add("MemoryMB", strconv.FormatInt(c.MemoryMB, 10))
+	values.Add("allocated.CPUCount", strconv.Itoa(allocated.CPUCount))
+	values.Add("allocated.CPULevel", strconv.Itoa(allocated.CPULevel))
+	values.Add("allocated.MemoryMB", strconv.FormatInt(allocated.MemoryMB, 10))
 }
 
-func NewComputeResourceFromRequest(r *http.Request) ComputeResource {
+func NewComputeResourceFromRequest(r *http.Request) (ComputeResource, ComputeResource) {
 	cpuCount, _ := strconv.ParseInt(r.FormValue("CPUCount"), 10, 32)
 	cpuLevel, _ := strconv.ParseInt(r.FormValue("CPULevel"), 10, 32)
 	memoryMB, _ := strconv.ParseInt(r.FormValue("MemoryMB"), 10, 64)
+	availableCpuCount, _ := strconv.ParseInt(r.FormValue("allocated.CPUCount"), 10, 32)
+	availableCpuLevel, _ := strconv.ParseInt(r.FormValue("allocated.CPULevel"), 10, 32)
+	availableMemoryMB, _ := strconv.ParseInt(r.FormValue("allocated.MemoryMB"), 10, 64)
 	return ComputeResource{
-		CPUCount: int(cpuCount),
-		CPULevel: int(cpuLevel),
-		MemoryMB: memoryMB,
-	}
+			CPUCount: int(cpuCount),
+			CPULevel: int(cpuLevel),
+			MemoryMB: memoryMB,
+		}, ComputeResource{
+			CPUCount: int(availableCpuCount),
+			CPULevel: int(availableCpuLevel),
+			MemoryMB: availableMemoryMB,
+		}
 }

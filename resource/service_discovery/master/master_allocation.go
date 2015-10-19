@@ -1,14 +1,14 @@
-package leader
+package master
 
 import (
 	"fmt"
-	"log"
+	"math/rand"
 	"sort"
 
 	"github.com/chrislusf/glow/resource"
 )
 
-func (tl *TeamLeader) allocate(req *resource.AllocationRequest) (result *resource.AllocationResult) {
+func (tl *TeamMaster) allocate(req *resource.AllocationRequest) (result *resource.AllocationResult) {
 	result = &resource.AllocationResult{}
 	dc, err := tl.findDataCenter(req)
 	if err != nil {
@@ -22,7 +22,7 @@ func (tl *TeamLeader) allocate(req *resource.AllocationRequest) (result *resourc
 	return
 }
 
-func (tl *TeamLeader) allocateServersOnRack(dc *resource.DataCenter, rack *resource.Rack, requests []*resource.ComputeRequest) (
+func (tl *TeamMaster) allocateServersOnRack(dc *resource.DataCenter, rack *resource.Rack, requests []*resource.ComputeRequest) (
 	allocated []resource.Allocation, remainingRequests []*resource.ComputeRequest) {
 	var j = -1
 	for _, agent := range rack.Agents {
@@ -40,7 +40,7 @@ func (tl *TeamLeader) allocateServersOnRack(dc *resource.DataCenter, rack *resou
 			}
 			request := requests[j]
 
-			fmt.Printf("available %v, requested %v\n", available, request.ComputeResource)
+			// fmt.Printf("available %v, requested %v\n", available, request.ComputeResource)
 			if available.Covers(request.ComputeResource) {
 				allocated = append(allocated, resource.Allocation{
 					Location:  agent.Location,
@@ -49,7 +49,7 @@ func (tl *TeamLeader) allocateServersOnRack(dc *resource.DataCenter, rack *resou
 				agent.Allocated = agent.Allocated.Plus(request.ComputeResource)
 				rack.Allocated = rack.Allocated.Plus(request.ComputeResource)
 				dc.Allocated = dc.Allocated.Plus(request.ComputeResource)
-				tl.LeaderResource.Topology.Allocated = tl.LeaderResource.Topology.Allocated.Plus(request.ComputeResource)
+				tl.MasterResource.Topology.Allocated = tl.MasterResource.Topology.Allocated.Plus(request.ComputeResource)
 				available = available.Minus(request.ComputeResource)
 				hasAllocation = true
 			} else {
@@ -60,7 +60,7 @@ func (tl *TeamLeader) allocateServersOnRack(dc *resource.DataCenter, rack *resou
 	return
 }
 
-func (tl *TeamLeader) findServers(dc *resource.DataCenter, req *resource.AllocationRequest) (ret []resource.Allocation) {
+func (tl *TeamMaster) findServers(dc *resource.DataCenter, req *resource.AllocationRequest) (ret []resource.Allocation) {
 	// sort racks by unallocated resources
 	racks := make([]*resource.Rack, 0, len(dc.Racks))
 	for _, rack := range dc.Racks {
@@ -84,7 +84,7 @@ func (tl *TeamLeader) findServers(dc *resource.DataCenter, req *resource.Allocat
 	return
 }
 
-func (tl *TeamLeader) findDataCenter(req *resource.AllocationRequest) (*resource.DataCenter, error) {
+func (tl *TeamMaster) findDataCenter(req *resource.AllocationRequest) (*resource.DataCenter, error) {
 	// calculate total resource requested
 	var totalComputeResource resource.ComputeResource
 	for _, cr := range req.Requests {
@@ -92,6 +92,7 @@ func (tl *TeamLeader) findDataCenter(req *resource.AllocationRequest) (*resource
 	}
 
 	// check preferred data center
+	// TODO: assign for each data center, instead of just the last data center
 	dcName := ""
 	for _, cr := range req.Requests {
 		for _, input := range cr.Inputs {
@@ -99,35 +100,35 @@ func (tl *TeamLeader) findDataCenter(req *resource.AllocationRequest) (*resource
 		}
 	}
 	if dcName != "" {
-		dc, hasDc := tl.LeaderResource.Topology.DataCenters[dcName]
+		dc, hasDc := tl.MasterResource.Topology.DataCenters[dcName]
 		if !hasDc {
-			log.Fatalf("Failed to find existing data center: %s", dcName)
+			return nil, fmt.Errorf("Failed to find existing data center: %s", dcName)
 		}
-		if dc.Resource.Minus(dc.Allocated).Covers(totalComputeResource) {
-			return dc, nil
-		}
-		return nil, fmt.Errorf("Data center %s is busy for:%v", dcName, totalComputeResource)
+		return dc, nil
 	}
 
-	// ensure one data center has enough resources
-	found := false
-	for _, dc := range tl.LeaderResource.Topology.DataCenters {
-		if dc.Resource.Covers(totalComputeResource) {
-			found = true
-		}
-	}
-	if !found {
-		return nil, fmt.Errorf("Total compute resource is too big for any data center:%+v", totalComputeResource)
+	if len(tl.MasterResource.Topology.DataCenters) == 0 {
+		return nil, fmt.Errorf("No data centers found.")
 	}
 
-	// find a data center with unallocated resources
-	for _, dc := range tl.LeaderResource.Topology.DataCenters {
-		// fmt.Printf("dc has: %+v, used:%+v, totalComputeResource: %+v\n", dc.Resource, dc.Allocated, totalComputeResource)
-		if dc.Resource.Minus(dc.Allocated).Covers(totalComputeResource) {
-			return dc, nil
+	// weighted reservior sampling
+	var selectedDc *resource.DataCenter
+	var seenWeight int64
+	for _, dc := range tl.MasterResource.Topology.DataCenters {
+		available := dc.Resource.Minus(dc.Allocated)
+		weight := available.MemoryMB
+		if weight > 0 {
+			seenWeight += weight
+			if rand.Int63n(seenWeight) < weight {
+				selectedDc = dc
+			}
 		}
 	}
-	return nil, fmt.Errorf("All data centers are busy for:%v", totalComputeResource)
+	if seenWeight == 0 {
+		return nil, fmt.Errorf("No data center is free.")
+	}
+
+	return selectedDc, nil
 }
 
 type ByAvailableResources []*resource.Rack

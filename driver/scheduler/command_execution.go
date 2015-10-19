@@ -8,18 +8,24 @@ import (
 	"time"
 
 	"github.com/chrislusf/glow/driver/cmd"
+	"github.com/chrislusf/glow/resource"
 	"github.com/chrislusf/glow/resource/service_discovery/client"
 	"github.com/chrislusf/glow/util"
 	"github.com/golang/protobuf/proto"
 )
 
-func NewStartRequest(path string, dir string, args []string) *cmd.ControlMessage {
+func NewStartRequest(path string, dir string, args []string, allocated resource.ComputeResource) *cmd.ControlMessage {
 	return &cmd.ControlMessage{
 		Type: cmd.ControlMessage_StartRequest.Enum(),
 		StartRequest: &cmd.StartRequest{
 			Path: proto.String(path),
 			Args: args,
 			Dir:  proto.String(dir),
+			Resource: &cmd.ComputeResource{
+				CpuCount: proto.Int32(int32(allocated.CPUCount)),
+				CpuLevel: proto.Int32(int32(allocated.CPULevel)),
+				Memory:   proto.Int32(int32(allocated.MemoryMB)),
+			},
 		},
 	}
 }

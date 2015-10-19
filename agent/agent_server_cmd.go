@@ -6,6 +6,7 @@ import (
 	"os/exec"
 
 	"github.com/chrislusf/glow/driver/cmd"
+	"github.com/chrislusf/glow/resource"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -30,6 +31,14 @@ func (as *AgentServer) handleStart(conn net.Conn,
 
 	// println("received command:", *startRequest.Path)
 
+	allocated := resource.ComputeResource{
+		CPUCount: int(startRequest.Resource.GetCpuCount()),
+		MemoryMB: int64(startRequest.Resource.GetMemory()),
+	}
+
+	as.plusAllocated(allocated)
+	defer as.minusAllocated(allocated)
+
 	cmd := exec.Command(
 		*startRequest.Path,
 		startRequest.Args...,
@@ -49,7 +58,21 @@ func (as *AgentServer) handleStart(conn net.Conn,
 
 	cmd.Wait()
 
+	// log.Printf("Finish command %v", cmd)
+
 	return reply
+}
+
+func (as *AgentServer) plusAllocated(allocated resource.ComputeResource) {
+	as.allocatedResourceLock.Lock()
+	defer as.allocatedResourceLock.Unlock()
+	*as.allocatedResource = as.allocatedResource.Plus(allocated)
+}
+
+func (as *AgentServer) minusAllocated(allocated resource.ComputeResource) {
+	as.allocatedResourceLock.Lock()
+	defer as.allocatedResourceLock.Unlock()
+	*as.allocatedResource = as.allocatedResource.Minus(allocated)
 }
 
 func (as *AgentServer) handleDeleteDatasetShard(conn net.Conn,

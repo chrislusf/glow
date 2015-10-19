@@ -1,21 +1,23 @@
 package driver
 
 import (
-	"bytes"
-	"encoding/gob"
 	"flag"
+	"fmt"
 	"log"
 	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/chrislusf/glow/driver/scheduler"
 	"github.com/chrislusf/glow/flow"
+	"github.com/chrislusf/glow/io"
 )
 
 type TaskOption struct {
 	ContextId    int
 	TaskGroupId  int
 	FistTaskName string
+	Inputs       string
 }
 
 var taskOption TaskOption
@@ -24,6 +26,7 @@ func init() {
 	flag.IntVar(&taskOption.ContextId, "glow.context.id", -1, "context id")
 	flag.IntVar(&taskOption.TaskGroupId, "glow.taskGroup.id", -1, "task group id")
 	flag.StringVar(&taskOption.FistTaskName, "glow.task.name", "", "name of first task in the task group")
+	flag.StringVar(&taskOption.Inputs, "glow.taskGroup.inputs", "", "comma and @ seperated input locations")
 
 	flow.RegisterTaskRunner(NewTaskRunner(&taskOption))
 }
@@ -53,23 +56,35 @@ func (tr *TaskRunner) Run(fc *flow.FlowContext) {
 		return
 	}
 
+	// println("taskGroup", tr.Tasks[0].Name(), "starts")
 	// 4. setup task input and output channels
 	var wg sync.WaitGroup
 	tr.connectInputsAndOutputs(&wg)
 	// 6. starts to run the task locally
 	for _, task := range tr.Tasks {
+		// println("run task", task.Name())
 		wg.Add(1)
 		go func(task *flow.Task) {
 			defer wg.Done()
-			task.Run()
+			task.RunTask()
 		}(task)
 	}
 	// 7. need to close connected output channels
 	wg.Wait()
+	// println("taskGroup", tr.Tasks[0].Name(), "finishes")
 }
 
 func (tr *TaskRunner) connectInputsAndOutputs(wg *sync.WaitGroup) {
-	tr.connectExternalInputs(wg)
+	name2Location := make(map[string]string)
+	if tr.option.Inputs != "" {
+		for _, nameLocation := range strings.Split(tr.option.Inputs, ",") {
+			// println("input:", nameLocation)
+			nl := strings.Split(nameLocation, "@")
+			name2Location[nl[0]] = nl[1]
+		}
+	}
+	tr.connectExternalInputChannels(wg)
+	tr.connectExternalInputs(wg, name2Location)
 	tr.connectInternalInputsAndOutputs(wg)
 	tr.connectExternalOutputs(wg)
 }
@@ -98,17 +113,36 @@ func (tr *TaskRunner) connectInternalInputsAndOutputs(wg *sync.WaitGroup) {
 	}
 }
 
-func (tr *TaskRunner) connectExternalInputs(wg *sync.WaitGroup) {
+func (tr *TaskRunner) connectExternalInputs(wg *sync.WaitGroup, name2Location map[string]string) {
 	task := tr.Tasks[0]
 	for i, shard := range task.Inputs {
 		d := shard.Parent
 		readChanName := shard.Name()
 		// println("taskGroup", tr.option.TaskGroupId, "task", task.Name(), "trying to read from:", readChanName, len(task.InputChans))
-		rawChan, err := GetReadChannel(readChanName)
+		rawChan, err := io.GetDirectReadChannel(readChanName, name2Location[readChanName])
 		if err != nil {
 			log.Panic(err)
 		}
-		task.InputChans[i] = rawReadChannelToTyped(rawChan, d.Type, wg)
+		io.ConnectRawReadChannelToTyped(rawChan, task.InputChans[i], d.Type, wg)
+	}
+}
+
+func (tr *TaskRunner) connectExternalInputChannels(wg *sync.WaitGroup) {
+	// this is only for Channel dataset
+	firstTask := tr.Tasks[0]
+	if firstTask.Inputs != nil {
+		return
+	}
+	ds := firstTask.Outputs[0].Parent
+	for i, _ := range ds.ExternalInputChans {
+		inputChanName := fmt.Sprintf("ct-%d-input-%d-p-%d", tr.option.ContextId, ds.Id, i)
+		rawChan, err := io.GetDirectReadChannel(inputChanName, "localhost:8932")
+		if err != nil {
+			log.Panic(err)
+		}
+		typedInputChan := make(chan reflect.Value)
+		io.ConnectRawReadChannelToTyped(rawChan, typedInputChan, ds.Type, wg)
+		firstTask.InputChans = append(firstTask.InputChans, typedInputChan)
 	}
 }
 
@@ -117,57 +151,10 @@ func (tr *TaskRunner) connectExternalOutputs(wg *sync.WaitGroup) {
 	for _, shard := range task.Outputs {
 		writeChanName := shard.Name()
 		// println("taskGroup", tr.option.TaskGroupId, "step", task.Step.Id, "task", task.Id, "writing to:", writeChanName)
-		rawChan, err := GetSendChannel(writeChanName, wg)
+		rawChan, err := io.GetLocalSendChannel(writeChanName, wg)
 		if err != nil {
 			log.Panic(err)
 		}
-		connectTypedWriteChannelToRaw(shard.WriteChan, rawChan, wg)
+		io.ConnectTypedWriteChannelToRaw(shard.WriteChan, rawChan, wg)
 	}
-}
-
-func rawReadChannelToTyped(c chan []byte, t reflect.Type, wg *sync.WaitGroup) chan reflect.Value {
-
-	out := make(chan reflect.Value)
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		for data := range c {
-			dec := gob.NewDecoder(bytes.NewBuffer(data))
-			v := reflect.New(t)
-			if err := dec.DecodeValue(v); err != nil {
-				log.Fatal("data type:", v.Kind(), " decode error:", err)
-			} else {
-				out <- reflect.Indirect(v)
-			}
-		}
-
-		close(out)
-	}()
-
-	return out
-
-}
-
-func connectTypedWriteChannelToRaw(writeChan reflect.Value, c chan []byte, wg *sync.WaitGroup) {
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		var t reflect.Value
-		for ok := true; ok; {
-			if t, ok = writeChan.Recv(); ok {
-				var buf bytes.Buffer
-				enc := gob.NewEncoder(&buf)
-				if err := enc.EncodeValue(t); err != nil {
-					log.Fatal("data type:", t.Type().String(), " ", t.Kind(), " encode error:", err)
-				}
-				c <- buf.Bytes()
-			}
-		}
-		close(c)
-
-	}()
-
 }

@@ -1,6 +1,7 @@
 package flow
 
 import (
+	"os"
 	"sync"
 )
 
@@ -25,8 +26,10 @@ func RegisterTaskRunner(r TaskRunner) {
 }
 
 type ContextRunner interface {
-	Run(fc *FlowContext)
+	Run(*FlowContext)
 	IsDriverMode() bool
+	IsDriverPlotMode() bool
+	Plot(*FlowContext)
 }
 
 type TaskRunner interface {
@@ -34,48 +37,69 @@ type TaskRunner interface {
 	IsTaskMode() bool
 }
 
-func (fc *FlowContext) Run() {
-
+func Ready() {
 	if taskRunner.IsTaskMode() {
-		taskRunner.Run(fc)
+		for _, fc := range Contexts {
+			fc.Run()
+		}
+		os.Exit(0)
 	} else if contextRunner.IsDriverMode() {
-		contextRunner.Run(fc)
+		if contextRunner.IsDriverPlotMode() {
+			for _, fc := range Contexts {
+				contextRunner.Plot(fc)
+			}
+			os.Exit(0)
+		}
 	} else {
-		fc.run_standalone()
 	}
 }
 
-func (fc *FlowContext) run_standalone() {
+func (fc *FlowContext) Run() {
+
+	if taskRunner != nil && taskRunner.IsTaskMode() {
+		taskRunner.Run(fc)
+	} else if contextRunner != nil && contextRunner.IsDriverMode() {
+		contextRunner.Run(fc)
+	} else {
+		fc.runFlowContextInStandAloneMode()
+	}
+}
+
+func (fc *FlowContext) runFlowContextInStandAloneMode() {
 
 	var wg sync.WaitGroup
 
+	isDatasetStarted := make(map[int]bool)
+
 	// start all task edges
-	for i, step := range fc.Steps {
-		if i == 0 {
-			wg.Add(1)
-			go func(step *Step) {
-				defer wg.Done()
-				// println("start dataset", step.Id)
-				for _, input := range step.Inputs {
-					if input != nil {
-						input.RunSelf(step.Id)
-					}
-				}
-			}(step)
+	for _, step := range fc.Steps {
+		for _, input := range step.Inputs {
+			if _, ok := isDatasetStarted[input.Id]; !ok {
+				wg.Add(1)
+				go func(step *Step) {
+					defer wg.Done()
+					input.RunDatasetInStandAloneMode()
+				}(step)
+				isDatasetStarted[input.Id] = true
+			}
 		}
 		wg.Add(1)
 		go func(step *Step) {
 			defer wg.Done()
-			step.Run()
+			step.RunStep()
 		}(step)
-		wg.Add(1)
-		go func(step *Step) {
-			defer wg.Done()
-			// println("start dataset", step.Id+1)
-			if step.Output != nil {
-				step.Output.RunSelf(step.Id + 1)
+
+		if step.Output != nil {
+			if _, ok := isDatasetStarted[step.Output.Id]; !ok {
+				wg.Add(1)
+				go func(step *Step) {
+					defer wg.Done()
+					// println(step.Name, "start output dataset", step.Output.Id)
+					step.Output.RunDatasetInStandAloneMode()
+				}(step)
+				isDatasetStarted[step.Output.Id] = true
 			}
-		}(step)
+		}
 	}
 	wg.Wait()
 }

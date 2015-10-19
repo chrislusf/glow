@@ -14,6 +14,7 @@ func (d *Dataset) SetupShard(n int) {
 			Parent:    d,
 			WriteChan: reflect.MakeChan(ctype, 0),
 		}
+		// println("created shard", ds.Name())
 		d.Shards = append(d.Shards, ds)
 	}
 }

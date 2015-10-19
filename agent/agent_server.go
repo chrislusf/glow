@@ -3,11 +3,13 @@ package agent
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/chrislusf/glow/driver/cmd"
@@ -36,40 +38,44 @@ func (ds *LiveDataStore) Destroy() {
 }
 
 type AgentServerOption struct {
-	Leader      *string
-	Port        *int
-	Dir         *string
-	DataCenter  *string
-	Rack        *string
-	MaxExecutor *int
-	MemoryMB    *int64
-	CPULevel    *int
+	Master       *string
+	Port         *int
+	Dir          *string
+	DataCenter   *string
+	Rack         *string
+	MaxExecutor  *int
+	MemoryMB     *int64
+	CPULevel     *int
+	CleanRestart *bool
 }
 
 type AgentServer struct {
-	Option          *AgentServerOption
-	leader          string
-	Port            int
-	name2Store      map[string]*LiveDataStore
-	dir             string
-	name2StoreLock  sync.Mutex
-	wg              sync.WaitGroup
-	l               net.Listener
-	computeResource resource.ComputeResource
+	Option                *AgentServerOption
+	Master                string
+	Port                  int
+	name2Store            map[string]*LiveDataStore
+	dir                   string
+	name2StoreLock        sync.Mutex
+	wg                    sync.WaitGroup
+	l                     net.Listener
+	computeResource       *resource.ComputeResource
+	allocatedResource     *resource.ComputeResource
+	allocatedResourceLock sync.Mutex
 }
 
 func NewAgentServer(option *AgentServerOption) *AgentServer {
 	as := &AgentServer{
 		Option:     option,
-		leader:     *option.Leader,
+		Master:     *option.Master,
 		Port:       *option.Port,
 		dir:        *option.Dir,
 		name2Store: make(map[string]*LiveDataStore),
-		computeResource: resource.ComputeResource{
+		computeResource: &resource.ComputeResource{
 			CPUCount: *option.MaxExecutor,
 			CPULevel: *option.CPULevel,
 			MemoryMB: *option.MemoryMB,
 		},
+		allocatedResource: &resource.ComputeResource{},
 	}
 
 	err := as.Init()
@@ -91,14 +97,27 @@ func (r *AgentServer) Init() (err error) {
 
 	r.Port = r.l.Addr().(*net.TCPAddr).Port
 	fmt.Println("AgentServer starts on:", r.Port)
+
+	if *r.Option.CleanRestart {
+		if fileInfos, err := ioutil.ReadDir(r.dir); err == nil {
+			for _, fi := range fileInfos {
+				name := fi.Name()
+				if !fi.IsDir() && strings.HasSuffix(name, ".dat") {
+					println("removing old dat file:", name)
+					os.Remove(name)
+				}
+			}
+		}
+	}
+
 	return
 }
 
 func (as *AgentServer) Run() {
 	//register agent
 	killHeartBeaterChan := make(chan bool, 1)
-	go client.NewHeartBeater(as.Port, as.leader).StartAgentHeartBeat(killHeartBeaterChan, func(values url.Values) {
-		as.computeResource.AddToValues(values)
+	go client.NewHeartBeater(as.Port, as.Master).StartAgentHeartBeat(killHeartBeaterChan, func(values url.Values) {
+		resource.AddToValues(values, as.computeResource, as.allocatedResource)
 		values.Add("dataCenter", *as.Option.DataCenter)
 		values.Add("rack", *as.Option.Rack)
 	})

@@ -15,13 +15,12 @@ type ReceiveChannel struct {
 	Ch     chan []byte
 	offset uint64
 	name   string
-	Leader string
 }
 
-func (rc *ReceiveChannel) findTarget() (target string) {
-	l := client.NewNameServiceProxy(rc.Leader)
+func FindTarget(name string, leader string) (target string) {
+	l := client.NewNameServiceProxy(leader)
 	for {
-		locations := l.Find(rc.name)
+		locations := l.Find(name)
 		if len(locations) > 0 {
 			target = locations[rand.Intn(len(locations))]
 		}
@@ -35,22 +34,20 @@ func (rc *ReceiveChannel) findTarget() (target string) {
 	return
 }
 
-func NewReceiveChannel(name string, leader string, offset uint64) *ReceiveChannel {
+func NewReceiveChannel(name string, offset uint64) *ReceiveChannel {
 	return &ReceiveChannel{
-		Leader: leader,
 		name:   name,
 		offset: offset,
 	}
 }
 
 // Not thread safe
-func (rc *ReceiveChannel) GetChannel() (chan []byte, error) {
+func (rc *ReceiveChannel) GetDirectChannel(target string) (chan []byte, error) {
 	if rc.Ch != nil {
 		return rc.Ch, nil
 	}
 	rc.Ch = make(chan []byte)
 	go func() {
-		target := rc.findTarget()
 		rc.receiveTopicFrom(target)
 	}()
 

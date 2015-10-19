@@ -13,13 +13,13 @@ type Step struct {
 	Name     string
 }
 
-func (s *Step) Run() {
+func (s *Step) RunStep() {
 	var wg sync.WaitGroup
 	for i, t := range s.Tasks {
 		wg.Add(1)
 		go func(i int, t *Task) {
 			defer wg.Done()
-			t.Run()
+			t.RunTask()
 		}(i, t)
 	}
 	wg.Wait()

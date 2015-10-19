@@ -9,13 +9,14 @@ import (
 )
 
 type FlowGraph struct {
-	taskGroups []*TaskGroup
-	out        *bytes.Buffer
+	flowContext *flow.FlowContext
+	taskGroups  []*TaskGroup
+	out         *bytes.Buffer
 }
 
-func PlotGraph(taskGroups []*TaskGroup) {
+func PlotGraph(taskGroups []*TaskGroup, fc *flow.FlowContext) {
 	var buffer bytes.Buffer
-	fg := &FlowGraph{taskGroups, &buffer}
+	fg := &FlowGraph{fc, taskGroups, &buffer}
 	fg.plot()
 
 	fmt.Println(buffer.String())
@@ -51,23 +52,31 @@ digraph G {
 func (fg *FlowGraph) plot() {
 	fg.println("digraph glow {")
 	prefix := "  "
-	fg.w(prefix).println("center=true;")
-	fg.w(prefix).println("compound=true;")
-	fg.w(prefix).println("start [shape=Mdiamond];")
-	fg.w(prefix).println("end [shape=Msquare];")
 	for _, tg := range fg.taskGroups {
 		fg.printTaskGroup(tg, prefix)
 	}
+	hasStart, hasEnd := false, false
 	for _, tg := range fg.taskGroups {
 		firstTask, lastTask := tg.Tasks[0], tg.Tasks[len(tg.Tasks)-1]
 		if firstTask.Inputs == nil {
-			fg.w(prefix).w("start -> ").t(firstTask).println(";")
+			ds := firstTask.Outputs[0].Parent
+			if len(ds.ExternalInputChans) == 0 {
+				fg.w(prefix).w("start -> ").t(firstTask).println(";")
+				hasStart = true
+			} else {
+				for i, _ := range ds.ExternalInputChans {
+					fg.w(prefix).input(firstTask, i, len(ds.ExternalInputChans)).println(" [shape=doublecircle];")
+					fg.w(prefix).input(firstTask, i, len(ds.ExternalInputChans)).w(" -> ").t(firstTask).println(";")
+				}
+			}
 		} else {
 			for _, dss := range firstTask.Inputs {
 				fg.w(prefix).d(dss).w(" -> ").t(firstTask).println(";")
 			}
 		}
+
 		if lastTask.Outputs == nil {
+			hasEnd = true
 			fg.w(prefix).t(lastTask).println(" -> end;")
 		} else {
 			for _, dss := range lastTask.Outputs {
@@ -75,6 +84,25 @@ func (fg *FlowGraph) plot() {
 			}
 		}
 	}
+
+	for _, ds := range fg.flowContext.Datasets {
+		if len(ds.ExternalOutputChans) > 0 {
+			fg.w(prefix).output(ds).println(" [shape=doublecircle];")
+			for _, dss := range ds.Shards {
+				fg.w(prefix).d(dss).w(" -> ").output(ds).println(";")
+			}
+		}
+	}
+
+	fg.w(prefix).println("center=true;")
+	fg.w(prefix).println("compound=true;")
+	if hasStart {
+		fg.w(prefix).println("start [shape=Mdiamond];")
+	}
+	if hasEnd {
+		fg.w(prefix).println("end [shape=Msquare];")
+	}
+
 	fg.println("}")
 }
 
@@ -109,6 +137,14 @@ func (fg *FlowGraph) t(t *flow.Task) *FlowGraph {
 }
 func (fg *FlowGraph) d(dss *flow.DatasetShard) *FlowGraph {
 	fg.w("d").i(dss.Parent.Id).w("_").i(dss.Id)
+	return fg
+}
+func (fg *FlowGraph) input(t *flow.Task, i, length int) *FlowGraph {
+	fg.w("input").i(t.Id)
+	return fg
+}
+func (fg *FlowGraph) output(ds *flow.Dataset) *FlowGraph {
+	fg.w("output").i(ds.Id)
 	return fg
 }
 

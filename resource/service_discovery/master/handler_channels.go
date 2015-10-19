@@ -1,13 +1,11 @@
-// Leader acts as a transient team leader
-// It register each service's active locations.
-package leader
+package master
 
 import (
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/labstack/echo"
+	"github.com/chrislusf/glow/util"
 )
 
 type ChannelInformation struct {
@@ -15,14 +13,22 @@ type ChannelInformation struct {
 	LastHeartBeat time.Time
 }
 
-func (tl *TeamLeader) listChannelsHandler(c *echo.Context) error {
-	path := c.P(0)
+func (tl *TeamMaster) handleChannel(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		tl.updateChannelHandler(w, r)
+	} else {
+		tl.listChannelsHandler(w, r)
+	}
+}
+
+func (tl *TeamMaster) listChannelsHandler(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Path[len("/channel/"):]
 
 	freshChannels := make([]*ChannelInformation, 0)
 	rps, ok := tl.channels[path]
 	if !ok {
-		c.JSON(http.StatusOK, freshChannels)
-		return nil
+		util.Json(w, r, http.StatusOK, freshChannels)
+		return
 	}
 	for _, rp := range rps {
 		if rp.LastHeartBeat.Add(TimeOutLimit * time.Second).After(time.Now()) {
@@ -35,19 +41,18 @@ func (tl *TeamLeader) listChannelsHandler(c *echo.Context) error {
 	tl.channelsLock.Lock()
 	tl.channels[path] = freshChannels
 	tl.channelsLock.Unlock()
-	c.JSON(http.StatusOK, freshChannels)
-	return nil
+	util.Json(w, r, http.StatusOK, freshChannels)
 }
 
 // put agent information list under a path
-func (tl *TeamLeader) updateChannelHandler(c *echo.Context) error {
-	servicePort := c.Request().FormValue("servicePort")
-	host := c.Request().Host
+func (tl *TeamMaster) updateChannelHandler(w http.ResponseWriter, r *http.Request) {
+	servicePort := r.FormValue("servicePort")
+	host := r.Host
 	if strings.Contains(host, ":") {
 		host = host[0:strings.Index(host, ":")]
 	}
 	location := host + ":" + servicePort
-	path := c.P(0)
+	path := r.URL.Path[len("/channel/"):]
 	// println(path, ":", location)
 
 	rps, ok := tl.channels[path]
@@ -72,10 +77,6 @@ func (tl *TeamLeader) updateChannelHandler(c *echo.Context) error {
 	tl.channels[path] = rps
 	tl.channelsLock.Unlock()
 
-	c.JSON(http.StatusAccepted, tl.channels)
+	util.Json(w, r, http.StatusAccepted, tl.channels)
 
-	// id, _ := strconv.Atoi(c.Param("url"))
-	// utils.WriteJson(c, http.StatusOK, infos)
-	// c.String(http.StatusOK, c.P(0)+" runs at "+location.String()+".")
-	return nil
 }

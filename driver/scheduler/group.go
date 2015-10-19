@@ -58,6 +58,8 @@ func findAncestorStepId(step *flow.Step) (int, bool) {
 	current := step
 	taskCount := len(current.Tasks)
 
+	// println("find step", step.Name)
+
 	for taskCount == len(current.Tasks) {
 		if len(current.Inputs) > 1 {
 			// more than 2 dataset inputs
@@ -84,15 +86,15 @@ func translateToStepGroups(fc *flow.FlowContext) []*StepGroup {
 	// use array instead of map to ensure consistent ordering
 	stepId2StepGroup := make([]*StepGroup, len(fc.Steps))
 	for _, step := range fc.Steps {
-		// println("step:", step.Id, "starting...")
-		stepId, foundStepId := findAncestorStepId(step)
+		// println("step:", step.Name, step.Id, "starting...")
+		ancestorStepId, foundStepId := findAncestorStepId(step)
 		if !foundStepId {
-			// println("step:", step.Id, "Not found stepId.")
+			println("step:", step.Id, "Not found ancestorStepId.")
 			continue
 		}
-		// println("step:", step.Id, "dataset id", stepId)
-		if stepId2StepGroup[stepId] == nil {
-			stepId2StepGroup[stepId] = NewStepGroup()
+		// println("step:", step.Name, step.Id, "ancestorStepId", ancestorStepId)
+		if stepId2StepGroup[ancestorStepId] == nil {
+			stepId2StepGroup[ancestorStepId] = NewStepGroup()
 			for _, ds := range step.Inputs {
 				parentDsId, hasParentIdId := findAncestorStepId(ds.Step)
 				if !hasParentIdId {
@@ -104,10 +106,10 @@ func translateToStepGroups(fc *flow.FlowContext) []*StepGroup {
 					// since we add steps following the same order as the code
 					log.Panic("parent StepGroup should already be in the map")
 				}
-				stepId2StepGroup[stepId].AddParent(parentSg)
+				stepId2StepGroup[ancestorStepId].AddParent(parentSg)
 			}
 		}
-		stepId2StepGroup[stepId].AddStep(step)
+		stepId2StepGroup[ancestorStepId].AddStep(step)
 	}
 	// shrink
 	var ret []*StepGroup
@@ -115,6 +117,7 @@ func translateToStepGroups(fc *flow.FlowContext) []*StepGroup {
 		if stepGroup == nil || len(stepGroup.Steps) == 0 {
 			continue
 		}
+		// println("add step group started by", stepGroup.Steps[0].Name, "with", len(stepGroup.Steps), "steps")
 		ret = append(ret, stepGroup)
 	}
 	return ret
@@ -125,6 +128,7 @@ func translateToTaskGroups(stepId2StepGroup []*StepGroup) (ret []*TaskGroup) {
 	for _, stepGroup := range stepId2StepGroup {
 		assertSameNumberOfTasks(stepGroup.Steps)
 		count := len(stepGroup.Steps[0].Tasks)
+		// println("dealing with", stepGroup.Steps[0].Name, "tasks:", len(stepGroup.Steps[0].Tasks))
 		for i := 0; i < count; i++ {
 			tg := NewTaskGroup()
 			for _, step := range stepGroup.Steps {

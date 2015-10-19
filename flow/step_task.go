@@ -5,7 +5,8 @@ import (
 	"log"
 	"reflect"
 	"strconv"
-	"sync"
+
+	"github.com/chrislusf/glow/io"
 )
 
 type Task struct {
@@ -27,13 +28,14 @@ func (step *Step) NewTask() (task *Task) {
 // ds close its own r chan
 // task closes its own channel to next ds' w:ds
 
-func (t *Task) Run() {
-	// println("run  step", t.Step.Id, "task", t.Id)
+func (t *Task) RunTask() {
+	// println("start", t.Name())
 	t.Step.Function(t)
 	for _, out := range t.Outputs {
+		// println(t.Name(), "close WriteChan of", out.Name())
 		out.WriteChan.Close()
 	}
-	// println("stop step", t.Step.Id, "task", t.Id)
+	// println("stop", t.Name())
 }
 
 func (t *Task) Name() string {
@@ -72,27 +74,5 @@ func (t *Task) MergedInputChan() chan reflect.Value {
 	for _, c := range t.InputChans {
 		prevChans = append(prevChans, c)
 	}
-	return merge(prevChans)
-}
-
-func merge(cs []chan reflect.Value) (out chan reflect.Value) {
-	var wg sync.WaitGroup
-
-	out = make(chan reflect.Value)
-
-	for _, c := range cs {
-		wg.Add(1)
-		go func(c chan reflect.Value) {
-			defer wg.Done()
-			for n := range c {
-				out <- n
-			}
-		}(c)
-	}
-
-	go func() {
-		wg.Wait()
-		close(out)
-	}()
-	return
+	return io.MergeChannel(prevChans)
 }

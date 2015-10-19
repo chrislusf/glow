@@ -13,15 +13,15 @@ type FlowContext struct {
 	Datasets []*Dataset
 }
 
-func NewContext() (fc *FlowContext) {
+func New() (fc *FlowContext) {
 	fc = &FlowContext{Id: len(Contexts)}
 	Contexts = append(Contexts, fc)
 	return
 }
 
-func (fc *FlowContext) newNextDataset(shardSize int, task reflect.Type) (ret *Dataset) {
-	if task != nil {
-		ret = NewDataset(fc, task)
+func (fc *FlowContext) newNextDataset(shardSize int, dType reflect.Type) (ret *Dataset) {
+	ret = NewDataset(fc, dType)
+	if dType != nil {
 		ret.SetupShard(shardSize)
 	}
 	return
@@ -40,12 +40,17 @@ func (f *FlowContext) AddOneToOneStep(input *Dataset, output *Dataset) (step *St
 	FromDatasetToStep(input, step)
 
 	// setup the network
-	for i, shard := range input.GetShards() {
+	if output != nil && len(output.ExternalInputChans) > 0 {
 		task := step.NewTask()
-		if output != nil {
-			FromTaskToDatasetShard(task, output.GetShards()[i])
+		FromTaskToDatasetShard(task, output.GetShards()[0])
+	} else {
+		for i, shard := range input.GetShards() {
+			task := step.NewTask()
+			if output != nil && output.Shards != nil {
+				FromTaskToDatasetShard(task, output.GetShards()[i])
+			}
+			FromDatasetShardToTask(shard, task)
 		}
-		FromDatasetShardToTask(shard, task)
 	}
 	return
 }
