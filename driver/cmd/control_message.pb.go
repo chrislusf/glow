@@ -191,6 +191,8 @@ type StartRequest struct {
 	Dir              *string          `protobuf:"bytes,4,req,name=dir" json:"dir,omitempty"`
 	ExtraFiles       []string         `protobuf:"bytes,5,rep,name=extraFiles" json:"extraFiles,omitempty"`
 	Resource         *ComputeResource `protobuf:"bytes,6,req,name=resource" json:"resource,omitempty"`
+	Host             *string          `protobuf:"bytes,7,opt,name=host" json:"host,omitempty"`
+	Port             *int32           `protobuf:"varint,8,opt,name=port" json:"port,omitempty"`
 	XXX_unrecognized []byte           `json:"-"`
 }
 
@@ -238,6 +240,20 @@ func (m *StartRequest) GetResource() *ComputeResource {
 		return m.Resource
 	}
 	return nil
+}
+
+func (m *StartRequest) GetHost() string {
+	if m != nil && m.Host != nil {
+		return *m.Host
+	}
+	return ""
+}
+
+func (m *StartRequest) GetPort() int32 {
+	if m != nil && m.Port != nil {
+		return *m.Port
+	}
+	return 0
 }
 
 type StartResponse struct {

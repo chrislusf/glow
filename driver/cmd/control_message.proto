@@ -41,6 +41,8 @@ message StartRequest {
 	required string dir = 4;
 	repeated string extraFiles = 5;
 	required ComputeResource resource = 6;
+	optional string host = 7;
+	optional int32 port = 8;
 }
 
 message StartResponse {
