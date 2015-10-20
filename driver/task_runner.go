@@ -136,7 +136,7 @@ func (tr *TaskRunner) connectExternalInputChannels(wg *sync.WaitGroup) {
 	ds := firstTask.Outputs[0].Parent
 	for i, _ := range ds.ExternalInputChans {
 		inputChanName := fmt.Sprintf("ct-%d-input-%d-p-%d", tr.option.ContextId, ds.Id, i)
-		rawChan, err := io.GetDirectReadChannel(inputChanName, "localhost:8932")
+		rawChan, err := io.GetLocalReadChannel(inputChanName)
 		if err != nil {
 			log.Panic(err)
 		}

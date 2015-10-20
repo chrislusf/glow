@@ -6,6 +6,7 @@ import (
 	"flag"
 	"log"
 	"reflect"
+	"strconv"
 	"sync"
 
 	"github.com/chrislusf/glow/io/receiver"
@@ -24,6 +25,10 @@ func init() {
 
 func GetLocalSendChannel(name string, wg *sync.WaitGroup) (chan []byte, error) {
 	return sender.NewSendChannel(name, networkContext.AgentPort, wg)
+}
+
+func GetLocalReadChannel(name string) (chan []byte, error) {
+	return GetDirectReadChannel(name, "localhost:"+strconv.Itoa(networkContext.AgentPort))
 }
 
 func GetDirectReadChannel(name, location string) (chan []byte, error) {

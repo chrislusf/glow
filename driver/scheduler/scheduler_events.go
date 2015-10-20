@@ -144,11 +144,11 @@ func (s *Scheduler) setupInputChannels(fc *flow.FlowContext, task *flow.Task, lo
 	if len(ds.ExternalInputChans) == 0 {
 		return
 	}
-	// println("setup input channel for", task.Name())
 	// connect local typed chan to remote raw chan
 	// write to the dataset location in the cluster so that the task can be retried if needed.
 	for i, inChan := range ds.ExternalInputChans {
 		inputChanName := fmt.Sprintf("ct-%d-input-%d-p-%d", fc.Id, ds.Id, i)
+		// println("setup input channel for", task.Name(), "on", location.URL())
 		s.registerDatasetShardLocation(inputChanName, location)
 		rawChan, err := io.GetDirectSendChannel(inputChanName, location.URL(), waitGroup)
 		if err != nil {
@@ -197,6 +197,9 @@ func (s *Scheduler) setupOutputChannels(shards []*flow.DatasetShard, waitGroup *
 }
 
 func (s *Scheduler) allInputLocations(task *flow.Task) string {
+	s.datasetShard2LocationLock.Lock()
+	defer s.datasetShard2LocationLock.Unlock()
+
 	var buf bytes.Buffer
 	for i, input := range task.Inputs {
 		name := input.Name()
