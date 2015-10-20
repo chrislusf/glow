@@ -14,7 +14,7 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-func NewStartRequest(path string, dir string, args []string, allocated resource.ComputeResource) *cmd.ControlMessage {
+func NewStartRequest(path string, dir string, args []string, allocated resource.ComputeResource, envs []string, port int32) *cmd.ControlMessage {
 	return &cmd.ControlMessage{
 		Type: cmd.ControlMessage_StartRequest.Enum(),
 		StartRequest: &cmd.StartRequest{
@@ -26,6 +26,8 @@ func NewStartRequest(path string, dir string, args []string, allocated resource.
 				CpuLevel: proto.Int32(int32(allocated.CPULevel)),
 				Memory:   proto.Int32(int32(allocated.MemoryMB)),
 			},
+			Envs: envs,
+			Port: proto.Int32(port),
 		},
 	}
 }

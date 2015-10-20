@@ -1,38 +1,77 @@
 package rsync
 
 import (
+	"hash/crc32"
+	"io"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
+
+	"github.com/chrislusf/glow/util"
 )
 
+type FileHash struct {
+	fullPath string `json:"path,omitempty"`
+	File     string `json:"file,omitempty"`
+	Hash     uint32 `json:"hash,omitempty"`
+}
+
 type RsyncServer struct {
-	fileLocation string
-	Port         int
+	Port           int
+	ExecutableFile string
+	RelatedFiles   []string
+
+	fileHashes []FileHash
 }
 
-func NewRsyncServer(file string) *RsyncServer {
-	return &RsyncServer{
-		fileLocation: file,
+func NewRsyncServer(file string, relatedFiles []string) (*RsyncServer, error) {
+	rs := &RsyncServer{
+		ExecutableFile: file,
+		RelatedFiles:   relatedFiles,
 	}
+	if fh, err := GenerateFileHash(file); err != nil {
+		log.Printf("Failed to read %s: %v", file, err)
+	} else {
+		rs.fileHashes = append(rs.fileHashes, *fh)
+	}
+	for _, f := range rs.RelatedFiles {
+		if fh, err := GenerateFileHash(f); err != nil {
+			log.Printf("Failed to read %s: %v", f, err)
+		} else {
+			rs.fileHashes = append(rs.fileHashes, *fh)
+		}
+	}
+	return rs, nil
 }
 
-func (rs *RsyncServer) handler(w http.ResponseWriter, req *http.Request) {
-	file, err := os.Open(rs.fileLocation)
-	if err != nil {
-		log.Printf("Failed to open %s: %v", rs.fileLocation, err)
-		return
+func (rs *RsyncServer) listHandler(w http.ResponseWriter, r *http.Request) {
+	util.Json(w, r, http.StatusAccepted, ListFileResult{rs.fileHashes})
+}
+
+func (rs *RsyncServer) fileHandler(w http.ResponseWriter, r *http.Request) {
+	fileName := r.URL.Path[len("/file/"):]
+	for _, fh := range rs.fileHashes {
+		if fh.File == fileName {
+			file, err := os.Open(fh.fullPath)
+			if err != nil {
+				log.Printf("Can not read file: %s", fh.fullPath)
+				return
+			}
+			defer file.Close()
+			http.ServeContent(w, r, fh.File, time.Now(), file)
+			return
+		}
 	}
-	defer file.Close()
-	http.ServeContent(w, req, "", time.Now(), file)
 }
 
 // go start a http server locally that will respond predictably to ranged requests
 func (rs *RsyncServer) Start() {
 	s := http.NewServeMux()
-	s.HandleFunc("/content", rs.handler)
+	s.HandleFunc("/list", rs.listHandler)
+	s.HandleFunc("/file/", rs.fileHandler)
 
 	listener, err := net.Listen("tcp", ":0")
 	if err != nil {
@@ -44,4 +83,28 @@ func (rs *RsyncServer) Start() {
 	go func() {
 		http.Serve(listener, s)
 	}()
+}
+
+func GenerateFileHash(fileName string) (*FileHash, error) {
+
+	if _, err := os.Stat(fileName); os.IsNotExist(err) {
+		return nil, err
+	}
+
+	f, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	hasher := crc32.NewIEEE()
+	if _, err := io.Copy(hasher, f); err != nil {
+		return nil, err
+	}
+	crc := hasher.Sum32()
+
+	return &FileHash{
+		fullPath: fileName,
+		File:     filepath.Base(fileName),
+		Hash:     crc,
+	}, nil
 }

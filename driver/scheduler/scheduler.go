@@ -18,9 +18,12 @@ type Scheduler struct {
 }
 
 type SchedulerOption struct {
-	DataCenter   string
-	Rack         string
-	TaskMemoryMB int
+	DataCenter     string
+	Rack           string
+	TaskMemoryMB   int
+	DriverPort     int
+	Module         string
+	ExecutableFile string
 }
 
 func NewScheduler(leader string, option *SchedulerOption) *Scheduler {

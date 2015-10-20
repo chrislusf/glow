@@ -23,7 +23,7 @@ type TaskOption struct {
 var taskOption TaskOption
 
 func init() {
-	flag.IntVar(&taskOption.ContextId, "glow.context.id", -1, "context id")
+	flag.IntVar(&taskOption.ContextId, "glow.flow.id", -1, "flow id")
 	flag.IntVar(&taskOption.TaskGroupId, "glow.taskGroup.id", -1, "task group id")
 	flag.StringVar(&taskOption.FistTaskName, "glow.task.name", "", "name of first task in the task group")
 	flag.StringVar(&taskOption.Inputs, "glow.taskGroup.inputs", "", "comma and @ seperated input locations")

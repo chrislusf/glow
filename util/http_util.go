@@ -55,7 +55,7 @@ func Get(url string) ([]byte, error) {
 	}
 	defer r.Body.Close()
 	b, err := ioutil.ReadAll(r.Body)
-	if r.StatusCode != 200 {
+	if r.StatusCode < 200 || r.StatusCode >= 300 {
 		return nil, fmt.Errorf("%s: %s", url, r.Status)
 	}
 	if err != nil {

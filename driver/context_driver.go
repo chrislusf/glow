@@ -2,7 +2,10 @@ package driver
 
 import (
 	"flag"
+	"log"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/chrislusf/glow/driver/rsync"
@@ -18,17 +21,21 @@ type DriverOption struct {
 	PlotOutput   bool
 	TaskMemoryMB int
 	FlowBid      float64
+	Module       string
+	RelatedFiles string
 }
 
 func init() {
 	var driverOption DriverOption
-	flag.BoolVar(&driverOption.ShouldStart, "driver", false, "start in driver mode")
-	flag.StringVar(&driverOption.Leader, "driver.leader", "localhost:8930", "leader server")
-	flag.StringVar(&driverOption.DataCenter, "driver.dataCenter", "", "preferred data center name")
-	flag.StringVar(&driverOption.Rack, "driver.rack", "", "preferred rack name")
-	flag.IntVar(&driverOption.TaskMemoryMB, "driver.task.memoryMB", 64, "request one task memory size in MB")
-	flag.Float64Var(&driverOption.FlowBid, "driver.flow.bid", 100.0, "total bid price in a flow to compete for resources")
-	flag.BoolVar(&driverOption.PlotOutput, "driver.plot.flow", false, "print out task group flow in graphviz dot format")
+	flag.BoolVar(&driverOption.ShouldStart, "glow", false, "start in driver mode")
+	flag.StringVar(&driverOption.Leader, "glow.leader", "localhost:8930", "leader server")
+	flag.StringVar(&driverOption.DataCenter, "glow.dataCenter", "", "preferred data center name")
+	flag.StringVar(&driverOption.Rack, "glow.rack", "", "preferred rack name")
+	flag.IntVar(&driverOption.TaskMemoryMB, "glow.task.memoryMB", 64, "request one task memory size in MB")
+	flag.Float64Var(&driverOption.FlowBid, "glow.flow.bid", 100.0, "total bid price in a flow to compete for resources")
+	flag.BoolVar(&driverOption.PlotOutput, "glow.flow.plot", false, "print out task group flow in graphviz dot format")
+	flag.StringVar(&driverOption.Module, "glow.module", "", "a name to group related jobs together on agent")
+	flag.StringVar(&driverOption.RelatedFiles, "glow.related.files", "", strconv.QuoteRune(os.PathListSeparator)+" separated list of files")
 
 	flow.RegisterContextRunner(NewFlowContextDriver(&driverOption))
 }
@@ -63,16 +70,21 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 		return
 	}
 
-	// rsyncServer :=
-	rsync.NewRsyncServer(os.Args[0])
-	// rsyncServer.Start()
+	rsyncServer, err := rsync.NewRsyncServer(os.Args[0], fcd.option.RelatedFileNames())
+	if err != nil {
+		log.Fatalf("Failed to start local server: %v", err)
+	}
+	rsyncServer.Start()
 
 	sched := scheduler.NewScheduler(
 		fcd.option.Leader,
 		&scheduler.SchedulerOption{
-			DataCenter:   fcd.option.DataCenter,
-			Rack:         fcd.option.Rack,
-			TaskMemoryMB: fcd.option.TaskMemoryMB,
+			DataCenter:     fcd.option.DataCenter,
+			Rack:           fcd.option.Rack,
+			TaskMemoryMB:   fcd.option.TaskMemoryMB,
+			DriverPort:     rsyncServer.Port,
+			Module:         fcd.option.Module,
+			ExecutableFile: os.Args[0],
 		},
 	)
 	defer fcd.Cleanup(sched, fc, taskGroups)
@@ -116,4 +128,8 @@ func (fcd *FlowContextDriver) CloseOutputChannels(fc *flow.FlowContext) {
 			ch.Close()
 		}
 	}
+}
+
+func (option *DriverOption) RelatedFileNames() []string {
+	return strings.Split(option.RelatedFiles, strconv.QuoteRune(os.PathListSeparator))
 }

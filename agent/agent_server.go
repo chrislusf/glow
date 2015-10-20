@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -64,11 +65,17 @@ type AgentServer struct {
 }
 
 func NewAgentServer(option *AgentServerOption) *AgentServer {
+	absoluteDir, err := filepath.Abs(util.CleanPath(*option.Dir))
+	if err != nil {
+		panic(err)
+	}
+	println("starting in", absoluteDir)
+	option.Dir = &absoluteDir
 	as := &AgentServer{
 		Option:     option,
 		Master:     *option.Master,
 		Port:       *option.Port,
-		dir:        *option.Dir,
+		dir:        absoluteDir,
 		name2Store: make(map[string]*LiveDataStore),
 		computeResource: &resource.ComputeResource{
 			CPUCount: *option.MaxExecutor,
@@ -78,7 +85,7 @@ func NewAgentServer(option *AgentServerOption) *AgentServer {
 		allocatedResource: &resource.ComputeResource{},
 	}
 
-	err := as.Init()
+	err = as.Init()
 	if err != nil {
 		panic(err)
 	}
@@ -103,8 +110,8 @@ func (r *AgentServer) Init() (err error) {
 			for _, fi := range fileInfos {
 				name := fi.Name()
 				if !fi.IsDir() && strings.HasSuffix(name, ".dat") {
-					println("removing old dat file:", name)
-					os.Remove(name)
+					// println("removing old dat file:", name)
+					os.Remove(filepath.Join(r.dir, name))
 				}
 			}
 		}

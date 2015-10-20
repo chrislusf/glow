@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"sync"
@@ -66,9 +67,8 @@ func (s *Scheduler) EventLoop() {
 
 				// fmt.Printf("allocated %s on %v\n", tasks[0].Name(), allocation.Location)
 				// create reqeust
-				dir, _ := os.Getwd()
 				args := []string{
-					"-glow.context.id",
+					"-glow.flow.id",
 					strconv.Itoa(event.FlowContext.Id),
 					"-glow.taskGroup.id",
 					strconv.Itoa(taskGroup.Id),
@@ -82,7 +82,14 @@ func (s *Scheduler) EventLoop() {
 				for _, arg := range os.Args[1:] {
 					args = append(args, arg)
 				}
-				request := NewStartRequest(os.Args[0], dir, args, allocation.Allocated)
+				request := NewStartRequest(
+					"./"+filepath.Base(os.Args[0]),
+					s.option.Module,
+					args,
+					allocation.Allocated,
+					os.Environ(),
+					int32(s.option.DriverPort),
+				)
 
 				// fmt.Printf("starting on %s: %v\n", allocation.Allocated, request)
 				if err := RemoteDirectExecute(allocation.Location.URL(), request); err != nil {
