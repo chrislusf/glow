@@ -27,7 +27,7 @@ func (as *AgentServer) handleWriteConnection(r io.Reader, name string) {
 
 	as.name2Store[name] = NewLiveDataStore(s)
 	ds = as.name2Store[name]
-	println(name, "is broadcasting...")
+	// println(name, "is broadcasting...")
 	as.name2StoreCond.Broadcast()
 
 	as.name2StoreCond.L.Unlock()

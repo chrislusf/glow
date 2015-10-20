@@ -25,7 +25,7 @@ func (as *AgentServer) handleLocalReadConnection(conn net.Conn, name string, off
 	}
 	as.name2StoreCond.L.Unlock()
 
-	println(name, "start reading from:", offset)
+	// println(name, "start reading from:", offset)
 
 	closeSignal := make(chan bool, 1)
 
