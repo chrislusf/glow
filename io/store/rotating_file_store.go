@@ -355,6 +355,7 @@ func (l *RotatingFileStore) Destroy() {
 // oldLogFiles returns the list of backup log files stored in the same
 // directory as the current log file, sorted by ModTime
 func (l *RotatingFileStore) listOldLogFiles() ([]logInfo, error) {
+	os.MkdirAll(l.dir(), 0755)
 	files, err := ioutil.ReadDir(l.dir())
 	if err != nil {
 		return nil, fmt.Errorf("can't read log file directory: %s", err)

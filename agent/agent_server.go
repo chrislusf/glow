@@ -56,7 +56,7 @@ type AgentServer struct {
 	Port                  int
 	name2Store            map[string]*LiveDataStore
 	dir                   string
-	name2StoreLock        sync.Mutex
+	name2StoreCond        *sync.Cond
 	wg                    sync.WaitGroup
 	l                     net.Listener
 	computeResource       *resource.ComputeResource
@@ -71,12 +71,16 @@ func NewAgentServer(option *AgentServerOption) *AgentServer {
 	}
 	println("starting in", absoluteDir)
 	option.Dir = &absoluteDir
+
+	var lock sync.Mutex
+
 	as := &AgentServer{
-		Option:     option,
-		Master:     *option.Master,
-		Port:       *option.Port,
-		dir:        absoluteDir,
-		name2Store: make(map[string]*LiveDataStore),
+		Option:         option,
+		Master:         *option.Master,
+		Port:           *option.Port,
+		dir:            absoluteDir,
+		name2Store:     make(map[string]*LiveDataStore),
+		name2StoreCond: sync.NewCond(&lock),
 		computeResource: &resource.ComputeResource{
 			CPUCount: *option.MaxExecutor,
 			CPULevel: *option.CPULevel,

@@ -12,20 +12,25 @@ import (
 
 func (as *AgentServer) handleWriteConnection(r io.Reader, name string) {
 
-	as.name2StoreLock.Lock()
+	as.name2StoreCond.L.Lock()
 	ds, ok := as.name2Store[name]
-	if !ok {
-		s, err := store.NewLocalFileDataStore(as.dir, fmt.Sprintf("%s-%d", name, as.Port))
-		if err != nil {
-			log.Printf("Failed to create a queue on disk: %v", err)
-			as.name2StoreLock.Unlock()
-			return
-		}
-		as.name2Store[name] = NewLiveDataStore(s)
-		ds = as.name2Store[name]
-
+	if ok {
+		as.doDelete(name)
 	}
-	as.name2StoreLock.Unlock()
+
+	s, err := store.NewLocalFileDataStore(as.dir, fmt.Sprintf("%s-%d", name, as.Port))
+	if err != nil {
+		log.Printf("Failed to create a queue on disk: %v", err)
+		as.name2StoreCond.L.Unlock()
+		return
+	}
+
+	as.name2Store[name] = NewLiveDataStore(s)
+	ds = as.name2Store[name]
+	println(name, "is broadcasting...")
+	as.name2StoreCond.Broadcast()
+
+	as.name2StoreCond.L.Unlock()
 
 	//register stream
 	go client.NewHeartBeater(as.Port, *as.Option.Master).StartChannelHeartBeat(ds.killHeartBeater, name)
@@ -52,15 +57,20 @@ func (as *AgentServer) handleWriteConnection(r io.Reader, name string) {
 
 func (as *AgentServer) handleDelete(name string) {
 
-	as.name2StoreLock.Lock()
+	as.name2StoreCond.L.Lock()
+	defer as.name2StoreCond.L.Unlock()
+
+	as.doDelete(name)
+}
+
+func (as *AgentServer) doDelete(name string) {
+
 	ds, ok := as.name2Store[name]
 	if !ok {
-		as.name2StoreLock.Unlock()
 		return
 	}
 
 	delete(as.name2Store, name)
-	as.name2StoreLock.Unlock()
 
 	ds.Destroy()
 }

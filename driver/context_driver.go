@@ -131,5 +131,8 @@ func (fcd *FlowContextDriver) CloseOutputChannels(fc *flow.FlowContext) {
 }
 
 func (option *DriverOption) RelatedFileNames() []string {
-	return strings.Split(option.RelatedFiles, strconv.QuoteRune(os.PathListSeparator))
+	if option.RelatedFiles != "" {
+		return strings.Split(option.RelatedFiles, strconv.QuoteRune(os.PathListSeparator))
+	}
+	return []string{}
 }

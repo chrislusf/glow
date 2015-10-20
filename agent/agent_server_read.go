@@ -7,26 +7,25 @@ import (
 	"net"
 	"time"
 
-	"github.com/chrislusf/glow/io/store"
 	"github.com/chrislusf/glow/util"
 )
 
 func (as *AgentServer) handleLocalReadConnection(conn net.Conn, name string, offset int64) {
-	as.name2StoreLock.Lock()
-	ds, ok := as.name2Store[name]
-	if !ok {
-		s, err := store.NewLocalFileDataStore(as.dir, fmt.Sprintf("%s-%d", name, as.Port))
-		if err != nil {
-			// log.Printf("Failed to create queue on disk: %v", err)
-			as.name2StoreLock.Unlock()
-			return
-		}
-		as.name2Store[name] = NewLiveDataStore(s)
-		ds = as.name2Store[name]
-	}
-	as.name2StoreLock.Unlock()
+	var ds *LiveDataStore
+	var ok bool
 
-	// println(name, "start reading from:", offset)
+	as.name2StoreCond.L.Lock()
+	for {
+		ds, ok = as.name2Store[name]
+		if ok {
+			break
+		}
+		println(name, "is waiting to read...")
+		as.name2StoreCond.Wait()
+	}
+	as.name2StoreCond.L.Unlock()
+
+	println(name, "start reading from:", offset)
 
 	closeSignal := make(chan bool, 1)
 

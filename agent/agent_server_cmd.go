@@ -39,11 +39,11 @@ func (as *AgentServer) handleStart(conn net.Conn,
 	reply := &cmd.StartResponse{}
 
 	dir := path.Join(*as.Option.Dir, startRequest.GetDir())
-	os.MkdirAll(dir, os.ModeDir)
+	os.MkdirAll(dir, 0755)
 	err := rsync.FetchFilesTo(startRequest.GetHost()+":"+strconv.Itoa(int(startRequest.GetPort())), dir)
 	if err != nil {
 		log.Printf("Failed to download file: %v", err)
-		*reply.Error = err.Error()
+		reply.Error = proto.String(err.Error())
 		return reply
 	}
 
@@ -67,7 +67,7 @@ func (as *AgentServer) handleStart(conn net.Conn,
 	if err != nil {
 		log.Printf("Failed to start command %s under %s: %v",
 			cmd.Path, cmd.Dir, err)
-		*reply.Error = err.Error()
+		reply.Error = proto.String(err.Error())
 	} else {
 		reply.Pid = proto.Int32(int32(cmd.Process.Pid))
 	}

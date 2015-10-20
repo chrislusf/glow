@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"sync"
 
 	"github.com/chrislusf/glow/util"
 )
+
+var fetchLock sync.Mutex
 
 type ListFileResult struct {
 	Files []FileHash `json:"files,omitempty"`
@@ -27,6 +30,8 @@ func ListFiles(server string) ([]FileHash, error) {
 }
 
 func FetchFilesTo(driverAddress string, dir string) error {
+	fetchLock.Lock()
+	defer fetchLock.Unlock()
 
 	fileList, err := ListFiles(driverAddress)
 	if err != nil {

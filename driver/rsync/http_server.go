@@ -33,13 +33,13 @@ func NewRsyncServer(file string, relatedFiles []string) (*RsyncServer, error) {
 		RelatedFiles:   relatedFiles,
 	}
 	if fh, err := GenerateFileHash(file); err != nil {
-		log.Printf("Failed to read %s: %v", file, err)
+		log.Printf("Failed1 to read %s: %v", file, err)
 	} else {
 		rs.fileHashes = append(rs.fileHashes, *fh)
 	}
 	for _, f := range rs.RelatedFiles {
 		if fh, err := GenerateFileHash(f); err != nil {
-			log.Printf("Failed to read %s: %v", f, err)
+			log.Printf("Failed2 to read %s: %v", f, err)
 		} else {
 			rs.fileHashes = append(rs.fileHashes, *fh)
 		}

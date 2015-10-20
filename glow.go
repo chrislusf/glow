@@ -81,8 +81,9 @@ func main() {
 		wg.Wait()
 
 	case receiver.FullCommand():
+		target := r.FindTarget(*receiveFromChanName, *receiverMaster)
 		rc := r.NewReceiveChannel(*receiveFromChanName, 0)
-		recvChan, err := rc.GetDirectChannel(*receiverMaster)
+		recvChan, err := rc.GetDirectChannel(target)
 		if err != nil {
 			panic(err)
 		}
