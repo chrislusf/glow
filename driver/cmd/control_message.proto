@@ -39,10 +39,9 @@ message StartRequest {
 	repeated string args = 2;
 	repeated string envs = 3;
 	required string dir = 4;
-	repeated string extraFiles = 5;
-	required ComputeResource resource = 6;
-	optional string host = 7;
-	optional int32 port = 8;
+	required ComputeResource resource = 5;
+	optional string host = 6;
+	optional int32 port = 7;
 }
 
 message StartResponse {

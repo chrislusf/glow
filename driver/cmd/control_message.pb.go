@@ -189,10 +189,9 @@ type StartRequest struct {
 	Args             []string         `protobuf:"bytes,2,rep,name=args" json:"args,omitempty"`
 	Envs             []string         `protobuf:"bytes,3,rep,name=envs" json:"envs,omitempty"`
 	Dir              *string          `protobuf:"bytes,4,req,name=dir" json:"dir,omitempty"`
-	ExtraFiles       []string         `protobuf:"bytes,5,rep,name=extraFiles" json:"extraFiles,omitempty"`
-	Resource         *ComputeResource `protobuf:"bytes,6,req,name=resource" json:"resource,omitempty"`
-	Host             *string          `protobuf:"bytes,7,opt,name=host" json:"host,omitempty"`
-	Port             *int32           `protobuf:"varint,8,opt,name=port" json:"port,omitempty"`
+	Resource         *ComputeResource `protobuf:"bytes,5,req,name=resource" json:"resource,omitempty"`
+	Host             *string          `protobuf:"bytes,6,opt,name=host" json:"host,omitempty"`
+	Port             *int32           `protobuf:"varint,7,opt,name=port" json:"port,omitempty"`
 	XXX_unrecognized []byte           `json:"-"`
 }
 
@@ -226,13 +225,6 @@ func (m *StartRequest) GetDir() string {
 		return *m.Dir
 	}
 	return ""
-}
-
-func (m *StartRequest) GetExtraFiles() []string {
-	if m != nil {
-		return m.ExtraFiles
-	}
-	return nil
 }
 
 func (m *StartRequest) GetResource() *ComputeResource {
