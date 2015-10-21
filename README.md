@@ -76,5 +76,5 @@ To leap from one computer to clusters of computers, add this line to the import 
 This will "steroidize" the code to run in cluster mode! 
 
 ```
-./word_count -driver -driver.leader="localhost:8930"
+./word_count -glow -glow.leader="localhost:8930"
 ```
