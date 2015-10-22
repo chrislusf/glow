@@ -6,6 +6,12 @@ Examples are in this repo https://github.com/chrislusf/glow_examples
 
 Glow is providing a library to easily compute in parallel threads or distributed to clusters of machines.
 
+# Installation
+```
+go get github.com/chrislusf/glow
+go get github.com/chrislusf/glow/flow
+```
+
 # One minute tutorial
 
 ## Simple Start
