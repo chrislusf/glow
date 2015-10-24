@@ -11,11 +11,11 @@ func (d *Dataset) Join(other *Dataset) *Dataset {
 		return sorted_d.SelfJoin(nil)
 	}
 	sorted_other := other.Partition(len(d.Shards)).LocalSort(nil)
-	return sorted_d.JoinHashedSorted(sorted_other, nil, false, false)
+	return sorted_d.JoinPartitionedSorted(sorted_other, nil, false, false)
 }
 
 // Join multiple datasets that are sharded by the same key, and locally sorted within the shard
-func (this *Dataset) JoinHashedSorted(that *Dataset,
+func (this *Dataset) JoinPartitionedSorted(that *Dataset,
 	compareFunc interface{}, isLeftOuterJoin, isRightOuterJoin bool,
 ) (ret *Dataset) {
 	outType := reflect.TypeOf([]interface{}{})
@@ -23,7 +23,7 @@ func (this *Dataset) JoinHashedSorted(that *Dataset,
 
 	inputs := []*Dataset{this, that}
 	step := this.context.MergeDatasets1ShardTo1Step(inputs, ret)
-	step.Name = "JoinHashedSorted"
+	step.Name = "JoinPartitionedSorted"
 	step.Function = func(task *Task) {
 		outChan := task.Outputs[0].WriteChan
 
