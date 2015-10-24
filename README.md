@@ -84,3 +84,16 @@ This will "steroidize" the code to run in cluster mode!
 ```
 ./word_count -glow -glow.leader="localhost:8930"
 ```
+
+# Read More
+
+1. Wiki page: https://github.com/chrislusf/glow/wiki
+2. Mailing list: https://groups.google.com/forum/#!forum/glow-user-discussion
+3. Examples: https://github.com/chrislusf/glow_examples/tree/master/word_count
+
+# Contribution
+Fork it, code it, and send pull requests. Better first discuss about the feature you want on the mailing list.
+https://groups.google.com/forum/#!forum/glow-user-discussion
+
+# License
+http://www.apache.org/licenses/LICENSE-2.0
