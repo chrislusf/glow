@@ -1,3 +1,4 @@
+// Generic network channel managed by agent.
 package io
 
 import (

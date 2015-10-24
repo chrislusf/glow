@@ -1,3 +1,4 @@
+// Disk-backed queue
 package store
 
 import (

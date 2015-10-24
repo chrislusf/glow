@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/chrislusf/glow/driver/scheduler"
+	"github.com/chrislusf/glow/driver/plan"
 	"github.com/chrislusf/glow/flow"
 	"github.com/chrislusf/glow/io"
 )
@@ -47,7 +47,7 @@ func (tr *TaskRunner) IsTaskMode() bool {
 // if this should not run, return false
 func (tr *TaskRunner) Run(fc *flow.FlowContext) {
 
-	taskGroups := scheduler.GroupTasks(fc)
+	taskGroups := plan.GroupTasks(fc)
 
 	tr.Tasks = taskGroups[tr.option.TaskGroupId].Tasks
 

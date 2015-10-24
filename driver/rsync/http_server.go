@@ -1,3 +1,4 @@
+// Server and client to copy files between driver and agent.
 package rsync
 
 import (

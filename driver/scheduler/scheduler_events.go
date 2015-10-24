@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/chrislusf/glow/driver/plan"
 	"github.com/chrislusf/glow/driver/scheduler/market"
 	"github.com/chrislusf/glow/flow"
 	"github.com/chrislusf/glow/io"
@@ -18,14 +19,14 @@ import (
 
 type SubmitTaskGroup struct {
 	FlowContext *flow.FlowContext
-	TaskGroup   *TaskGroup
+	TaskGroup   *plan.TaskGroup
 	Bid         float64
 	WaitGroup   *sync.WaitGroup
 }
 
 type ReleaseTaskGroupInputs struct {
 	FlowContext *flow.FlowContext
-	TaskGroups  []*TaskGroup
+	TaskGroups  []*plan.TaskGroup
 	WaitGroup   *sync.WaitGroup
 }
 

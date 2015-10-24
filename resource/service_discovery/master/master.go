@@ -1,3 +1,4 @@
+// master collects data from agents, and manage named network channels.
 package master
 
 import (

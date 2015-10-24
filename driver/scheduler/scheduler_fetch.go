@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/chrislusf/glow/driver/plan"
 	"github.com/chrislusf/glow/driver/scheduler/market"
 	"github.com/chrislusf/glow/resource"
 	"github.com/chrislusf/glow/util"
@@ -18,7 +19,7 @@ import (
 func (s *Scheduler) Fetch(demands []market.Demand) {
 	var request resource.AllocationRequest
 	for _, d := range demands {
-		demand := d.Requirement.(*TaskGroup)
+		demand := d.Requirement.(*plan.TaskGroup)
 		request.Requests = append(request.Requests, resource.ComputeRequest{
 			ComputeResource: resource.ComputeResource{
 				CPUCount: 1,
@@ -48,7 +49,7 @@ func (s *Scheduler) Fetch(demands []market.Demand) {
 	}
 }
 
-func (s *Scheduler) findTaskGroupInputs(tg *TaskGroup) (ret []resource.DataResource) {
+func (s *Scheduler) findTaskGroupInputs(tg *plan.TaskGroup) (ret []resource.DataResource) {
 	firstTask := tg.Tasks[0]
 	for _, input := range firstTask.Inputs {
 		dataLocation, found := s.datasetShard2Location[input.Name()]

@@ -1,3 +1,4 @@
+// Schedule tasks to run on available resources assigned by master.
 package scheduler
 
 import (

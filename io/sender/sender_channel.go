@@ -1,3 +1,4 @@
+// network channel that sends data
 package sender
 
 import (

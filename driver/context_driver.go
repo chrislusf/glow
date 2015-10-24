@@ -1,3 +1,4 @@
+// Driver coordinates distributed execution
 package driver
 
 import (
@@ -8,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/chrislusf/glow/driver/plan"
 	"github.com/chrislusf/glow/driver/rsync"
 	"github.com/chrislusf/glow/driver/scheduler"
 	"github.com/chrislusf/glow/flow"
@@ -57,16 +59,16 @@ func (fcd *FlowContextDriver) IsDriverPlotMode() bool {
 }
 
 func (fcd *FlowContextDriver) Plot(fc *flow.FlowContext) {
-	taskGroups := scheduler.GroupTasks(fc)
-	scheduler.PlotGraph(taskGroups, fc)
+	taskGroups := plan.GroupTasks(fc)
+	plan.PlotGraph(taskGroups, fc)
 }
 
 // driver runs on local, controlling all tasks
 func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 
-	taskGroups := scheduler.GroupTasks(fc)
+	taskGroups := plan.GroupTasks(fc)
 	if fcd.option.PlotOutput {
-		scheduler.PlotGraph(taskGroups, fc)
+		plan.PlotGraph(taskGroups, fc)
 		return
 	}
 
@@ -110,7 +112,7 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 
 }
 
-func (fcd *FlowContextDriver) Cleanup(sched *scheduler.Scheduler, fc *flow.FlowContext, taskGroups []*scheduler.TaskGroup) {
+func (fcd *FlowContextDriver) Cleanup(sched *scheduler.Scheduler, fc *flow.FlowContext, taskGroups []*plan.TaskGroup) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	sched.EventChan <- scheduler.ReleaseTaskGroupInputs{

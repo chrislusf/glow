@@ -1,3 +1,4 @@
+// resource management
 package resource
 
 import (

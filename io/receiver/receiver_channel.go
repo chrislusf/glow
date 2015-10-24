@@ -1,3 +1,4 @@
+// network channel that receives data
 package receiver
 
 import (

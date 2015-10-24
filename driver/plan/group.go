@@ -1,4 +1,5 @@
-package scheduler
+// Optimize task execution by grouping tasks that are connected.
+package plan
 
 import (
 	"log"

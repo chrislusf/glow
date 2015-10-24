@@ -1,3 +1,4 @@
+// A market system to match tasks with resources.
 //
 // Continuous Double Auction Protocol
 // (CDA) is to allocate the best possible resource to an arriving
