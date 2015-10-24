@@ -85,6 +85,9 @@ This will "steroidize" the code to run in cluster mode!
 ./word_count -glow -glow.leader="localhost:8930"
 ```
 
+![Glow Hello World Execution Plan](https://raw.githubusercontent.com/chrislusf/glow/master/helloworld.png)
+
+
 # Read More
 
 1. Wiki page: https://github.com/chrislusf/glow/wiki
