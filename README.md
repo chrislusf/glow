@@ -55,7 +55,7 @@ Try it.
 ./word_count
 ```
 
-It will run the input text file, '/etc/passwd', in 3 go routines, filter/map/map, and then reduced to one number in one goroutine (not exactly correct, but let's skip the details for now.) and print it out. 
+It will run the input text file, '/etc/passwd', in 3 go routines, filter/map/map, and then reduced to one number in one goroutine (not exactly one goroutine, but let's skip the details for now.) and print it out. 
 
 This is useful already, saving lots of idiomatic but repetitive code on channels, sync wait, etc.
 
