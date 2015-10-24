@@ -16,7 +16,7 @@ go get github.com/chrislusf/glow/flow
 
 ## Simple Start
 
-Here is an simple full example:
+Here is a simple full example:
 
 ```
 package main
