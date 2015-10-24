@@ -1,5 +1,5 @@
-// This contains data structure for computation. Mostly Dataset operations
-// such as Map/Reduce/Join/Sort etc
+// Package flow contains data structure for computation.
+// Mostly Dataset operations such as Map/Reduce/Join/Sort etc.
 package flow
 
 import (

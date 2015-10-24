@@ -1,4 +1,4 @@
-// Optimize task execution by grouping tasks that are connected.
+// Package plan optimizes task execution by grouping tasks that are connected.
 package plan
 
 import (

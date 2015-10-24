@@ -1,4 +1,4 @@
-// resource management
+// Package resource manages computing resources and their locations.
 package resource
 
 import (

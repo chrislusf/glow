@@ -1,4 +1,5 @@
-// Server and client to copy files between driver and agent.
+// Package rsync adds file server and copying client to copy files
+// between glow driver and agent.
 package rsync
 
 import (

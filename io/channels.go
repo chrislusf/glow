@@ -1,4 +1,5 @@
-// Generic network channel managed by agent.
+// Package io creates network channels. The network channels are managed by
+// glow agent.
 package io
 
 import (

@@ -1,3 +1,5 @@
+// Package agent runs on servers with computing resources, and executes
+// tasks sent by driver.
 package agent
 
 import (

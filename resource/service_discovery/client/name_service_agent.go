@@ -1,4 +1,4 @@
-// client send heartbeats to master
+// Package client send heartbeats to master.
 package client
 
 import (
