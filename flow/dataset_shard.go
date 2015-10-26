@@ -14,6 +14,19 @@ type DatasetShard struct {
 	readingChans []chan reflect.Value
 }
 
+func (d *Dataset) SetupShard(n int) {
+	ctype := reflect.ChanOf(reflect.BothDir, d.Type)
+	for i := 0; i < n; i++ {
+		ds := &DatasetShard{
+			Id:        i,
+			Parent:    d,
+			WriteChan: reflect.MakeChan(ctype, 0),
+		}
+		// println("created shard", ds.Name())
+		d.Shards = append(d.Shards, ds)
+	}
+}
+
 func (s *DatasetShard) Name() string {
 	return fmt.Sprintf("ct-%d-ds-%d-shard-%d", s.Parent.context.Id, s.Parent.Id, s.Id)
 }

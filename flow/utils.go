@@ -12,8 +12,8 @@ func guessFunctionOutputType(f interface{}) reflect.Type {
 	if ft.NumOut() == 1 {
 		return ft.Out(0)
 	}
-	if ft.NumOut() > 1 {
-		return reflect.TypeOf([]interface{}{})
+	if ft.NumOut() == 2 {
+		return KeyValueType
 	}
 	return nil
 }

@@ -71,42 +71,25 @@ func (d *Dataset) LocalReduceByKey(f interface{}) *Dataset {
 	return ret
 }
 
-func aggregateSameKey(inputs chan reflect.Value, f interface{}, outChan reflect.Value) {
-	var sameKeyValues []interface{}
-	var prevKey reflect.Value
-	fn := reflect.ValueOf(f)
-	for input := range inputs {
-		if !reflect.DeepEqual(prevKey, input.Index(0)) {
-			outs := fn.Call([]reflect.Value{
-				prevKey,
-				reflect.ValueOf(sameKeyValues),
-			})
-			send(outChan, prevKey.Interface(), outs[0].Interface())
-			prevKey = input.Index(0)
-			sameKeyValues = nil
-		}
-		sameKeyValues = append(sameKeyValues, input.Index(1).Interface())
-	}
-}
-
 func foldSameKey(inputs chan reflect.Value, f interface{}, outChan reflect.Value) {
 	var prevKey interface{}
 	fn := reflect.ValueOf(f)
 	var localResult reflect.Value
 	for input := range inputs {
-		if !reflect.DeepEqual(prevKey, input.Index(0).Interface()) {
+		kv := input.Interface().(KeyValue)
+		if !reflect.DeepEqual(prevKey, kv.Key) {
 			if localResult.IsValid() {
-				send(outChan, prevKey, localResult.Interface())
+				sendKeyValue(outChan, prevKey, localResult.Interface())
 			}
-			prevKey = input.Index(0).Interface()
-			localResult = reflect.ValueOf(input.Index(1).Interface())
+			prevKey = kv.Key
+			localResult = reflect.ValueOf(kv.Value)
 		} else {
 			outs := fn.Call([]reflect.Value{
 				localResult,
-				reflect.ValueOf(input.Index(1).Interface()),
+				reflect.ValueOf(kv.Value),
 			})
 			localResult = outs[0]
 		}
 	}
-	send(outChan, prevKey, localResult.Interface())
+	sendKeyValue(outChan, prevKey, localResult.Interface())
 }

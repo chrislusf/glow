@@ -31,49 +31,33 @@ func (d *Dataset) Map(f interface{}) *Dataset {
 		}
 
 		if ft.In(ft.NumIn()-1).Kind() == reflect.Chan {
-			if d.Type.Kind() == reflect.Struct && ft.NumIn() != 2 {
-				invokeMapFunc = func(input reflect.Value) {
-					var args []reflect.Value
-					for i := 0; i < input.NumField(); i++ {
-						args = append(args, input.Field(i))
-					}
-					args = append(args, outChan)
-					fn.Call(args)
-				}
-			} else {
-				invokeMapFunc = func(input reflect.Value) {
-					fn.Call([]reflect.Value{input, outChan})
-				}
+			// if last parameter in the function is a channel
+			// use the channel element type as output type
+			invokeMapFunc = func(input reflect.Value) {
+				fn.Call([]reflect.Value{input, outChan})
 			}
 		} else {
-			if d.Type.Kind() == reflect.Struct && ft.NumIn() != 1 {
-				invokeMapFunc = func(input reflect.Value) {
-					var args []reflect.Value
-					for i := 0; i < input.NumField(); i++ {
-						args = append(args, input.Field(i))
-					}
-					outs := fn.Call(args)
-					sendValues(outChan, outs)
-				}
-			} else if d.Type.Kind() == reflect.Slice && ft.NumIn() != 1 {
-				invokeMapFunc = func(input reflect.Value) {
-					var args []reflect.Value
-					for i := 0; i < input.Len(); i++ {
-						p := reflect.ValueOf(input.Index(i).Interface())
-						if p.Kind() == reflect.Slice {
-							// dealing with joining k, [k,v], [k,v]
-							p = p.Index(1)
-						}
-						// println("args", i, "kind", p.Kind().String(), p.Type().String(), ":", reflect.ValueOf(p.Interface()).String())
-						args = append(args, reflect.ValueOf(p.Interface()))
-					}
-					outs := fn.Call(args)
-					sendValues(outChan, outs)
-				}
-			} else {
-				invokeMapFunc = func(input reflect.Value) {
+			invokeMapFunc = func(input reflect.Value) {
+				switch input.Type() {
+				case KeyValueType:
+					kv := input.Interface().(KeyValue)
+					outs := _functionCall(fn, kv.Key, kv.Value)
+					sendMapOutputs(outChan, outs)
+				case KeyValueValueType:
+					kv := input.Interface().(KeyValueValue)
+					outs := _functionCall(fn, kv.Key, kv.Value1, kv.Value2)
+					sendMapOutputs(outChan, outs)
+				case KeyValuesType:
+					kvs := input.Interface().(KeyValues)
+					outs := _functionCall(fn, kvs.Key, kvs.Values)
+					sendMapOutputs(outChan, outs)
+				case KeyValuesValuesType:
+					kvv := input.Interface().(KeyValuesValues)
+					outs := _functionCall(fn, kvv.Key, kvv.Values1, kvv.Values2)
+					sendMapOutputs(outChan, outs)
+				default:
 					outs := fn.Call([]reflect.Value{input})
-					sendValues(outChan, outs)
+					sendMapOutputs(outChan, outs)
 				}
 			}
 		}
@@ -84,6 +68,14 @@ func (d *Dataset) Map(f interface{}) *Dataset {
 		// println("exiting d:", d.Id, "step:", step.Id, "task:", task.Id)
 	}
 	return ret
+}
+
+func _functionCall(fn reflect.Value, inputs ...interface{}) []reflect.Value {
+	var args []reflect.Value
+	for _, input := range inputs {
+		args = append(args, reflect.ValueOf(input))
+	}
+	return fn.Call(args)
 }
 
 // f(A)bool
@@ -111,20 +103,16 @@ func add1ShardTo1Step(d *Dataset, nextDataType reflect.Type) (ret *Dataset, step
 
 // the value over the outChan is always reflect.Value
 // but the inner values are always actual interface{} object
-func sendValues(outChan reflect.Value, values []reflect.Value) {
-	var infs []interface{}
-	for _, v := range values {
-		infs = append(infs, v.Interface())
-	}
+func sendMapOutputs(outChan reflect.Value, values []reflect.Value) {
 	if !outChan.IsValid() {
 		return
 	}
-	if len(infs) > 1 {
-		outChan.Send(reflect.ValueOf(infs))
+	if len(values) == 2 {
+		outChan.Send(reflect.ValueOf(KeyValue{values[0].Interface(), values[1].Interface()}))
 		return
 	}
-	if len(infs) == 1 {
-		outChan.Send(reflect.ValueOf(infs[0]))
+	if len(values) == 1 {
+		outChan.Send(values[0])
 		return
 	}
 }

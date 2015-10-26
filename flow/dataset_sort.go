@@ -25,8 +25,7 @@ func (d *Dataset) LocalSort(f interface{}) *Dataset {
 		if len(kvs) == 0 {
 			return
 		}
-		v := guessKey(reflect.ValueOf(kvs[0]))
-		comparator := getLessThanComparator(d.Type, v, f)
+		comparator := getLessThanComparator(d.Type, reflect.ValueOf(kvs[0]), f)
 		timsort.Sort(kvs, comparator)
 
 		for _, kv := range kvs {

@@ -18,7 +18,7 @@ func (d *Dataset) Join(other *Dataset) *Dataset {
 func (this *Dataset) JoinPartitionedSorted(that *Dataset,
 	compareFunc interface{}, isLeftOuterJoin, isRightOuterJoin bool,
 ) (ret *Dataset) {
-	outType := reflect.TypeOf([]interface{}{})
+	outType := KeyValueValueType
 	ret = this.context.newNextDataset(len(this.Shards), outType)
 
 	inputs := []*Dataset{this, that}
@@ -63,42 +63,42 @@ func (this *Dataset) JoinPartitionedSorted(that *Dataset,
 				// left and right cartician join
 				for _, a := range leftValues {
 					for _, b := range rightValues {
-						send(outChan, leftKey, a, b)
+						sendKeyValueValue(outChan, leftKey, a, b)
 					}
 				}
 				leftKey, leftValue, rightKey, rightValue = leftNextKey, leftNextValue, rightNextKey, rightNextValue
 			case x < 0:
 				if isLeftOuterJoin {
-					send(outChan, leftKey, leftValue, nil)
+					sendKeyValueValue(outChan, leftKey, leftValue, nil)
 				}
 				leftKey, leftValue, leftHasValue = getKeyValue(leftChan)
 			case x > 0:
 				if isRightOuterJoin {
-					send(outChan, rightKey, nil, rightValue)
+					sendKeyValueValue(outChan, rightKey, nil, rightValue)
 				}
 				rightKey, rightValue, rightHasValue = getKeyValue(rightChan)
 			}
 		}
 		if leftHasValue {
 			if isLeftOuterJoin {
-				send(outChan, leftKey, leftValue, nil)
+				sendKeyValueValue(outChan, leftKey, leftValue, nil)
 			}
 		}
 		for leftKeyValue := range leftChan {
 			if isLeftOuterJoin {
 				leftKey, leftValue = leftKeyValue.Field(0), leftKeyValue.Field(1)
-				send(outChan, leftKey, leftValue, nil)
+				sendKeyValueValue(outChan, leftKey, leftValue, nil)
 			}
 		}
 		if rightHasValue {
 			if isRightOuterJoin {
-				send(outChan, rightKey, nil, rightValue)
+				sendKeyValueValue(outChan, rightKey, nil, rightValue)
 			}
 		}
 		for rightKeyValue := range rightChan {
 			if isRightOuterJoin {
 				rightKey, rightValue = rightKeyValue.Field(0), rightKeyValue.Field(1)
-				send(outChan, rightKey, nil, rightValue)
+				sendKeyValueValue(outChan, rightKey, nil, rightValue)
 			}
 		}
 
@@ -106,35 +106,8 @@ func (this *Dataset) JoinPartitionedSorted(that *Dataset,
 	return ret
 }
 
-func getSameKeyValues(ch chan reflect.Value, comparator func(a, b interface{}) int64, theKey, firstValue interface{}, hasFirstValue bool) (nextKey, nextValue interface{}, theValues []interface{}, hasValue bool) {
-	theValues = append(theValues, firstValue)
-	hasValue = hasFirstValue
-	for {
-		nextKey, nextValue, hasValue = getKeyValue(ch)
-		if hasValue && comparator(theKey, nextKey) == 0 {
-			theValues = append(theValues, nextValue)
-		} else {
-			return
-		}
-	}
-	return
-}
-
-func getKeyValue(ch chan reflect.Value) (key, value interface{}, ok bool) {
-	keyValue, hasValue := <-ch
-	if hasValue {
-		key = keyValue.Index(0).Interface()
-		value = keyValue.Index(1).Interface()
-	}
-	return key, value, hasValue
-}
-
-func send(outChan reflect.Value, values ...interface{}) {
-	outChan.Send(reflect.ValueOf(values))
-}
-
 func (d *Dataset) SelfJoin(compareFunc interface{}) (ret *Dataset) {
-	outType := reflect.TypeOf([]interface{}{})
+	outType := KeyValueValueType
 	ret, step := add1ShardTo1Step(d, outType)
 	step.Name = "SelfJoin"
 	step.Function = func(task *Task) {
@@ -169,7 +142,7 @@ func (d *Dataset) SelfJoin(compareFunc interface{}) (ret *Dataset) {
 				for _, a := range leftValues {
 					for _, b := range leftValues {
 						if a != nil && b != nil {
-							send(outChan, leftKey, a, b)
+							sendKeyValueValue(outChan, leftKey, a, b)
 						}
 					}
 				}
@@ -178,4 +151,12 @@ func (d *Dataset) SelfJoin(compareFunc interface{}) (ret *Dataset) {
 
 	}
 	return ret
+}
+
+func sendKeyValue(outChan reflect.Value, key, value interface{}) {
+	outChan.Send(reflect.ValueOf(KeyValue{key, value}))
+}
+
+func sendKeyValueValue(outChan reflect.Value, key, a, b interface{}) {
+	outChan.Send(reflect.ValueOf(KeyValueValue{key, a, b}))
 }

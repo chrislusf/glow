@@ -73,6 +73,10 @@ func (fc *FlowContext) TextFile(fname string, shard int) (ret *Dataset) {
 func (fc *FlowContext) Channel(ch interface{}) (ret *Dataset) {
 	chValue, chType := reflect.ValueOf(ch), reflect.TypeOf(ch)
 
+	return fc.doChannel(chValue, chType)
+}
+
+func (fc *FlowContext) doChannel(chValue reflect.Value, chType reflect.Type) (ret *Dataset) {
 	ret = fc.newNextDataset(1, chType.Elem())
 	ret.ExternalInputChans = append(ret.ExternalInputChans, reflect.Indirect(chValue))
 	step := fc.AddOneToOneStep(nil, ret)
@@ -83,4 +87,21 @@ func (fc *FlowContext) Channel(ch interface{}) (ret *Dataset) {
 		}
 	}
 	return
+}
+
+// Slice accepts a slice and send values to tasks via Channel()
+func (fc *FlowContext) Slice(slice interface{}) (ret *Dataset) {
+	sliceValue, sliceType := reflect.ValueOf(slice), reflect.TypeOf(slice)
+	sliceLen := sliceValue.Len()
+	chType := reflect.ChanOf(reflect.BothDir, sliceType.Elem())
+	chValue := reflect.MakeChan(chType, 0)
+
+	go func() {
+		for i := 0; i < sliceLen; i++ {
+			chValue.Send(sliceValue.Index(i))
+		}
+		chValue.Close()
+	}()
+
+	return fc.doChannel(chValue, chType)
 }

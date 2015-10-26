@@ -6,19 +6,6 @@ import (
 	"github.com/chrislusf/glow/util"
 )
 
-func (d *Dataset) SetupShard(n int) {
-	ctype := reflect.ChanOf(reflect.BothDir, d.Type)
-	for i := 0; i < n; i++ {
-		ds := &DatasetShard{
-			Id:        i,
-			Parent:    d,
-			WriteChan: reflect.MakeChan(ctype, 0),
-		}
-		// println("created shard", ds.Name())
-		d.Shards = append(d.Shards, ds)
-	}
-}
-
 // hash data or by data key, return a new dataset
 // This is devided into 2 steps:
 // 1. Each record is sharded to a local shard

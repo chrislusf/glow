@@ -43,19 +43,19 @@ func _getLessThanComparatorByKeyValue(key reflect.Value) (funcPointer interface{
 	return
 }
 
-func getLessThanComparator(datasetType reflect.Type, key reflect.Value, functionPointer interface{}) func(a interface{}, b interface{}) bool {
+func getLessThanComparator(datasetType reflect.Type, key reflect.Value,
+	functionPointer interface{}) func(a interface{}, b interface{}) bool {
 	lessThanFuncValue := reflect.ValueOf(functionPointer)
 	if functionPointer == nil {
 		v := guessKey(key)
 		lessThanFuncValue = reflect.ValueOf(_getLessThanComparatorByKeyValue(v))
 	}
-	if datasetType.Kind() == reflect.Slice {
+	if datasetType == KeyValueType {
 		return func(a interface{}, b interface{}) bool {
-			// println("a:", reflect.ValueOf(a).Field(0).Kind().String(), "lessThanFuncValue:", lessThanFuncValue.String())
-			ret := lessThanFuncValue.Call([]reflect.Value{
-				reflect.ValueOf(reflect.ValueOf(a).Index(0).Interface()),
-				reflect.ValueOf(reflect.ValueOf(b).Index(0).Interface()),
-			})
+			ret := _functionCall(lessThanFuncValue,
+				a.(KeyValue).Key,
+				b.(KeyValue).Key,
+			)
 			return ret[0].Bool()
 		}
 	} else {

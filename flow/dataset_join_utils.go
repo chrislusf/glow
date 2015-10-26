@@ -69,3 +69,31 @@ func getComparator(dt reflect.Type) (funcPointer interface{}) {
 	}
 	return
 }
+
+func getSameKeyValues(ch chan reflect.Value,
+	comparator func(a, b interface{}) int64,
+	theKey, firstValue interface{}, hasFirstValue bool) (
+	nextKey, nextValue interface{}, theValues []interface{}, hasValue bool) {
+
+	theValues = append(theValues, firstValue)
+	hasValue = hasFirstValue
+	for {
+		nextKey, nextValue, hasValue = getKeyValue(ch)
+		if hasValue && comparator(theKey, nextKey) == 0 {
+			theValues = append(theValues, nextValue)
+		} else {
+			return
+		}
+	}
+	return
+}
+
+func getKeyValue(ch chan reflect.Value) (key, value interface{}, ok bool) {
+	keyValue, hasValue := <-ch
+	if hasValue {
+		kv := keyValue.Interface().(KeyValue)
+		key = kv.Key
+		value = kv.Value
+	}
+	return key, value, hasValue
+}
