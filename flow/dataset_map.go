@@ -34,7 +34,27 @@ func (d *Dataset) Map(f interface{}) *Dataset {
 			// if last parameter in the function is a channel
 			// use the channel element type as output type
 			invokeMapFunc = func(input reflect.Value) {
-				fn.Call([]reflect.Value{input, outChan})
+				switch input.Type() {
+				case KeyValueType:
+					kv := input.Interface().(KeyValue)
+					outs := _functionCallWithChanOutput(fn, outChan, kv.Key, kv.Value)
+					sendMapOutputs(outChan, outs)
+				case KeyValueValueType:
+					kv := input.Interface().(KeyValueValue)
+					outs := _functionCall(fn, outChan, kv.Key, kv.Value1, kv.Value2)
+					sendMapOutputs(outChan, outs)
+				case KeyValuesType:
+					kvs := input.Interface().(KeyValues)
+					outs := _functionCall(fn, outChan, kvs.Key, kvs.Values)
+					sendMapOutputs(outChan, outs)
+				case KeyValuesValuesType:
+					kvv := input.Interface().(KeyValuesValues)
+					outs := _functionCall(fn, outChan, kvv.Key, kvv.Values1, kvv.Values2)
+					sendMapOutputs(outChan, outs)
+				default:
+					outs := fn.Call([]reflect.Value{input, outChan})
+					sendMapOutputs(outChan, outs)
+				}
 			}
 		} else {
 			invokeMapFunc = func(input reflect.Value) {
@@ -68,6 +88,15 @@ func (d *Dataset) Map(f interface{}) *Dataset {
 		// println("exiting d:", d.Id, "step:", step.Id, "task:", task.Id)
 	}
 	return ret
+}
+
+func _functionCallWithChanOutput(fn reflect.Value, outChan reflect.Value, inputs ...interface{}) []reflect.Value {
+	var args []reflect.Value
+	for _, input := range inputs {
+		args = append(args, reflect.ValueOf(input))
+	}
+	args = append(args, outChan)
+	return fn.Call(args)
 }
 
 func _functionCall(fn reflect.Value, inputs ...interface{}) []reflect.Value {
