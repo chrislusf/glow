@@ -67,7 +67,7 @@ func (d *Dataset) CoGroup(other *Dataset) *Dataset {
 // Join multiple datasets that are sharded by the same key, and locally sorted within the shard
 func (this *Dataset) CoGroupPartitionedSorted(that *Dataset,
 	compareFunc interface{}) (ret *Dataset) {
-	outType := reflect.TypeOf([]interface{}{})
+	outType := KeyValuesValuesType
 	ret = this.context.newNextDataset(len(this.Shards), outType)
 
 	inputs := []*Dataset{this, that}
