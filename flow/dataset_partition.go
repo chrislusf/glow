@@ -1,6 +1,7 @@
 package flow
 
 import (
+	"log"
 	"reflect"
 
 	"github.com/chrislusf/glow/util"
@@ -28,14 +29,16 @@ func HashByKey(input reflect.Value, shard int) int {
 
 	var x int
 	switch dt.Kind() {
-	case reflect.Int:
+	case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Uint8:
 		x = int(v.Int()) % shard
 	case reflect.String:
 		x = int(util.Hash([]byte(v.String()))) % shard
 	case reflect.Slice:
 		x = int(util.Hash(v.Bytes())) % shard
 	default:
-		println("unexpected key to hash:", v.Kind().String())
+		log.Fatalf("unexpected key to hash %s: %v", v.Kind().String(), v)
 	}
 	return x
 }
