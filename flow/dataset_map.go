@@ -5,16 +5,17 @@ import (
 )
 
 // map can work with multiple kinds of inputs and outputs
-// 1. If 2 inputs, the first input is key, the second input is value
-// 2. If 1 input, the input is value.
-// 3. If last input is channel, the output goes into the channel
-// 4. If 2 output, the first output is key, the second output is value
-// 5. If 1 output, the output is value.
-// 6. A map function may not necessarily have any output.
-//
-// f(A, chan B)
-// input, type is same as parent Dataset's type
-// output chan, element type is same as current Dataset's type
+// Input Types:
+//   1. single value
+//   2. (key, value) : Most common format for key value pair
+//   3. (key, values) : GroupByKey() outputs
+//   4. (key, values1, values2) : CoGroup() outputs
+//   5. (key, value1, value2) : Join() outputs
+// Output Types:
+//   1. return single value
+//   2. return (key, value)
+//   3. return no value
+//   4. return no value, but last parameter is a output channel
 func (d *Dataset) Map(f interface{}) *Dataset {
 	outType := guessFunctionOutputType(f)
 	ret, step := add1ShardTo1Step(d, outType)

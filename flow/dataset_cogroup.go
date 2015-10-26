@@ -13,7 +13,7 @@ func (d *Dataset) GroupByKey() *Dataset {
 func (d *Dataset) LocalGroupByKey(compareFunc interface{}) *Dataset {
 	outType := KeyValuesType
 	ret, step := add1ShardTo1Step(d, outType)
-	step.Name = "LocalSelfCoGroup"
+	step.Name = "LocalGroupByKey"
 	step.Function = func(task *Task) {
 		outChan := task.Outputs[0].WriteChan
 
