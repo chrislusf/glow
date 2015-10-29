@@ -11,8 +11,7 @@ func (d *Dataset) GroupByKey() *Dataset {
 }
 
 func (d *Dataset) LocalGroupByKey(compareFunc interface{}) *Dataset {
-	outType := KeyValuesType
-	ret, step := add1ShardTo1Step(d, outType)
+	ret, step := add1ShardTo1Step(d, KeyValuesType)
 	step.Name = "LocalGroupByKey"
 	step.Function = func(task *Task) {
 		outChan := task.Outputs[0].WriteChan
@@ -64,11 +63,11 @@ func (d *Dataset) CoGroup(other *Dataset) *Dataset {
 	return sorted_d.CoGroupPartitionedSorted(sorted_other, nil)
 }
 
-// Join multiple datasets that are sharded by the same key, and locally sorted within the shard
+// CoGroupPartitionedSorted joins 2 datasets that are sharded
+// by the same key, and locally sorted within the shard
 func (this *Dataset) CoGroupPartitionedSorted(that *Dataset,
 	compareFunc interface{}) (ret *Dataset) {
-	outType := KeyValuesValuesType
-	ret = this.context.newNextDataset(len(this.Shards), outType)
+	ret = this.context.newNextDataset(len(this.Shards), KeyValuesValuesType)
 
 	inputs := []*Dataset{this, that}
 	step := this.context.MergeDatasets1ShardTo1Step(inputs, ret)

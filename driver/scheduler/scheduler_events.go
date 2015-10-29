@@ -13,7 +13,7 @@ import (
 	"github.com/chrislusf/glow/driver/plan"
 	"github.com/chrislusf/glow/driver/scheduler/market"
 	"github.com/chrislusf/glow/flow"
-	"github.com/chrislusf/glow/io"
+	"github.com/chrislusf/glow/netchan"
 	"github.com/chrislusf/glow/resource"
 )
 
@@ -151,12 +151,12 @@ func (s *Scheduler) setupInputChannels(fc *flow.FlowContext, task *flow.Task, lo
 		inputChanName := fmt.Sprintf("ct-%d-input-%d-p-%d", fc.Id, ds.Id, i)
 		// println("setup input channel for", task.Name(), "on", location.URL())
 		s.registerDatasetShardLocation(inputChanName, location)
-		rawChan, err := io.GetDirectSendChannel(inputChanName, location.URL(), waitGroup)
+		rawChan, err := netchan.GetDirectSendChannel(inputChanName, location.URL(), waitGroup)
 		if err != nil {
 			log.Panic(err)
 		}
 		// println("writing", inputChanName, "to", location.URL())
-		io.ConnectTypedWriteChannelToRaw(inChan, rawChan, waitGroup)
+		netchan.ConnectTypedWriteChannelToRaw(inChan, rawChan, waitGroup)
 	}
 }
 
@@ -178,18 +178,18 @@ func (s *Scheduler) setupOutputChannels(shards []*flow.DatasetShard, waitGroup *
 		// connect remote raw chan to local typed chan
 		readChanName := shard.Name()
 		location := s.datasetShard2Location[readChanName]
-		rawChan, err := io.GetDirectReadChannel(readChanName, location.URL())
+		rawChan, err := netchan.GetDirectReadChannel(readChanName, location.URL())
 		if err != nil {
 			log.Panic(err)
 		}
 		for _, out := range ds.ExternalOutputChans {
 			ch := make(chan reflect.Value)
-			io.ConnectRawReadChannelToTyped(rawChan, ch, ds.Type, waitGroup)
+			netchan.ConnectRawReadChannelToTyped(rawChan, ch, ds.Type, waitGroup)
 			waitGroup.Add(1)
 			go func() {
 				defer waitGroup.Done()
 				for v := range ch {
-					v = io.CleanObject(v, ds.Type, out.Type().Elem())
+					v = netchan.CleanObject(v, ds.Type, out.Type().Elem())
 					out.Send(v)
 				}
 			}()

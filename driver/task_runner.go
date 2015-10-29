@@ -10,7 +10,7 @@ import (
 
 	"github.com/chrislusf/glow/driver/plan"
 	"github.com/chrislusf/glow/flow"
-	"github.com/chrislusf/glow/io"
+	"github.com/chrislusf/glow/netchan"
 )
 
 type TaskOption struct {
@@ -119,11 +119,11 @@ func (tr *TaskRunner) connectExternalInputs(wg *sync.WaitGroup, name2Location ma
 		d := shard.Parent
 		readChanName := shard.Name()
 		// println("taskGroup", tr.option.TaskGroupId, "task", task.Name(), "trying to read from:", readChanName, len(task.InputChans))
-		rawChan, err := io.GetDirectReadChannel(readChanName, name2Location[readChanName])
+		rawChan, err := netchan.GetDirectReadChannel(readChanName, name2Location[readChanName])
 		if err != nil {
 			log.Panic(err)
 		}
-		io.ConnectRawReadChannelToTyped(rawChan, task.InputChans[i], d.Type, wg)
+		netchan.ConnectRawReadChannelToTyped(rawChan, task.InputChans[i], d.Type, wg)
 	}
 }
 
@@ -136,12 +136,12 @@ func (tr *TaskRunner) connectExternalInputChannels(wg *sync.WaitGroup) {
 	ds := firstTask.Outputs[0].Parent
 	for i, _ := range ds.ExternalInputChans {
 		inputChanName := fmt.Sprintf("ct-%d-input-%d-p-%d", tr.option.ContextId, ds.Id, i)
-		rawChan, err := io.GetLocalReadChannel(inputChanName)
+		rawChan, err := netchan.GetLocalReadChannel(inputChanName)
 		if err != nil {
 			log.Panic(err)
 		}
 		typedInputChan := make(chan reflect.Value)
-		io.ConnectRawReadChannelToTyped(rawChan, typedInputChan, ds.Type, wg)
+		netchan.ConnectRawReadChannelToTyped(rawChan, typedInputChan, ds.Type, wg)
 		firstTask.InputChans = append(firstTask.InputChans, typedInputChan)
 	}
 }
@@ -151,10 +151,10 @@ func (tr *TaskRunner) connectExternalOutputs(wg *sync.WaitGroup) {
 	for _, shard := range task.Outputs {
 		writeChanName := shard.Name()
 		// println("taskGroup", tr.option.TaskGroupId, "step", task.Step.Id, "task", task.Id, "writing to:", writeChanName)
-		rawChan, err := io.GetLocalSendChannel(writeChanName, wg)
+		rawChan, err := netchan.GetLocalSendChannel(writeChanName, wg)
 		if err != nil {
 			log.Panic(err)
 		}
-		io.ConnectTypedWriteChannelToRaw(shard.WriteChan, rawChan, wg)
+		netchan.ConnectTypedWriteChannelToRaw(shard.WriteChan, rawChan, wg)
 	}
 }

@@ -1,6 +1,6 @@
-// Package io creates network channels. The network channels are managed by
+// Package netchan creates network channels. The network channels are managed by
 // glow agent.
-package io
+package netchan
 
 import (
 	"bytes"
@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/chrislusf/glow/io/receiver"
-	"github.com/chrislusf/glow/io/sender"
+	"github.com/chrislusf/glow/netchan/receiver"
+	"github.com/chrislusf/glow/netchan/sender"
 )
 
 type NetworkContext struct {

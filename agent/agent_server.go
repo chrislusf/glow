@@ -16,7 +16,7 @@ import (
 	"sync"
 
 	"github.com/chrislusf/glow/driver/cmd"
-	"github.com/chrislusf/glow/io/store"
+	"github.com/chrislusf/glow/netchan/store"
 	"github.com/chrislusf/glow/resource"
 	"github.com/chrislusf/glow/resource/service_discovery/client"
 	"github.com/chrislusf/glow/util"

@@ -11,8 +11,8 @@ import (
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	a "github.com/chrislusf/glow/agent"
-	r "github.com/chrislusf/glow/io/receiver"
-	s "github.com/chrislusf/glow/io/sender"
+	r "github.com/chrislusf/glow/netchan/receiver"
+	s "github.com/chrislusf/glow/netchan/sender"
 	m "github.com/chrislusf/glow/resource/service_discovery/master"
 )
 

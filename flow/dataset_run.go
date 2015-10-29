@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/chrislusf/glow/io"
+	"github.com/chrislusf/glow/netchan"
 )
 
 func (d *Dataset) RunDatasetInStandAloneMode() {
@@ -73,7 +73,7 @@ func (d *Dataset) connectExternalInputChansToRead(wg *sync.WaitGroup) {
 func (d *Dataset) sendToExternalOutputChans(t reflect.Value) {
 	for _, ch := range d.ExternalOutputChans {
 		elemType := ch.Type().Elem()
-		t = io.CleanObject(t, d.Type, elemType)
+		t = netchan.CleanObject(t, d.Type, elemType)
 		ch.Send(t)
 	}
 }
