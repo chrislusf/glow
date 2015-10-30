@@ -98,11 +98,12 @@ func (this *Dataset) CoGroupPartitionedSorted(that *Dataset,
 			return outs[0].Int()
 		}
 
-		var valueType reflect.Type
+		var leftType, rightType reflect.Type
 		if leftHasValue {
-			valueType = reflect.TypeOf(leftValue)
-		} else if rightHasValue {
-			valueType = reflect.TypeOf(rightValue)
+			leftType = reflect.TypeOf(leftValue)
+		}
+		if rightHasValue {
+			rightType = reflect.TypeOf(rightValue)
 		}
 
 		var leftValues, rightValues []interface{}
@@ -113,44 +114,44 @@ func (this *Dataset) CoGroupPartitionedSorted(that *Dataset,
 			case x == 0:
 				leftNextKey, leftNextValue, leftValues, leftHasValue = getSameKeyValues(leftChan, comparator, leftKey, leftValue, leftHasValue)
 				rightNextKey, rightNextValue, rightValues, rightHasValue = getSameKeyValues(rightChan, comparator, rightKey, rightValue, rightHasValue)
-				sendKeyValuesValues(outChan, leftKey, valueType, leftValues, rightValues)
+				sendKeyValuesValues(outChan, leftKey, leftType, leftValues, rightType, rightValues)
 				leftKey, leftValue, rightKey, rightValue = leftNextKey, leftNextValue, rightNextKey, rightNextValue
 			case x < 0:
 				leftNextKey, leftNextValue, leftValues, leftHasValue = getSameKeyValues(leftChan, comparator, leftKey, leftValue, leftHasValue)
-				sendKeyValuesValues(outChan, leftKey, valueType, leftValues, []interface{}{})
+				sendKeyValuesValues(outChan, leftKey, leftType, leftValues, rightType, []interface{}{})
 				leftKey, leftValue = leftNextKey, leftNextValue
 			case x > 0:
 				rightNextKey, rightNextValue, rightValues, rightHasValue = getSameKeyValues(rightChan, comparator, rightKey, rightValue, rightHasValue)
-				sendKeyValuesValues(outChan, rightKey, valueType, []interface{}{}, rightValues)
+				sendKeyValuesValues(outChan, rightKey, leftType, []interface{}{}, rightType, rightValues)
 				rightKey, rightValue = rightNextKey, rightNextValue
 			}
 		}
 		for leftHasValue {
 			leftNextKey, leftNextValue, leftValues, leftHasValue = getSameKeyValues(leftChan, comparator, leftKey, leftValue, leftHasValue)
-			sendKeyValuesValues(outChan, leftKey, valueType, leftValues, []interface{}{})
+			sendKeyValuesValues(outChan, leftKey, leftType, leftValues, rightType, []interface{}{})
 			leftKey, leftValue = leftNextKey, leftNextValue
 		}
 		for rightHasValue {
 			rightNextKey, rightNextValue, rightValues, rightHasValue = getSameKeyValues(rightChan, comparator, rightKey, rightValue, rightHasValue)
-			sendKeyValuesValues(outChan, rightKey, valueType, []interface{}{}, rightValues)
+			sendKeyValuesValues(outChan, rightKey, leftType, []interface{}{}, rightType, rightValues)
 			rightKey, rightValue = rightNextKey, rightNextValue
 		}
 	}
 	return ret
 }
 
-func sendKeyValuesValues(outChan reflect.Value, key interface{}, valueType reflect.Type, values1, values2 []interface{}) {
-	sliceType := reflect.SliceOf(valueType)
+func sendKeyValuesValues(outChan reflect.Value, key interface{},
+	leftType reflect.Type, leftValues []interface{}, rightType reflect.Type, rightValues []interface{}) {
 
-	slice1Len := len(values1)
-	slice1Value := reflect.MakeSlice(sliceType, slice1Len, slice1Len)
-	for i, value := range values1 {
+	slice1Len := len(leftValues)
+	slice1Value := reflect.MakeSlice(reflect.SliceOf(leftType), slice1Len, slice1Len)
+	for i, value := range leftValues {
 		slice1Value.Index(i).Set(reflect.ValueOf(value))
 	}
 
-	slice2Len := len(values2)
-	slice2Value := reflect.MakeSlice(sliceType, slice2Len, slice2Len)
-	for i, value := range values2 {
+	slice2Len := len(rightValues)
+	slice2Value := reflect.MakeSlice(reflect.SliceOf(rightType), slice2Len, slice2Len)
+	for i, value := range rightValues {
 		slice2Value.Index(i).Set(reflect.ValueOf(value))
 	}
 
