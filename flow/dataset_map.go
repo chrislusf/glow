@@ -111,6 +111,8 @@ func _functionCall(fn reflect.Value, inputs ...interface{}) []reflect.Value {
 // f(A)bool
 func (d *Dataset) Filter(f interface{}) *Dataset {
 	ret, step := add1ShardTo1Step(d, d.Type)
+	ret.IsKeyPartitioned = d.IsKeyPartitioned
+	ret.IsKeyLocalSorted = d.IsKeyLocalSorted
 	step.Name = "Filter"
 	step.Function = func(task *Task) {
 		fn := reflect.ValueOf(f)

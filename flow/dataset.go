@@ -17,6 +17,9 @@ type Dataset struct {
 	ReadingSteps        []*Step
 	ExternalInputChans  []reflect.Value
 	ExternalOutputChans []reflect.Value
+
+	IsKeyPartitioned bool
+	IsKeyLocalSorted bool
 }
 
 func NewDataset(context *FlowContext, t reflect.Type) *Dataset {

@@ -15,7 +15,12 @@ func (d *Dataset) Partition(shard int) *Dataset {
 	if shard == 1 {
 		return d
 	}
-	return d.partition_scatter(shard).partition_collect(shard)
+	if d.IsKeyPartitioned && shard == len(d.Shards) {
+		return d
+	}
+	ret := d.partition_scatter(shard).partition_collect(shard)
+	ret.IsKeyPartitioned = true
+	return ret
 }
 
 func HashByKey(input reflect.Value, shard int) int {

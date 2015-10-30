@@ -14,7 +14,14 @@ func (d *Dataset) Sort(f interface{}) (ret *Dataset) {
 // f(V, V) bool : less than function
 // New Dataset contains K,V
 func (d *Dataset) LocalSort(f interface{}) *Dataset {
+	if f == nil && d.IsKeyLocalSorted {
+		return d
+	}
 	ret, step := add1ShardTo1Step(d, d.Type)
+	ret.IsKeyPartitioned = d.IsKeyPartitioned
+	if f == nil {
+		ret.IsKeyLocalSorted = true
+	}
 	step.Name = "LocalSort"
 	step.Function = func(task *Task) {
 		outChan := task.Outputs[0].WriteChan
