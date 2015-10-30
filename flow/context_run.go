@@ -38,12 +38,12 @@ type TaskRunner interface {
 }
 
 func Ready() {
-	if taskRunner.IsTaskMode() {
+	if taskRunner != nil && taskRunner.IsTaskMode() {
 		for _, fc := range Contexts {
 			fc.Run()
 		}
 		os.Exit(0)
-	} else if contextRunner.IsDriverMode() {
+	} else if contextRunner != nil && contextRunner.IsDriverMode() {
 		if contextRunner.IsDriverPlotMode() {
 			for _, fc := range Contexts {
 				contextRunner.Plot(fc)
