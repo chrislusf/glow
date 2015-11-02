@@ -4,12 +4,14 @@ import (
 	"reflect"
 )
 
+// Reduce runs on a dataset with data type V.
+// Function f takes two arguments of type V and returns one type V.
+// The function should be commutative and associative
+// so that it can be computed correctly in parallel.
 func (d *Dataset) Reduce(f interface{}) (ret *Dataset) {
 	return d.LocalReduce(f).MergeReduce(f)
 }
 
-// f(V, V) V : less than function
-// New Dataset contains V
 func (d *Dataset) LocalReduce(f interface{}) *Dataset {
 	ret, step := add1ShardTo1Step(d, d.Type)
 	step.Name = "LocalReduce"
@@ -59,6 +61,16 @@ func (d *Dataset) MergeReduce(f interface{}) (ret *Dataset) {
 		outChan.Send(localResult)
 	}
 	return ret
+}
+
+// ReduceByKey runs on a dataset with (K, V) pairs,
+// returns a dataset with (K, V) pairs, where values for the same key
+// are aggreated by function f.
+// Function f takes two arguments of type V and returns one type V.
+// The function should be commutative and associative
+// so that it can be computed correctly in parallel.
+func (d *Dataset) ReduceByKey(f interface{}) *Dataset {
+	return d.LocalSort(nil).LocalReduceByKey(f).MergeSorted(nil).LocalReduceByKey(f)
 }
 
 func (d *Dataset) LocalReduceByKey(f interface{}) *Dataset {
