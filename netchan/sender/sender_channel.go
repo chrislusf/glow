@@ -24,7 +24,7 @@ func NewDirectSendChannel(name string, target string, wg *sync.WaitGroup) (chan 
 
 	conn, err := net.DialTCP(network, nil, raddr)
 	if err != nil {
-		return ch, fmt.Errorf("Fail to dial %s: %v", raddr, err)
+		return ch, fmt.Errorf("Fail to dial send %s: %v", raddr, err)
 	}
 
 	wg.Add(1)

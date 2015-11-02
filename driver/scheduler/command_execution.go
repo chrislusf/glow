@@ -125,7 +125,7 @@ func getDirectCommandConnection(target string) (net.Conn, error) {
 	// println("dial tcp", raddr.String())
 	conn, err := net.DialTCP(network, nil, raddr)
 	if err != nil {
-		return nil, fmt.Errorf("Fail to dial %s:%v", raddr, err)
+		return nil, fmt.Errorf("Fail to dial command %s:%v", raddr, err)
 	}
 
 	return conn, err

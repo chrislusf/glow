@@ -67,7 +67,7 @@ func (rc *ReceiveChannel) receiveTopicFrom(target string) {
 	// println("dial tcp", raddr.String())
 	conn, err := net.DialTCP(network, nil, raddr)
 	if err != nil {
-		log.Printf("Fail to dial %s:%v", raddr, err)
+		log.Printf("Fail to dial receive %s:%v", raddr, err)
 		time.Sleep(time.Second)
 		return
 	}
