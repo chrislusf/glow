@@ -43,11 +43,11 @@ func NewReceiveChannel(name string, offset uint64) *ReceiveChannel {
 }
 
 // Not thread safe
-func (rc *ReceiveChannel) GetDirectChannel(target string) (chan []byte, error) {
+func (rc *ReceiveChannel) GetDirectChannel(target string, chanBufferSize int) (chan []byte, error) {
 	if rc.Ch != nil {
 		return rc.Ch, nil
 	}
-	rc.Ch = make(chan []byte)
+	rc.Ch = make(chan []byte, chanBufferSize)
 	go func() {
 		rc.receiveTopicFrom(target)
 	}()

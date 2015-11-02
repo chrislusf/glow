@@ -83,7 +83,7 @@ func main() {
 	case receiver.FullCommand():
 		target := r.FindTarget(*receiveFromChanName, *receiverMaster)
 		rc := r.NewReceiveChannel(*receiveFromChanName, 0)
-		recvChan, err := rc.GetDirectChannel(target)
+		recvChan, err := rc.GetDirectChannel(target, 128)
 		if err != nil {
 			panic(err)
 		}

@@ -29,13 +29,13 @@ func GetLocalSendChannel(name string, wg *sync.WaitGroup) (chan []byte, error) {
 	return sender.NewSendChannel(name, networkContext.AgentPort, wg)
 }
 
-func GetLocalReadChannel(name string) (chan []byte, error) {
-	return GetDirectReadChannel(name, "localhost:"+strconv.Itoa(networkContext.AgentPort))
+func GetLocalReadChannel(name string, chanBufferSize int) (chan []byte, error) {
+	return GetDirectReadChannel(name, "localhost:"+strconv.Itoa(networkContext.AgentPort), chanBufferSize)
 }
 
-func GetDirectReadChannel(name, location string) (chan []byte, error) {
+func GetDirectReadChannel(name, location string, chanBufferSize int) (chan []byte, error) {
 	rc := receiver.NewReceiveChannel(name, 0)
-	return rc.GetDirectChannel(location)
+	return rc.GetDirectChannel(location, chanBufferSize)
 }
 
 func GetDirectSendChannel(name string, target string, wg *sync.WaitGroup) (chan []byte, error) {

@@ -10,9 +10,10 @@ import (
 var Contexts []*FlowContext
 
 type FlowContext struct {
-	Id       int
-	Steps    []*Step
-	Datasets []*Dataset
+	Id                int
+	Steps             []*Step
+	Datasets          []*Dataset
+	ChannelBufferSize int
 }
 
 func New() (fc *FlowContext) {

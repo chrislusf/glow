@@ -32,8 +32,9 @@ func init() {
 }
 
 type TaskRunner struct {
-	option *TaskOption
-	Tasks  []*flow.Task
+	option      *TaskOption
+	Tasks       []*flow.Task
+	FlowContext *flow.FlowContext
 }
 
 func NewTaskRunner(option *TaskOption) *TaskRunner {
@@ -53,6 +54,7 @@ func (tr *TaskRunner) Run(fc *flow.FlowContext) {
 	taskGroups := plan.GroupTasks(fc)
 
 	tr.Tasks = taskGroups[tr.option.TaskGroupId].Tasks
+	tr.FlowContext = fc
 
 	if len(tr.Tasks) == 0 {
 		log.Println("How can the task group has no tasks!")
@@ -122,7 +124,7 @@ func (tr *TaskRunner) connectExternalInputs(wg *sync.WaitGroup, name2Location ma
 		d := shard.Parent
 		readChanName := shard.Name()
 		// println("taskGroup", tr.option.TaskGroupId, "task", task.Name(), "trying to read from:", readChanName, len(task.InputChans))
-		rawChan, err := netchan.GetDirectReadChannel(readChanName, name2Location[readChanName])
+		rawChan, err := netchan.GetDirectReadChannel(readChanName, name2Location[readChanName], tr.FlowContext.ChannelBufferSize)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -139,7 +141,7 @@ func (tr *TaskRunner) connectExternalInputChannels(wg *sync.WaitGroup) {
 	ds := firstTask.Outputs[0].Parent
 	for i, _ := range ds.ExternalInputChans {
 		inputChanName := fmt.Sprintf("ct-%d-input-%d-p-%d", tr.option.ContextId, ds.Id, i)
-		rawChan, err := netchan.GetLocalReadChannel(inputChanName)
+		rawChan, err := netchan.GetLocalReadChannel(inputChanName, tr.FlowContext.ChannelBufferSize)
 		if err != nil {
 			log.Panic(err)
 		}

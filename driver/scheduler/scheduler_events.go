@@ -178,7 +178,7 @@ func (s *Scheduler) setupOutputChannels(shards []*flow.DatasetShard, waitGroup *
 		// connect remote raw chan to local typed chan
 		readChanName := shard.Name()
 		location := s.datasetShard2Location[readChanName]
-		rawChan, err := netchan.GetDirectReadChannel(readChanName, location.URL())
+		rawChan, err := netchan.GetDirectReadChannel(readChanName, location.URL(), 1024)
 		if err != nil {
 			log.Panic(err)
 		}
