@@ -46,6 +46,9 @@ func (tr *TaskRunner) IsTaskMode() bool {
 
 // if this should not run, return false
 func (tr *TaskRunner) Run(fc *flow.FlowContext) {
+	if fc.Id != tr.option.ContextId {
+		return
+	}
 
 	taskGroups := plan.GroupTasks(fc)
 
