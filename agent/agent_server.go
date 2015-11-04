@@ -16,29 +16,11 @@ import (
 	"sync"
 
 	"github.com/chrislusf/glow/driver/cmd"
-	"github.com/chrislusf/glow/netchan/store"
 	"github.com/chrislusf/glow/resource"
 	"github.com/chrislusf/glow/resource/service_discovery/client"
 	"github.com/chrislusf/glow/util"
 	"github.com/golang/protobuf/proto"
 )
-
-type LiveDataStore struct {
-	store           store.DataStore
-	killHeartBeater chan bool
-}
-
-func NewLiveDataStore(s store.DataStore) *LiveDataStore {
-	return &LiveDataStore{
-		store:           s,
-		killHeartBeater: make(chan bool, 1),
-	}
-}
-
-func (ds *LiveDataStore) Destroy() {
-	ds.killHeartBeater <- true
-	ds.store.Destroy()
-}
 
 type AgentServerOption struct {
 	Master       *string
@@ -56,14 +38,12 @@ type AgentServer struct {
 	Option                *AgentServerOption
 	Master                string
 	Port                  int
-	name2Store            map[string]*LiveDataStore
-	dir                   string
-	name2StoreCond        *sync.Cond
 	wg                    sync.WaitGroup
 	l                     net.Listener
 	computeResource       *resource.ComputeResource
 	allocatedResource     *resource.ComputeResource
 	allocatedResourceLock sync.Mutex
+	storageBackend        *ManagedDatasetShards
 }
 
 func NewAgentServer(option *AgentServerOption) *AgentServer {
@@ -74,15 +54,11 @@ func NewAgentServer(option *AgentServerOption) *AgentServer {
 	println("starting in", absoluteDir)
 	option.Dir = &absoluteDir
 
-	var lock sync.Mutex
-
 	as := &AgentServer{
 		Option:         option,
 		Master:         *option.Master,
 		Port:           *option.Port,
-		dir:            absoluteDir,
-		name2Store:     make(map[string]*LiveDataStore),
-		name2StoreCond: sync.NewCond(&lock),
+		storageBackend: NewManagedDatasetShards(*option.Dir, *option.Port),
 		computeResource: &resource.ComputeResource{
 			CPUCount: *option.MaxExecutor,
 			CPULevel: *option.CPULevel,
@@ -112,12 +88,12 @@ func (r *AgentServer) Init() (err error) {
 	fmt.Println("AgentServer starts on:", r.Port)
 
 	if *r.Option.CleanRestart {
-		if fileInfos, err := ioutil.ReadDir(r.dir); err == nil {
+		if fileInfos, err := ioutil.ReadDir(r.storageBackend.dir); err == nil {
 			for _, fi := range fileInfos {
 				name := fi.Name()
 				if !fi.IsDir() && strings.HasSuffix(name, ".dat") {
 					// println("removing old dat file:", name)
-					os.Remove(filepath.Join(r.dir, name))
+					os.Remove(filepath.Join(r.storageBackend.dir, name))
 				}
 			}
 		}
