@@ -83,7 +83,7 @@ func (s *Scheduler) EventLoop() {
 					args = append(args, arg)
 				}
 				request := NewStartRequest(
-					"./"+filepath.Base(os.Args[0]),
+					filepath.Join(".", filepath.Base(os.Args[0])),
 					s.option.Module,
 					args,
 					allocation.Allocated,
