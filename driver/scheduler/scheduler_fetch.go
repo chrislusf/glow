@@ -52,7 +52,7 @@ func (s *Scheduler) Fetch(demands []market.Demand) {
 func (s *Scheduler) findTaskGroupInputs(tg *plan.TaskGroup) (ret []resource.DataResource) {
 	firstTask := tg.Tasks[0]
 	for _, input := range firstTask.Inputs {
-		dataLocation, found := s.datasetShard2Location[input.Name()]
+		dataLocation, found := s.shardLocator.GetShardLocation(input.Name())
 		if !found {
 			// log.Printf("Strange2: %s not allocated yet.", input.Name())
 			continue

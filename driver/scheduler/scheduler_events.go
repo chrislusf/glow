@@ -1,7 +1,6 @@
 package scheduler
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -49,7 +48,7 @@ func (s *Scheduler) EventLoop() {
 				tasks := event.TaskGroup.Tasks
 
 				// wait until inputs are registed
-				s.waitForInputDatasetShardLocations(tasks[0])
+				s.shardLocator.waitForInputDatasetShardLocations(tasks[0])
 				// fmt.Printf("inputs of %s is %s\n", tasks[0].Name(), s.allInputLocations(tasks[0]))
 
 				s.Market.AddDemand(market.Requirement(taskGroup), event.Bid, pickedServerChan)
@@ -62,7 +61,7 @@ func (s *Scheduler) EventLoop() {
 				s.setupInputChannels(event.FlowContext, tasks[0], allocation.Location, event.WaitGroup)
 
 				for _, shard := range tasks[len(tasks)-1].Outputs {
-					s.registerDatasetShardLocation(shard.Name(), allocation.Location)
+					s.shardLocator.SetShardLocation(shard.Name(), allocation.Location)
 				}
 				s.setupOutputChannels(tasks[len(tasks)-1].Outputs, event.WaitGroup)
 
@@ -78,7 +77,7 @@ func (s *Scheduler) EventLoop() {
 					"-glow.agent.port",
 					strconv.Itoa(allocation.Location.Port),
 					"-glow.taskGroup.inputs",
-					s.allInputLocations(tasks[0]),
+					s.shardLocator.allInputLocations(tasks[0]),
 				}
 				for _, arg := range os.Args[1:] {
 					args = append(args, arg)
@@ -104,7 +103,7 @@ func (s *Scheduler) EventLoop() {
 				for _, taskGroup := range event.TaskGroups {
 					tasks := taskGroup.Tasks
 					for _, ds := range tasks[len(tasks)-1].Outputs {
-						location := s.datasetShard2Location[ds.Name()]
+						location, _ := s.shardLocator.GetShardLocation(ds.Name())
 						request := NewDeleteDatasetShardRequest(ds.Name())
 						// println("deleting", ds.Name(), "on", location.URL())
 						if err := RemoteDirectExecute(location.URL(), request); err != nil {
@@ -115,25 +114,6 @@ func (s *Scheduler) EventLoop() {
 
 			}()
 		}
-	}
-}
-
-func (s *Scheduler) allInputsAreRegistered(task *flow.Task) bool {
-	for _, input := range task.Inputs {
-		if _, hasValue := s.datasetShard2Location[input.Name()]; !hasValue {
-			// fmt.Printf("%s's input %s is not ready\n", task.Name(), input.Name())
-			return false
-		}
-	}
-	return true
-}
-
-func (s *Scheduler) waitForInputDatasetShardLocations(task *flow.Task) {
-	s.datasetShard2LocationLock.Lock()
-	defer s.datasetShard2LocationLock.Unlock()
-
-	for !s.allInputsAreRegistered(task) {
-		s.waitForAllInputs.Wait()
 	}
 }
 
@@ -150,7 +130,7 @@ func (s *Scheduler) setupInputChannels(fc *flow.FlowContext, task *flow.Task, lo
 	for i, inChan := range ds.ExternalInputChans {
 		inputChanName := fmt.Sprintf("ct-%d-input-%d-p-%d", fc.Id, ds.Id, i)
 		// println("setup input channel for", task.Name(), "on", location.URL())
-		s.registerDatasetShardLocation(inputChanName, location)
+		s.shardLocator.SetShardLocation(inputChanName, location)
 		rawChan, err := netchan.GetDirectSendChannel(inputChanName, location.URL(), waitGroup)
 		if err != nil {
 			log.Panic(err)
@@ -158,15 +138,6 @@ func (s *Scheduler) setupInputChannels(fc *flow.FlowContext, task *flow.Task, lo
 		// println("writing", inputChanName, "to", location.URL())
 		netchan.ConnectTypedWriteChannelToRaw(inChan, rawChan, waitGroup)
 	}
-}
-
-func (s *Scheduler) registerDatasetShardLocation(name string, location resource.Location) {
-	s.datasetShard2LocationLock.Lock()
-	defer s.datasetShard2LocationLock.Unlock()
-
-	// fmt.Printf("shard %s is at %s\n", name, location.URL())
-	s.datasetShard2Location[name] = location
-	s.waitForAllInputs.Broadcast()
 }
 
 func (s *Scheduler) setupOutputChannels(shards []*flow.DatasetShard, waitGroup *sync.WaitGroup) {
@@ -177,7 +148,7 @@ func (s *Scheduler) setupOutputChannels(shards []*flow.DatasetShard, waitGroup *
 		}
 		// connect remote raw chan to local typed chan
 		readChanName := shard.Name()
-		location := s.datasetShard2Location[readChanName]
+		location, _ := s.shardLocator.GetShardLocation(readChanName)
 		rawChan, err := netchan.GetDirectReadChannel(readChanName, location.URL(), 1024)
 		if err != nil {
 			log.Panic(err)
@@ -195,25 +166,4 @@ func (s *Scheduler) setupOutputChannels(shards []*flow.DatasetShard, waitGroup *
 			}()
 		}
 	}
-}
-
-func (s *Scheduler) allInputLocations(task *flow.Task) string {
-	s.datasetShard2LocationLock.Lock()
-	defer s.datasetShard2LocationLock.Unlock()
-
-	var buf bytes.Buffer
-	for i, input := range task.Inputs {
-		name := input.Name()
-		location, hasValue := s.datasetShard2Location[name]
-		if !hasValue {
-			panic("hmmm, we just checked all inputs are registered!")
-		}
-		if i != 0 {
-			buf.WriteString(",")
-		}
-		buf.WriteString(name)
-		buf.WriteString("@")
-		buf.WriteString(location.URL())
-	}
-	return buf.String()
 }
