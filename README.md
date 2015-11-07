@@ -92,9 +92,10 @@ This will "steroidize" the code to run in cluster mode!
 
 # Read More
 
-1. Wiki page: https://github.com/chrislusf/glow/wiki
-2. Mailing list: https://groups.google.com/forum/#!forum/glow-user-discussion
-3. Examples: https://github.com/chrislusf/glow_examples/tree/master/word_count
+1. [Glow Introduction Slides] (https://raw.githubusercontent.com/chrislusf/glow/master/etc/GlowIntroduction.pdf)
+2. Wiki page: https://github.com/chrislusf/glow/wiki
+3. Mailing list: https://groups.google.com/forum/#!forum/glow-user-discussion
+4. Examples: https://github.com/chrislusf/glow_examples/tree/master/word_count
 
 # Contribution
 Fork it, code it, and send pull requests. Better first discuss about the feature you want on the mailing list.
