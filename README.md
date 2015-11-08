@@ -64,7 +64,7 @@ This is useful already, saving lots of idiomatic but repetitive code on channels
 However, there is one more thing!
 
 ## Scale it out
-We need to setup the cluster first. We do not need experts on Zookeeper/HDFS/Mesos/YARN etc. Just need to build or download one binary file.
+To setup the Glow cluster, we do not need experts on Zookeeper/HDFS/Mesos/YARN etc. Just build or download one binary file.
 
 ### Setup the cluster
 ```
@@ -88,6 +88,7 @@ This will "steroidize" the code to run in cluster mode!
 ```
 ./word_count -glow -glow.leader="localhost:8930"
 ```
+The word_count program will become a driver program, dividing the execution into a directed acyclic graph(DAG), and send tasks to agents.
 
 ![Glow Hello World Execution Plan](https://raw.githubusercontent.com/chrislusf/glow/master/etc/helloworld.png)
 
@@ -100,6 +101,8 @@ This will "steroidize" the code to run in cluster mode!
 4. Examples: https://github.com/chrislusf/glow_examples/tree/master/word_count
 
 # Contribution
+Start using it! And report or fix any issue you have seen, add any feature you want.
+
 Fork it, code it, and send pull requests. Better first discuss about the feature you want on the mailing list.
 https://groups.google.com/forum/#!forum/glow-user-discussion
 
