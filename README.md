@@ -75,6 +75,8 @@ We need to setup the cluster first. We do not need experts on Zookeeper/HDFS/Mes
   // run one or more agents on computers
   glow agent --dir . --max.executors=16 --memory=2048 --master="localhost:8930" --port 8931
 ```
+Glow Master and Glow Agent run very efficiently. They take about 6.5MB and 5.5MB memory respectively in my environments. I would recommend set up agents on any server you can find. You can tap into the computing power whenever you need to.
+
 ### Start the driver program
 To leap from one computer to clusters of computers, add this line to the import list:
 
