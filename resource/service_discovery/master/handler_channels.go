@@ -25,7 +25,7 @@ func (tl *TeamMaster) listChannelsHandler(w http.ResponseWriter, r *http.Request
 	path := r.URL.Path[len("/channel/"):]
 
 	freshChannels := make([]*ChannelInformation, 0)
-	rps, ok := tl.channels[path]
+	rps, ok := tl.channels.GetChannels(path)
 	if !ok {
 		util.Json(w, r, http.StatusOK, freshChannels)
 		return
@@ -38,9 +38,7 @@ func (tl *TeamMaster) listChannelsHandler(w http.ResponseWriter, r *http.Request
 	for i, j := 0, len(freshChannels)-1; i < j; i, j = i+1, j-1 {
 		freshChannels[i], freshChannels[j] = freshChannels[j], freshChannels[i]
 	}
-	tl.channelsLock.Lock()
-	tl.channels[path] = freshChannels
-	tl.channelsLock.Unlock()
+	tl.channels.SetChannels(path, freshChannels)
 	util.Json(w, r, http.StatusOK, freshChannels)
 }
 
@@ -55,7 +53,7 @@ func (tl *TeamMaster) updateChannelHandler(w http.ResponseWriter, r *http.Reques
 	path := r.URL.Path[len("/channel/"):]
 	// println(path, ":", location)
 
-	rps, ok := tl.channels[path]
+	rps, ok := tl.channels.GetChannels(path)
 	if !ok {
 		rps = make([]*ChannelInformation, 0)
 	}
@@ -73,9 +71,7 @@ func (tl *TeamMaster) updateChannelHandler(w http.ResponseWriter, r *http.Reques
 			LastHeartBeat: time.Now(),
 		})
 	}
-	tl.channelsLock.Lock()
-	tl.channels[path] = rps
-	tl.channelsLock.Unlock()
+	tl.channels.SetChannels(path, rps)
 
 	util.Json(w, r, http.StatusAccepted, tl.channels)
 

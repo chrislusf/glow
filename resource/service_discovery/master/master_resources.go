@@ -19,8 +19,8 @@ type ResourceUpdateEvent struct {
 type MasterResource struct {
 	Topology      resource.Topology
 	EventChan     chan interface{}
-	lock          sync.Mutex
 	EvictionQueue *util.PriorityQueue
+	sync.Mutex
 }
 
 func NewMasterResource() *MasterResource {
@@ -42,8 +42,8 @@ func NewMasterResource() *MasterResource {
 }
 
 func (l *MasterResource) UpdateAgentInformation(ai *resource.AgentInformation) {
-	l.lock.Lock()
-	defer l.lock.Unlock()
+	l.Lock()
+	defer l.Unlock()
 
 	dc, hasDc := l.Topology.DataCenters[ai.Location.DataCenter]
 	if !hasDc {
@@ -102,8 +102,8 @@ func (l *MasterResource) UpdateAgentInformation(ai *resource.AgentInformation) {
 }
 
 func (l *MasterResource) deleteAgentInformation(ai *resource.AgentInformation) {
-	l.lock.Lock()
-	defer l.lock.Unlock()
+	l.Lock()
+	defer l.Unlock()
 
 	dc, hasDc := l.Topology.DataCenters[ai.Location.DataCenter]
 	if !hasDc {
