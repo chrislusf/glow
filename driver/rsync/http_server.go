@@ -3,6 +3,7 @@
 package rsync
 
 import (
+	"encoding/hex"
 	"hash/crc32"
 	"io"
 	"log"
@@ -47,6 +48,18 @@ func NewRsyncServer(file string, relatedFiles []string) (*RsyncServer, error) {
 		}
 	}
 	return rs, nil
+}
+
+func (rs *RsyncServer) ExecutableFileHash() string {
+	if len(rs.fileHashes) == 0 {
+		return ""
+	}
+	hash := rs.fileHashes[0].Hash
+	src := make([]byte, 4)
+	dest := make([]byte, 8)
+	util.Uint32toBytes(src, hash)
+	hex.Encode(dest, src)
+	return string(dest)
 }
 
 func (rs *RsyncServer) listHandler(w http.ResponseWriter, r *http.Request) {

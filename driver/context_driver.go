@@ -81,12 +81,13 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 	sched := scheduler.NewScheduler(
 		fcd.option.Leader,
 		&scheduler.SchedulerOption{
-			DataCenter:     fcd.option.DataCenter,
-			Rack:           fcd.option.Rack,
-			TaskMemoryMB:   fcd.option.TaskMemoryMB,
-			DriverPort:     rsyncServer.Port,
-			Module:         fcd.option.Module,
-			ExecutableFile: os.Args[0],
+			DataCenter:         fcd.option.DataCenter,
+			Rack:               fcd.option.Rack,
+			TaskMemoryMB:       fcd.option.TaskMemoryMB,
+			DriverPort:         rsyncServer.Port,
+			Module:             fcd.option.Module,
+			ExecutableFile:     os.Args[0],
+			ExecutableFileHash: rsyncServer.ExecutableFileHash(),
 		},
 	)
 	defer fcd.Cleanup(sched, fc, taskGroups)

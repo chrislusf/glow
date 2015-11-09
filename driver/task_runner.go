@@ -14,10 +14,11 @@ import (
 )
 
 type TaskOption struct {
-	ContextId    int
-	TaskGroupId  int
-	FistTaskName string
-	Inputs       string
+	ContextId          int
+	TaskGroupId        int
+	FistTaskName       string
+	Inputs             string
+	ExecutableFileHash string
 }
 
 var taskOption TaskOption
@@ -27,6 +28,7 @@ func init() {
 	flag.IntVar(&taskOption.TaskGroupId, "glow.taskGroup.id", -1, "task group id")
 	flag.StringVar(&taskOption.FistTaskName, "glow.task.name", "", "name of first task in the task group")
 	flag.StringVar(&taskOption.Inputs, "glow.taskGroup.inputs", "", "comma and @ seperated input locations")
+	flag.StringVar(&taskOption.ExecutableFileHash, "glow.exe.hash", "", "hash of executable binary file")
 
 	flow.RegisterTaskRunner(NewTaskRunner(&taskOption))
 }
@@ -122,7 +124,7 @@ func (tr *TaskRunner) connectExternalInputs(wg *sync.WaitGroup, name2Location ma
 	task := tr.Tasks[0]
 	for i, shard := range task.Inputs {
 		d := shard.Parent
-		readChanName := shard.Name()
+		readChanName := tr.option.ExecutableFileHash + "-" + shard.Name()
 		// println("taskGroup", tr.option.TaskGroupId, "task", task.Name(), "trying to read from:", readChanName, len(task.InputChans))
 		rawChan, err := netchan.GetDirectReadChannel(readChanName, name2Location[readChanName], tr.FlowContext.ChannelBufferSize)
 		if err != nil {
@@ -140,7 +142,7 @@ func (tr *TaskRunner) connectExternalInputChannels(wg *sync.WaitGroup) {
 	}
 	ds := firstTask.Outputs[0].Parent
 	for i, _ := range ds.ExternalInputChans {
-		inputChanName := fmt.Sprintf("ct-%d-input-%d-p-%d", tr.option.ContextId, ds.Id, i)
+		inputChanName := fmt.Sprintf("%s-ct-%d-input-%d-p-%d", tr.option.ExecutableFileHash, tr.option.ContextId, ds.Id, i)
 		rawChan, err := netchan.GetLocalReadChannel(inputChanName, tr.FlowContext.ChannelBufferSize)
 		if err != nil {
 			log.Panic(err)
@@ -154,7 +156,7 @@ func (tr *TaskRunner) connectExternalInputChannels(wg *sync.WaitGroup) {
 func (tr *TaskRunner) connectExternalOutputs(wg *sync.WaitGroup) {
 	task := tr.Tasks[len(tr.Tasks)-1]
 	for _, shard := range task.Outputs {
-		writeChanName := shard.Name()
+		writeChanName := tr.option.ExecutableFileHash + "-" + shard.Name()
 		// println("taskGroup", tr.option.TaskGroupId, "step", task.Step.Id, "task", task.Id, "writing to:", writeChanName)
 		rawChan, err := netchan.GetLocalSendChannel(writeChanName, wg)
 		if err != nil {

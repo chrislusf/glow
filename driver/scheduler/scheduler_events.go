@@ -61,7 +61,7 @@ func (s *Scheduler) EventLoop() {
 				s.setupInputChannels(event.FlowContext, tasks[0], allocation.Location, event.WaitGroup)
 
 				for _, shard := range tasks[len(tasks)-1].Outputs {
-					s.shardLocator.SetShardLocation(shard.Name(), allocation.Location)
+					s.shardLocator.SetShardLocation(s.option.ExecutableFileHash+"-"+shard.Name(), allocation.Location)
 				}
 				s.setupOutputChannels(tasks[len(tasks)-1].Outputs, event.WaitGroup)
 
@@ -78,6 +78,8 @@ func (s *Scheduler) EventLoop() {
 					strconv.Itoa(allocation.Location.Port),
 					"-glow.taskGroup.inputs",
 					s.shardLocator.allInputLocations(tasks[0]),
+					"-glow.exe.hash",
+					s.shardLocator.executableFileHash,
 				}
 				for _, arg := range os.Args[1:] {
 					args = append(args, arg)
@@ -104,8 +106,9 @@ func (s *Scheduler) EventLoop() {
 				for _, taskGroup := range event.TaskGroups {
 					tasks := taskGroup.Tasks
 					for _, ds := range tasks[len(tasks)-1].Outputs {
-						location, _ := s.shardLocator.GetShardLocation(ds.Name())
-						request := NewDeleteDatasetShardRequest(ds.Name())
+						shardName := s.option.ExecutableFileHash + "-" + ds.Name()
+						location, _ := s.shardLocator.GetShardLocation(shardName)
+						request := NewDeleteDatasetShardRequest(shardName)
 						// println("deleting", ds.Name(), "on", location.URL())
 						if err := RemoteDirectExecute(location.URL(), request); err != nil {
 							println("exeuction error:", err.Error())
@@ -129,7 +132,7 @@ func (s *Scheduler) setupInputChannels(fc *flow.FlowContext, task *flow.Task, lo
 	// connect local typed chan to remote raw chan
 	// write to the dataset location in the cluster so that the task can be retried if needed.
 	for i, inChan := range ds.ExternalInputChans {
-		inputChanName := fmt.Sprintf("ct-%d-input-%d-p-%d", fc.Id, ds.Id, i)
+		inputChanName := fmt.Sprintf("%s-ct-%d-input-%d-p-%d", s.option.ExecutableFileHash, fc.Id, ds.Id, i)
 		// println("setup input channel for", task.Name(), "on", location.URL())
 		s.shardLocator.SetShardLocation(inputChanName, location)
 		rawChan, err := netchan.GetDirectSendChannel(inputChanName, location.URL(), waitGroup)
@@ -148,7 +151,7 @@ func (s *Scheduler) setupOutputChannels(shards []*flow.DatasetShard, waitGroup *
 			continue
 		}
 		// connect remote raw chan to local typed chan
-		readChanName := shard.Name()
+		readChanName := s.option.ExecutableFileHash + "-" + shard.Name()
 		location, _ := s.shardLocator.GetShardLocation(readChanName)
 		rawChan, err := netchan.GetDirectReadChannel(readChanName, location.URL(), 1024)
 		if err != nil {

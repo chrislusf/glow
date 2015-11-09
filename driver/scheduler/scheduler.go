@@ -14,12 +14,13 @@ type Scheduler struct {
 }
 
 type SchedulerOption struct {
-	DataCenter     string
-	Rack           string
-	TaskMemoryMB   int
-	DriverPort     int
-	Module         string
-	ExecutableFile string
+	DataCenter         string
+	Rack               string
+	TaskMemoryMB       int
+	DriverPort         int
+	Module             string
+	ExecutableFile     string
+	ExecutableFileHash string
 }
 
 func NewScheduler(leader string, option *SchedulerOption) *Scheduler {
@@ -27,7 +28,7 @@ func NewScheduler(leader string, option *SchedulerOption) *Scheduler {
 		Leader:       leader,
 		EventChan:    make(chan interface{}),
 		Market:       market.NewMarket(),
-		shardLocator: NewDatasetShardLocator(),
+		shardLocator: NewDatasetShardLocator(option.ExecutableFileHash),
 		option:       option,
 	}
 	s.Market.SetScoreFunction(s.Score).SetFetchFunction(s.Fetch)
