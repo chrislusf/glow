@@ -23,7 +23,7 @@ func (d *Dataset) Partition(shard int) *Dataset {
 	return ret
 }
 
-func HashByKey(input reflect.Value, shard int) int {
+func hashByKey(input reflect.Value, shard int) int {
 	v := guessKey(input)
 
 	dt := v.Type()
@@ -54,7 +54,7 @@ func (d *Dataset) partition_scatter(shard int) (ret *Dataset) {
 	step.Name = "Partition_scatter"
 	step.Function = func(task *Task) {
 		for input := range task.InputChan() {
-			x := HashByKey(input, shard)
+			x := hashByKey(input, shard)
 			task.Outputs[x].WriteChan.Send(input)
 		}
 	}
