@@ -73,6 +73,10 @@ func (d *Dataset) ReduceByKey(f interface{}) *Dataset {
 	return d.LocalSort(nil).LocalReduceByKey(f).MergeSorted(nil).LocalReduceByKey(f)
 }
 
+func (d *Dataset) ReduceByUserDefinedKey(lessThanFunc interface{}, reducer interface{}) *Dataset {
+	return d.LocalSort(lessThanFunc).LocalReduceByKey(reducer).MergeSorted(lessThanFunc).LocalReduceByKey(reducer)
+}
+
 func (d *Dataset) LocalReduceByKey(f interface{}) *Dataset {
 	ret, step := add1ShardTo1Step(d, d.Type)
 	step.Name = "LocalReduceByKey"
