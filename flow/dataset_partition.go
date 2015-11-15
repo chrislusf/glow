@@ -12,10 +12,10 @@ import (
 // 1. Each record is sharded to a local shard
 // 2. The destination shard will collect its child shards and merge into one
 func (d *Dataset) Partition(shard int) *Dataset {
-	if shard == 1 {
+	if d.IsKeyPartitioned && shard == len(d.Shards) {
 		return d
 	}
-	if d.IsKeyPartitioned && shard == len(d.Shards) {
+	if 1 == len(d.Shards) && shard == 1 {
 		return d
 	}
 	ret := d.partition_scatter(shard).partition_collect(shard)
