@@ -7,10 +7,12 @@ import (
 // assume nothing about these two dataset
 func (d *Dataset) Join(other *Dataset) *Dataset {
 	sorted_d := d.Partition(len(d.Shards)).LocalSort(nil)
+	var sorted_other *Dataset
 	if d == other {
-		return sorted_d.SelfJoin(nil)
+		sorted_other = sorted_d
+	} else {
+		sorted_other = other.Partition(len(d.Shards)).LocalSort(nil)
 	}
-	sorted_other := other.Partition(len(d.Shards)).LocalSort(nil)
 	return sorted_d.JoinPartitionedSorted(sorted_other, nil, false, false)
 }
 
@@ -99,53 +101,6 @@ func (this *Dataset) JoinPartitionedSorted(that *Dataset,
 			if isRightOuterJoin {
 				rightKey, rightValue = rightKeyValue.Field(0), rightKeyValue.Field(1)
 				sendKeyValueValue(outChan, rightKey, nil, rightValue)
-			}
-		}
-
-	}
-	return ret
-}
-
-func (d *Dataset) SelfJoin(compareFunc interface{}) (ret *Dataset) {
-	outType := KeyValueValueType
-	ret, step := add1ShardTo1Step(d, outType)
-	step.Name = "SelfJoin"
-	step.Function = func(task *Task) {
-		outChan := task.Outputs[0].WriteChan
-
-		leftChan := task.InputChans[0]
-
-		// get first value from both channels
-		leftKey, leftValue, leftHasValue := getKeyValue(leftChan)
-
-		// get comparator
-		if compareFunc == nil {
-			if leftHasValue {
-				compareFunc = getComparator(reflect.TypeOf(leftKey))
-			}
-		}
-		fn := reflect.ValueOf(compareFunc)
-		comparator := func(a, b interface{}) int64 {
-			outs := fn.Call([]reflect.Value{
-				reflect.ValueOf(a),
-				reflect.ValueOf(b),
-			})
-			return outs[0].Int()
-		}
-
-		var leftValues []interface{}
-		for leftHasValue {
-			leftKey, leftValue, leftValues, leftHasValue = getSameKeyValues(leftChan, comparator, leftKey, leftValue, leftHasValue)
-
-			// cartician join
-			if leftHasValue {
-				for _, a := range leftValues {
-					for _, b := range leftValues {
-						if a != nil && b != nil {
-							sendKeyValueValue(outChan, leftKey, a, b)
-						}
-					}
-				}
 			}
 		}
 
