@@ -19,6 +19,7 @@ type TaskOption struct {
 	FistTaskName       string
 	Inputs             string
 	ExecutableFileHash string
+	ChannelBufferSize  int
 }
 
 var taskOption TaskOption
@@ -29,6 +30,7 @@ func init() {
 	flag.StringVar(&taskOption.FistTaskName, "glow.task.name", "", "name of first task in the task group")
 	flag.StringVar(&taskOption.Inputs, "glow.taskGroup.inputs", "", "comma and @ seperated input locations")
 	flag.StringVar(&taskOption.ExecutableFileHash, "glow.exe.hash", "", "hash of executable binary file")
+	flag.IntVar(&taskOption.ChannelBufferSize, "glow.channel.bufferSize", 0, "channel buffer size for reading inputs")
 
 	flow.RegisterTaskRunner(NewTaskRunner(&taskOption))
 }
@@ -52,6 +54,7 @@ func (tr *TaskRunner) Run(fc *flow.FlowContext) {
 	if fc.Id != tr.option.ContextId {
 		return
 	}
+	fc.ChannelBufferSize = tr.option.ChannelBufferSize
 
 	taskGroups := plan.GroupTasks(fc)
 

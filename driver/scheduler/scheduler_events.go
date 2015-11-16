@@ -80,6 +80,8 @@ func (s *Scheduler) EventLoop() {
 					s.shardLocator.allInputLocations(tasks[0]),
 					"-glow.exe.hash",
 					s.shardLocator.executableFileHash,
+					"-glow.channel.bufferSize",
+					strconv.Itoa(event.FlowContext.ChannelBufferSize),
 				}
 				for _, arg := range os.Args[1:] {
 					args = append(args, arg)

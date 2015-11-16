@@ -13,7 +13,7 @@ type FlowContext struct {
 	Id                int
 	Steps             []*Step
 	Datasets          []*Dataset
-	ChannelBufferSize int
+	ChannelBufferSize int // configurable channel buffer size for reading
 }
 
 func New() (fc *FlowContext) {
