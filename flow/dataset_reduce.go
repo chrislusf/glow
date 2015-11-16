@@ -17,10 +17,14 @@ func (d *Dataset) LocalReduce(f interface{}) *Dataset {
 	step.Name = "LocalReduce"
 	step.Function = func(task *Task) {
 		outChan := task.Outputs[0].WriteChan
+		hasValue := false
 		isFirst := true
 		var localResult reflect.Value
 		fn := reflect.ValueOf(f)
 		for input := range task.InputChan() {
+			if !hasValue {
+				hasValue = true
+			}
 			if isFirst {
 				isFirst = false
 				localResult = input
@@ -32,7 +36,9 @@ func (d *Dataset) LocalReduce(f interface{}) *Dataset {
 				localResult = outs[0]
 			}
 		}
-		outChan.Send(localResult)
+		if hasValue {
+			outChan.Send(localResult)
+		}
 	}
 	return ret
 }
@@ -43,10 +49,14 @@ func (d *Dataset) MergeReduce(f interface{}) (ret *Dataset) {
 	step.Name = "MergeReduce"
 	step.Function = func(task *Task) {
 		outChan := task.Outputs[0].WriteChan
+		hasValue := false
 		isFirst := true
 		var localResult reflect.Value
 		fn := reflect.ValueOf(f)
 		for input := range task.MergedInputChan() {
+			if !hasValue {
+				hasValue = true
+			}
 			if isFirst {
 				isFirst = false
 				localResult = input
@@ -58,7 +68,9 @@ func (d *Dataset) MergeReduce(f interface{}) (ret *Dataset) {
 				localResult = outs[0]
 			}
 		}
-		outChan.Send(localResult)
+		if hasValue {
+			outChan.Send(localResult)
+		}
 	}
 	return ret
 }
