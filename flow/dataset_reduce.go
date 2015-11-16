@@ -18,15 +18,11 @@ func (d *Dataset) LocalReduce(f interface{}) *Dataset {
 	step.Function = func(task *Task) {
 		outChan := task.Outputs[0].WriteChan
 		hasValue := false
-		isFirst := true
 		var localResult reflect.Value
 		fn := reflect.ValueOf(f)
 		for input := range task.InputChan() {
 			if !hasValue {
 				hasValue = true
-			}
-			if isFirst {
-				isFirst = false
 				localResult = input
 			} else {
 				outs := fn.Call([]reflect.Value{
@@ -50,15 +46,11 @@ func (d *Dataset) MergeReduce(f interface{}) (ret *Dataset) {
 	step.Function = func(task *Task) {
 		outChan := task.Outputs[0].WriteChan
 		hasValue := false
-		isFirst := true
 		var localResult reflect.Value
 		fn := reflect.ValueOf(f)
 		for input := range task.MergedInputChan() {
 			if !hasValue {
 				hasValue = true
-			}
-			if isFirst {
-				isFirst = false
 				localResult = input
 			} else {
 				outs := fn.Call([]reflect.Value{
@@ -103,9 +95,14 @@ func foldSameKey(inputs chan reflect.Value, f interface{}, outChan reflect.Value
 	var prevKey interface{}
 	fn := reflect.ValueOf(f)
 	var localResult reflect.Value
+	hasValue := false
 	for input := range inputs {
 		kv := input.Interface().(KeyValue)
-		if !reflect.DeepEqual(prevKey, kv.Key) {
+		if !hasValue {
+			hasValue = true
+			prevKey = kv.Key
+			localResult = reflect.ValueOf(kv.Value)
+		} else if !reflect.DeepEqual(prevKey, kv.Key) {
 			if localResult.IsValid() {
 				sendKeyValue(outChan, prevKey, localResult.Interface())
 			}
@@ -119,5 +116,7 @@ func foldSameKey(inputs chan reflect.Value, f interface{}, outChan reflect.Value
 			localResult = outs[0]
 		}
 	}
-	sendKeyValue(outChan, prevKey, localResult.Interface())
+	if hasValue {
+		sendKeyValue(outChan, prevKey, localResult.Interface())
+	}
 }
