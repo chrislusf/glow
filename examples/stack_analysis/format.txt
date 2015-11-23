@@ -1,0 +1,23 @@
+   - **posts**.xml
+       - Id
+       - PostTypeId
+          - 1: Question
+          - 2: Answer
+       - ParentID (only present if PostTypeId is 2)
+       - AcceptedAnswerId (only present if PostTypeId is 1)
+       - CreationDate
+       - Score
+       - ViewCount
+       - Body
+       - OwnerUserId
+       - LastEditorUserId
+       - LastEditorDisplayName="Jeff Atwood"
+       - LastEditDate="2009-03-05T22:28:34.823"
+       - LastActivityDate="2009-03-11T12:51:01.480"
+       - CommunityOwnedDate="2009-03-11T12:51:01.480"
+       - ClosedDate="2009-03-11T12:51:01.480"
+       - Title=
+       - Tags=
+       - AnswerCount
+       - CommentCount
+       - FavoriteCount
