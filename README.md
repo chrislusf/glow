@@ -57,9 +57,9 @@ Try it.
 
 It will run the input text file, '/etc/passwd', in 3 go routines, filter/map/map, and then reduced to one number in one goroutine (not exactly one goroutine, but let's skip the details for now.) and print it out. 
 
-This is useful already, saving lots of idiomatic but repetitive code on channels, sync wait, etc.
+This is useful already, saving lots of idiomatic but repetitive code on channels, sync wait, etc, to fully utilize more CPU cores.
 
-However, there is one more thing!
+However, there is one more thing! It can run across a Glow cluster, which can be run multiple servers/racks/data centers!
 
 ## Scale it out
 To setup the Glow cluster, we do not need experts on Zookeeper/HDFS/Mesos/YARN etc. Just build or download one binary file.
