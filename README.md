@@ -93,10 +93,9 @@ The word_count program will become a driver program, dividing the execution into
 
 # Read More
 
-1. [Glow Introduction Slides] (https://raw.githubusercontent.com/chrislusf/glow/master/etc/GlowIntroduction.pdf)
-2. Wiki page: https://github.com/chrislusf/glow/wiki
-3. Mailing list: https://groups.google.com/forum/#!forum/glow-user-discussion
-4. Examples: https://github.com/chrislusf/glow/tree/master/examples/
+1. Wiki page: https://github.com/chrislusf/glow/wiki
+2. Mailing list: https://groups.google.com/forum/#!forum/glow-user-discussion
+3. Examples: https://github.com/chrislusf/glow/tree/master/examples/
 
 # Contribution
 Start using it! And report or fix any issue you have seen, add any feature you want.
