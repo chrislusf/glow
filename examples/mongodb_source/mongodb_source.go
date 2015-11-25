@@ -57,7 +57,7 @@ func iterate(mongodbUrl, dbName, collectionName string, fn func(*mgo.Iter)) {
 		println(err)
 		return
 	}
-	iter := session.DB("mailpin").C(collectionName).Find(nil).Iter()
+	iter := session.DB(dbName).C(collectionName).Find(nil).Iter()
 	fn(iter)
 	if err := iter.Close(); err != nil {
 		println(err)
