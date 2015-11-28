@@ -52,7 +52,7 @@ func main() {
 
 Try it. 
 ```
-./word_count
+  > ./word_count
 ```
 
 It will run the input text file, '/etc/passwd', in 3 go routines, filter/map/map, and then reduced to one number in one goroutine (not exactly one goroutine, but let's skip the details for now.) and print it out. 
@@ -67,11 +67,11 @@ To setup the Glow cluster, we do not need experts on Zookeeper/HDFS/Mesos/YARN e
 ### Setup the cluster
 ```
   // fetch and install via go, or just download it from somewhere
-  go get github.com/chrislusf/glow
+  > go get github.com/chrislusf/glow
   // start a master on one computer
-  glow master
+  > glow master
   // run one or more agents on computers
-  glow agent --dir . --max.executors=16 --memory=2048 --master="localhost:8930" --port 8931
+  > glow agent --dir . --max.executors=16 --memory=2048 --master="localhost:8930" --port 8931
 ```
 Glow Master and Glow Agent run very efficiently. They take about 6.5MB and 5.5MB memory respectively in my environments. I would recommend set up agents on any server you can find. You can tap into the computing power whenever you need to.
 
@@ -84,9 +84,17 @@ To leap from one computer to clusters of computers, add this line to the import 
 This will "steroidize" the code to run in cluster mode! 
 
 ```
-./word_count -glow -glow.leader="localhost:8930"
+> ./word_count -glow -glow.leader="localhost:8930"
 ```
 The word_count program will become a driver program, dividing the execution into a directed acyclic graph(DAG), and send tasks to agents.
+
+### Visualize the flow
+
+To understand how each executor works, you can visualize the flow by generating a dot file of the flow, and render it to png file via "dot" command provided from graphviz.
+```
+> ./word_count -glow -glow.flow.plot > x.dot
+> dot -Tpng -otestSelfJoin.png x.dot
+```
 
 ![Glow Hello World Execution Plan](https://raw.githubusercontent.com/chrislusf/glow/master/etc/helloworld.png)
 
