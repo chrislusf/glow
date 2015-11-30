@@ -64,7 +64,7 @@ func (d *Dataset) CoGroup(other *Dataset) *Dataset {
 }
 
 // CoGroupPartitionedSorted joins 2 datasets that are sharded
-// by the same key, and locally sorted within the shard
+// by the same key and already locally sorted within each shard.
 func (this *Dataset) CoGroupPartitionedSorted(that *Dataset,
 	compareFunc interface{}) (ret *Dataset) {
 	ret = this.context.newNextDataset(len(this.Shards), KeyValuesValuesType)
