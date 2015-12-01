@@ -39,7 +39,7 @@ type AgentServer struct {
 	Master                string
 	Port                  int
 	wg                    sync.WaitGroup
-	l                     net.Listener
+	listener              net.Listener
 	computeResource       *resource.ComputeResource
 	allocatedResource     *resource.ComputeResource
 	allocatedResourceLock sync.Mutex
@@ -79,12 +79,12 @@ func NewAgentServer(option *AgentServerOption) *AgentServer {
 // r.Port can be pre-set or leave it as zero
 // The actual port set to r.Port
 func (r *AgentServer) Init() (err error) {
-	r.l, err = net.Listen("tcp", ":"+strconv.Itoa(r.Port))
+	r.listener, err = net.Listen("tcp", ":"+strconv.Itoa(r.Port))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	r.Port = r.l.Addr().(*net.TCPAddr).Port
+	r.Port = r.listener.Addr().(*net.TCPAddr).Port
 	fmt.Println("AgentServer starts on:", r.Port)
 
 	if *r.Option.CleanRestart {
@@ -113,7 +113,7 @@ func (as *AgentServer) Run() {
 
 	for {
 		// Listen for an incoming connection.
-		conn, err := as.l.Accept()
+		conn, err := as.listener.Accept()
 		if err != nil {
 			fmt.Println("Error accepting: ", err.Error())
 			os.Exit(1)
@@ -129,7 +129,7 @@ func (as *AgentServer) Run() {
 }
 
 func (r *AgentServer) Stop() {
-	r.l.Close()
+	r.listener.Close()
 	r.wg.Wait()
 }
 
