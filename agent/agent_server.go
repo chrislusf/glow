@@ -89,9 +89,10 @@ func (r *AgentServer) Init() (err error) {
 
 	if *r.Option.CleanRestart {
 		if fileInfos, err := ioutil.ReadDir(r.storageBackend.dir); err == nil {
+			suffix := fmt.Sprintf("-%d.dat", r.Port)
 			for _, fi := range fileInfos {
 				name := fi.Name()
-				if !fi.IsDir() && strings.HasSuffix(name, ".dat") {
+				if !fi.IsDir() && strings.HasSuffix(name, suffix) {
 					// println("removing old dat file:", name)
 					os.Remove(filepath.Join(r.storageBackend.dir, name))
 				}
