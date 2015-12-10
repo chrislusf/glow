@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/chrislusf/glow/util"
-	"github.com/golang/snappy"
 )
 
 // Talk with local agent
@@ -36,7 +35,7 @@ func NewDirectSendChannel(name string, target string, wg *sync.WaitGroup) (chan 
 		util.WriteBytes(conn, buf, util.NewMessage(util.Data, []byte("PUT "+name)))
 
 		for data := range ch {
-			util.WriteBytes(conn, buf, util.NewMessage(util.Data, snappy.Encode(nil, data)))
+			util.WriteBytes(conn, buf, util.NewMessage(util.Data, data))
 		}
 
 		util.WriteBytes(conn, buf, util.NewMessage(util.CloseChannel, nil))
