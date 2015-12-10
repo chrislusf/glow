@@ -36,10 +36,10 @@ func (s *Scheduler) Fetch(demands []market.Demand) {
 		time.Sleep(time.Millisecond * time.Duration(15000+rand.Int63n(5000)))
 	} else {
 		if len(result.Allocations) == 0 {
-			log.Printf("%s Failed to allocate any server.", s.Leader)
+			log.Printf("%s Failed to allocate any executor.", s.Leader)
 			time.Sleep(time.Millisecond * time.Duration(2000+rand.Int63n(1000)))
 		} else {
-			log.Printf("%s allocated %d servers.", s.Leader, len(result.Allocations))
+			log.Printf("%s allocated %d executors.", s.Leader, len(result.Allocations))
 			for _, allocation := range result.Allocations {
 				s.Market.AddSupply(market.Supply{
 					Object: allocation,
