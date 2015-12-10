@@ -10,6 +10,7 @@ import (
 
 	"github.com/chrislusf/glow/resource/service_discovery/client"
 	"github.com/chrislusf/glow/util"
+	"github.com/golang/snappy"
 )
 
 type ReceiveChannel struct {
@@ -108,7 +109,12 @@ func (rc *ReceiveChannel) receiveTopicFrom(target string) {
 		}
 		// println("receive raw data :", string(data.Bytes()))
 		rc.offset += uint64(len(data.Data()))
-		rc.Ch <- data.Data()
+		uncompressed_data, err := snappy.Decode(nil, data.Data())
+		if err != nil {
+			log.Printf("receive uncompress error:%v", err)
+			continue
+		}
+		rc.Ch <- uncompressed_data
 	}
 	close(rc.Ch)
 }
