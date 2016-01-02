@@ -8,7 +8,7 @@ import (
 	"github.com/chrislusf/glow/util"
 )
 
-func (as *AgentServer) handleLocalReadConnection(conn net.Conn, name string, offset int64) {
+func (as *AgentServer) handleReadConnection(conn net.Conn, name string, offset int64) {
 
 	dsStore := as.storageBackend.WaitForNamedDatasetShard(name)
 

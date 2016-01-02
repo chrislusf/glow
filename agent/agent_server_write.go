@@ -6,7 +6,7 @@ import (
 	"github.com/chrislusf/glow/util"
 )
 
-func (as *AgentServer) handleWriteConnection(r io.Reader, name string) {
+func (as *AgentServer) handleLocalWriteConnection(r io.Reader, name string) {
 
 	dsStore := as.storageBackend.CreateNamedDatasetShard(name)
 

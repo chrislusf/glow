@@ -151,11 +151,11 @@ func (r *AgentServer) handleRequest(conn net.Conn) {
 	}
 	if bytes.HasPrefix(message.Data(), []byte("PUT ")) {
 		name := string(message.Data()[4:])
-		r.handleWriteConnection(conn, name)
+		r.handleLocalWriteConnection(conn, name)
 	} else if bytes.HasPrefix(message.Data(), []byte("GET ")) {
 		name := string(message.Data()[4:])
 		offset := util.ReadUint64(conn)
-		r.handleLocalReadConnection(conn, name, int64(offset))
+		r.handleReadConnection(conn, name, int64(offset))
 	} else if bytes.HasPrefix(message.Data(), []byte("CMD ")) {
 		newCmd := &cmd.ControlMessage{}
 		err := proto.Unmarshal(message.Data()[4:], newCmd)
