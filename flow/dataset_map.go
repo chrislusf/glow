@@ -50,13 +50,13 @@ func _buildMapperFunction(f interface{}, task *Task) func(input reflect.Value) {
 				_functionCallWithChanOutput(fn, outChan, kv.Key, kv.Value)
 			case KeyValueValueType:
 				kv := input.Interface().(KeyValueValue)
-				_functionCall(fn, outChan, kv.Key, kv.Value1, kv.Value2)
+				_functionCallWithChanOutput(fn, outChan, kv.Key, kv.Value1, kv.Value2)
 			case KeyValuesType:
 				kvs := input.Interface().(KeyValues)
-				_functionCall(fn, outChan, kvs.Key, kvs.Values)
+				_functionCallWithChanOutput(fn, outChan, kvs.Key, kvs.Values)
 			case KeyValuesValuesType:
 				kvv := input.Interface().(KeyValuesValues)
-				_functionCall(fn, outChan, kvv.Key, kvv.Values1, kvv.Values2)
+				_functionCallWithChanOutput(fn, outChan, kvv.Key, kvv.Values1, kvv.Values2)
 			default:
 				fn.Call([]reflect.Value{input, outChan})
 			}
