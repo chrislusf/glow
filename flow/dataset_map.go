@@ -38,23 +38,18 @@ func (d *Dataset) Map(f interface{}) *Dataset {
 				switch input.Type() {
 				case KeyValueType:
 					kv := input.Interface().(KeyValue)
-					outs := _functionCallWithChanOutput(fn, outChan, kv.Key, kv.Value)
-					sendMapOutputs(outChan, outs)
+					_functionCallWithChanOutput(fn, outChan, kv.Key, kv.Value)
 				case KeyValueValueType:
 					kv := input.Interface().(KeyValueValue)
-					outs := _functionCall(fn, outChan, kv.Key, kv.Value1, kv.Value2)
-					sendMapOutputs(outChan, outs)
+					_functionCall(fn, outChan, kv.Key, kv.Value1, kv.Value2)
 				case KeyValuesType:
 					kvs := input.Interface().(KeyValues)
-					outs := _functionCall(fn, outChan, kvs.Key, kvs.Values)
-					sendMapOutputs(outChan, outs)
+					_functionCall(fn, outChan, kvs.Key, kvs.Values)
 				case KeyValuesValuesType:
 					kvv := input.Interface().(KeyValuesValues)
-					outs := _functionCall(fn, outChan, kvv.Key, kvv.Values1, kvv.Values2)
-					sendMapOutputs(outChan, outs)
+					_functionCall(fn, outChan, kvv.Key, kvv.Values1, kvv.Values2)
 				default:
-					outs := fn.Call([]reflect.Value{input, outChan})
-					sendMapOutputs(outChan, outs)
+					fn.Call([]reflect.Value{input, outChan})
 				}
 			}
 		} else {
