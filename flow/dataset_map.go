@@ -41,49 +41,38 @@ func _buildMapperFunction(f interface{}, task *Task) func(input reflect.Value) {
 	}
 
 	if ft.In(ft.NumIn()-1).Kind() == reflect.Chan {
-		// if last parameter in the function is a channel
-		// use the channel element type as output type
-		return func(input reflect.Value) {
-			switch input.Type() {
-			case KeyValueType:
-				kv := input.Interface().(KeyValue)
-				_functionCallWithChanOutput(fn, outChan, kv.Key, kv.Value)
-			case KeyValueValueType:
-				kv := input.Interface().(KeyValueValue)
-				_functionCallWithChanOutput(fn, outChan, kv.Key, kv.Value1, kv.Value2)
-			case KeyValuesType:
-				kvs := input.Interface().(KeyValues)
-				_functionCallWithChanOutput(fn, outChan, kvs.Key, kvs.Values)
-			case KeyValuesValuesType:
-				kvv := input.Interface().(KeyValuesValues)
-				_functionCallWithChanOutput(fn, outChan, kvv.Key, kvv.Values1, kvv.Values2)
-			default:
-				fn.Call([]reflect.Value{input, outChan})
-			}
-		}
+		return _buildMapperFunctionWithChannel(fn, outChan)
 	}
+	return _buildMapperFunctionWithoutChannel(fn, outChan)
+}
+
+// if last parameter in the function is a channel
+// use the channel element type as output type
+func _buildMapperFunctionWithChannel(fn, outChan reflect.Value) func(input reflect.Value) {
 	return func(input reflect.Value) {
 		switch input.Type() {
 		case KeyValueType:
 			kv := input.Interface().(KeyValue)
-			outs := _functionCall(fn, kv.Key, kv.Value)
-			sendMapOutputs(outChan, outs)
+			_functionCallWithChanOutput(fn, outChan, kv.Key, kv.Value)
 		case KeyValueValueType:
 			kv := input.Interface().(KeyValueValue)
-			outs := _functionCall(fn, kv.Key, kv.Value1, kv.Value2)
-			sendMapOutputs(outChan, outs)
+			_functionCallWithChanOutput(fn, outChan, kv.Key, kv.Value1, kv.Value2)
 		case KeyValuesType:
 			kvs := input.Interface().(KeyValues)
-			outs := _functionCall(fn, kvs.Key, kvs.Values)
-			sendMapOutputs(outChan, outs)
+			_functionCallWithChanOutput(fn, outChan, kvs.Key, kvs.Values)
 		case KeyValuesValuesType:
 			kvv := input.Interface().(KeyValuesValues)
-			outs := _functionCall(fn, kvv.Key, kvv.Values1, kvv.Values2)
-			sendMapOutputs(outChan, outs)
+			_functionCallWithChanOutput(fn, outChan, kvv.Key, kvv.Values1, kvv.Values2)
 		default:
-			outs := fn.Call([]reflect.Value{input})
-			sendMapOutputs(outChan, outs)
+			fn.Call([]reflect.Value{input, outChan})
 		}
+	}
+}
+
+func _buildMapperFunctionWithoutChannel(fn, outChan reflect.Value) func(input reflect.Value) {
+	return func(input reflect.Value) {
+		outs := _functionCallBasedOnInputType(fn, input)
+		sendMapOutputs(outChan, outs)
 	}
 }
 
@@ -104,6 +93,26 @@ func _functionCall(fn reflect.Value, inputs ...interface{}) []reflect.Value {
 	return fn.Call(args)
 }
 
+func _functionCallBasedOnInputType(fn, input reflect.Value) (outs []reflect.Value) {
+	switch input.Type() {
+	case KeyValueType:
+		kv := input.Interface().(KeyValue)
+		outs = _functionCall(fn, kv.Key, kv.Value)
+	case KeyValueValueType:
+		kv := input.Interface().(KeyValueValue)
+		outs = _functionCall(fn, kv.Key, kv.Value1, kv.Value2)
+	case KeyValuesType:
+		kvs := input.Interface().(KeyValues)
+		outs = _functionCall(fn, kvs.Key, kvs.Values)
+	case KeyValuesValuesType:
+		kvv := input.Interface().(KeyValuesValues)
+		outs = _functionCall(fn, kvv.Key, kvv.Values1, kvv.Values2)
+	default:
+		outs = fn.Call([]reflect.Value{input})
+	}
+	return
+}
+
 // f(A)bool
 func (d *Dataset) Filter(f interface{}) *Dataset {
 	ret, step := add1ShardTo1Step(d, d.Type)
@@ -113,25 +122,9 @@ func (d *Dataset) Filter(f interface{}) *Dataset {
 	step.Function = func(task *Task) {
 		fn := reflect.ValueOf(f)
 		outChan := task.Outputs[0].WriteChan
-		var outs []reflect.Value
 		for input := range task.InputChan() {
-			switch input.Type() {
-			case KeyValueType:
-				kv := input.Interface().(KeyValue)
-				outs = _functionCall(fn, kv.Key, kv.Value)
-			case KeyValueValueType:
-				kv := input.Interface().(KeyValueValue)
-				outs = _functionCall(fn, kv.Key, kv.Value1, kv.Value2)
-			case KeyValuesType:
-				kvs := input.Interface().(KeyValues)
-				outs = _functionCall(fn, kvs.Key, kvs.Values)
-			case KeyValuesValuesType:
-				kvv := input.Interface().(KeyValuesValues)
-				outs = _functionCall(fn, kvv.Key, kvv.Values1, kvv.Values2)
-			default:
-				outs = fn.Call([]reflect.Value{input})
-			}
-			if outs[0].Bool() {
+			outs := _functionCallBasedOnInputType(fn, input)
+			if len(outs) > 0 && outs[0].Bool() {
 				outChan.Send(input)
 			}
 		}
