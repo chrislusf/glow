@@ -75,18 +75,18 @@ func (this *Dataset) CoGroupPartitionedSorted(that *Dataset,
 	step.Function = func(task *Task) {
 		outChan := task.Outputs[0].WriteChan
 
-		leftChan := task.InputChans[0]
-		rightChan := task.InputChans[1]
+		leftChan := newChannelOfValuesWithSameKey(task.InputChans[0], compareFunc)
+		rightChan := newChannelOfValuesWithSameKey(task.InputChans[1], compareFunc)
 
 		// get first value from both channels
-		leftKey, leftValue, leftHasValue := getKeyValue(leftChan)
-		rightKey, rightValue, rightHasValue := getKeyValue(rightChan)
+		leftValuesWithSameKey, leftHasValue := <-leftChan
+		rightValuesWithSameKey, rightHasValue := <-rightChan
 
 		if compareFunc == nil {
 			if leftHasValue {
-				compareFunc = getComparator(reflect.TypeOf(leftKey))
+				compareFunc = getComparator(reflect.TypeOf(leftValuesWithSameKey.Key))
 			} else if rightHasValue {
-				compareFunc = getComparator(reflect.TypeOf(rightKey))
+				compareFunc = getComparator(reflect.TypeOf(rightValuesWithSameKey.Key))
 			}
 		}
 		fn := reflect.ValueOf(compareFunc)
@@ -100,41 +100,34 @@ func (this *Dataset) CoGroupPartitionedSorted(that *Dataset,
 
 		var leftType, rightType reflect.Type
 		if leftHasValue {
-			leftType = reflect.TypeOf(leftValue)
+			leftType = reflect.TypeOf(leftValuesWithSameKey.Values[0])
 		}
 		if rightHasValue {
-			rightType = reflect.TypeOf(rightValue)
+			rightType = reflect.TypeOf(rightValuesWithSameKey.Values[0])
 		}
 
-		var leftValues, rightValues []interface{}
-		var leftNextKey, leftNextValue, rightNextKey, rightNextValue interface{}
 		for leftHasValue && rightHasValue {
-			x := comparator(leftKey, rightKey)
+			x := comparator(leftValuesWithSameKey.Key, rightValuesWithSameKey.Key)
 			switch {
 			case x == 0:
-				leftNextKey, leftNextValue, leftValues, leftHasValue = getSameKeyValues(leftChan, comparator, leftKey, leftValue, leftHasValue)
-				rightNextKey, rightNextValue, rightValues, rightHasValue = getSameKeyValues(rightChan, comparator, rightKey, rightValue, rightHasValue)
-				sendKeyValuesValues(outChan, leftKey, leftType, leftValues, rightType, rightValues)
-				leftKey, leftValue, rightKey, rightValue = leftNextKey, leftNextValue, rightNextKey, rightNextValue
+				sendKeyValuesValues(outChan, leftValuesWithSameKey.Key, leftType, leftValuesWithSameKey.Values, rightType, rightValuesWithSameKey.Values)
+				leftValuesWithSameKey, leftHasValue = <-leftChan
+				rightValuesWithSameKey, rightHasValue = <-rightChan
 			case x < 0:
-				leftNextKey, leftNextValue, leftValues, leftHasValue = getSameKeyValues(leftChan, comparator, leftKey, leftValue, leftHasValue)
-				sendKeyValuesValues(outChan, leftKey, leftType, leftValues, rightType, []interface{}{})
-				leftKey, leftValue = leftNextKey, leftNextValue
+				sendKeyValuesValues(outChan, leftValuesWithSameKey.Key, leftType, leftValuesWithSameKey.Values, rightType, []interface{}{})
+				leftValuesWithSameKey, leftHasValue = <-leftChan
 			case x > 0:
-				rightNextKey, rightNextValue, rightValues, rightHasValue = getSameKeyValues(rightChan, comparator, rightKey, rightValue, rightHasValue)
-				sendKeyValuesValues(outChan, rightKey, leftType, []interface{}{}, rightType, rightValues)
-				rightKey, rightValue = rightNextKey, rightNextValue
+				sendKeyValuesValues(outChan, rightValuesWithSameKey.Key, leftType, []interface{}{}, rightType, rightValuesWithSameKey.Values)
+				rightValuesWithSameKey, rightHasValue = <-rightChan
 			}
 		}
 		for leftHasValue {
-			leftNextKey, leftNextValue, leftValues, leftHasValue = getSameKeyValues(leftChan, comparator, leftKey, leftValue, leftHasValue)
-			sendKeyValuesValues(outChan, leftKey, leftType, leftValues, rightType, []interface{}{})
-			leftKey, leftValue = leftNextKey, leftNextValue
+			sendKeyValuesValues(outChan, leftValuesWithSameKey.Key, leftType, leftValuesWithSameKey.Values, rightType, []interface{}{})
+			leftValuesWithSameKey, leftHasValue = <-leftChan
 		}
 		for rightHasValue {
-			rightNextKey, rightNextValue, rightValues, rightHasValue = getSameKeyValues(rightChan, comparator, rightKey, rightValue, rightHasValue)
-			sendKeyValuesValues(outChan, rightKey, leftType, []interface{}{}, rightType, rightValues)
-			rightKey, rightValue = rightNextKey, rightNextValue
+			sendKeyValuesValues(outChan, rightValuesWithSameKey.Key, leftType, []interface{}{}, rightType, rightValuesWithSameKey.Values)
+			rightValuesWithSameKey, rightHasValue = <-rightChan
 		}
 	}
 	return ret

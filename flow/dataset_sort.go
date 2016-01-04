@@ -37,6 +37,7 @@ func (d *Dataset) LocalSort(f interface{}) *Dataset {
 
 		for _, kv := range kvs {
 			outChan.Send(reflect.ValueOf(kv))
+			// println(task.Name(), "sent kv index:", i)
 		}
 	}
 	return ret

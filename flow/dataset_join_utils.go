@@ -97,3 +97,59 @@ func getKeyValue(ch chan reflect.Value) (key, value interface{}, ok bool) {
 	}
 	return key, value, hasValue
 }
+
+type valuesWithSameKey struct {
+	Key    interface{}
+	Values []interface{}
+}
+
+// create a channel to aggregate values of the same key
+// automatically close original sorted channel
+func newChannelOfValuesWithSameKey(sortedChan chan reflect.Value, compareFunc interface{}) chan valuesWithSameKey {
+	outChan := make(chan valuesWithSameKey)
+	go func() {
+
+		defer close(outChan)
+
+		firstKey, firstValue, hasValue := getKeyValue(sortedChan)
+		if !hasValue {
+			return
+		}
+
+		if compareFunc == nil {
+			compareFunc = getComparator(reflect.TypeOf(firstKey))
+		}
+
+		fn := reflect.ValueOf(compareFunc)
+		comparator := func(a, b interface{}) int64 {
+			outs := fn.Call([]reflect.Value{
+				reflect.ValueOf(a),
+				reflect.ValueOf(b),
+			})
+			return outs[0].Int()
+		}
+
+		keyValues := valuesWithSameKey{
+			Key:    firstKey,
+			Values: make([]interface{}, 0),
+		}
+		keyValues.Values = append(keyValues.Values, firstValue)
+		for {
+			nextKey, nextValue, nextHasValue := getKeyValue(sortedChan)
+			if !nextHasValue {
+				outChan <- keyValues
+				break
+			}
+			x := comparator(keyValues.Key, nextKey)
+			if x == 0 {
+				keyValues.Values = append(keyValues.Values, nextValue)
+			} else {
+				outChan <- keyValues
+				keyValues.Key = nextKey
+				keyValues.Values = append(keyValues.Values[:0], nextValue)
+			}
+		}
+	}()
+
+	return outChan
+}

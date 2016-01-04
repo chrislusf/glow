@@ -29,18 +29,18 @@ func (this *Dataset) JoinPartitionedSorted(that *Dataset,
 	step.Function = func(task *Task) {
 		outChan := task.Outputs[0].WriteChan
 
-		leftChan := task.InputChans[0]
-		rightChan := task.InputChans[1]
+		leftChan := newChannelOfValuesWithSameKey(task.InputChans[0], compareFunc)
+		rightChan := newChannelOfValuesWithSameKey(task.InputChans[1], compareFunc)
 
 		// get first value from both channels
-		leftKey, leftValue, leftHasValue := getKeyValue(leftChan)
-		rightKey, rightValue, rightHasValue := getKeyValue(rightChan)
+		leftValuesWithSameKey, leftHasValue := <-leftChan
+		rightValuesWithSameKey, rightHasValue := <-rightChan
 
 		if compareFunc == nil {
 			if leftHasValue {
-				compareFunc = getComparator(reflect.TypeOf(leftKey))
+				compareFunc = getComparator(reflect.TypeOf(leftValuesWithSameKey.Key))
 			} else if rightHasValue {
-				compareFunc = getComparator(reflect.TypeOf(rightKey))
+				compareFunc = getComparator(reflect.TypeOf(rightValuesWithSameKey.Key))
 			}
 		}
 		fn := reflect.ValueOf(compareFunc)
@@ -52,55 +52,60 @@ func (this *Dataset) JoinPartitionedSorted(that *Dataset,
 			return outs[0].Int()
 		}
 
-		var leftValues, rightValues []interface{}
-		var leftNextKey, leftNextValue, rightNextKey, rightNextValue interface{}
 		for leftHasValue && rightHasValue {
-			x := comparator(leftKey, rightKey)
+			x := comparator(leftValuesWithSameKey.Key, rightValuesWithSameKey.Key)
 			switch {
 			case x == 0:
-				leftNextKey, leftNextValue, leftValues, leftHasValue = getSameKeyValues(leftChan, comparator, leftKey, leftValue, leftHasValue)
-				rightNextKey, rightNextValue, rightValues, rightHasValue = getSameKeyValues(rightChan, comparator, rightKey, rightValue, rightHasValue)
-
-				// fmt.Printf("left %+v, %v ============ right %+v %v\n", leftKey, leftValues, rightKey, rightValues)
 				// left and right cartician join
-				for _, a := range leftValues {
-					for _, b := range rightValues {
-						sendKeyValueValue(outChan, leftKey, a, b)
+				for _, a := range leftValuesWithSameKey.Values {
+					for _, b := range rightValuesWithSameKey.Values {
+						sendKeyValueValue(outChan, leftValuesWithSameKey.Key, a, b)
 					}
 				}
-				leftKey, leftValue, rightKey, rightValue = leftNextKey, leftNextValue, rightNextKey, rightNextValue
+				leftValuesWithSameKey, leftHasValue = <-leftChan
+				rightValuesWithSameKey, rightHasValue = <-rightChan
 			case x < 0:
 				if isLeftOuterJoin {
-					sendKeyValueValue(outChan, leftKey, leftValue, nil)
+					for _, leftValue := range leftValuesWithSameKey.Values {
+						sendKeyValueValue(outChan, leftValuesWithSameKey.Key, leftValue, nil)
+					}
 				}
-				leftKey, leftValue, leftHasValue = getKeyValue(leftChan)
+				leftValuesWithSameKey, leftHasValue = <-leftChan
 			case x > 0:
 				if isRightOuterJoin {
-					sendKeyValueValue(outChan, rightKey, nil, rightValue)
+					for _, rightValue := range rightValuesWithSameKey.Values {
+						sendKeyValueValue(outChan, rightValuesWithSameKey.Key, nil, rightValue)
+					}
 				}
-				rightKey, rightValue, rightHasValue = getKeyValue(rightChan)
+				rightValuesWithSameKey, rightHasValue = <-rightChan
 			}
 		}
 		if leftHasValue {
 			if isLeftOuterJoin {
-				sendKeyValueValue(outChan, leftKey, leftValue, nil)
+				for _, leftValue := range leftValuesWithSameKey.Values {
+					sendKeyValueValue(outChan, leftValuesWithSameKey.Key, leftValue, nil)
+				}
 			}
 		}
-		for leftKeyValue := range leftChan {
+		for leftValuesWithSameKey = range leftChan {
 			if isLeftOuterJoin {
-				leftKey, leftValue = leftKeyValue.Field(0), leftKeyValue.Field(1)
-				sendKeyValueValue(outChan, leftKey, leftValue, nil)
+				for _, leftValue := range leftValuesWithSameKey.Values {
+					sendKeyValueValue(outChan, leftValuesWithSameKey.Key, leftValue, nil)
+				}
 			}
 		}
 		if rightHasValue {
 			if isRightOuterJoin {
-				sendKeyValueValue(outChan, rightKey, nil, rightValue)
+				for _, rightValue := range rightValuesWithSameKey.Values {
+					sendKeyValueValue(outChan, rightValuesWithSameKey.Key, nil, rightValue)
+				}
 			}
 		}
-		for rightKeyValue := range rightChan {
+		for rightValuesWithSameKey = range rightChan {
 			if isRightOuterJoin {
-				rightKey, rightValue = rightKeyValue.Field(0), rightKeyValue.Field(1)
-				sendKeyValueValue(outChan, rightKey, nil, rightValue)
+				for _, rightValue := range rightValuesWithSameKey.Values {
+					sendKeyValueValue(outChan, rightValuesWithSameKey.Key, nil, rightValue)
+				}
 			}
 		}
 
