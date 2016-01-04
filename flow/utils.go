@@ -1,10 +1,7 @@
 package flow
 
 import (
-	"os"
-	"os/signal"
 	"reflect"
-	"syscall"
 )
 
 func guessFunctionOutputType(f interface{}) reflect.Type {
@@ -36,29 +33,4 @@ func guessKey(input reflect.Value) (key reflect.Value) {
 		return v
 	}
 	return key
-}
-
-func OnInterrupt(fn func()) {
-	// deal with control+c,etc
-	signalChan := make(chan os.Signal, 1)
-	// controlling terminal close, daemon not exit
-	signal.Ignore(syscall.SIGHUP)
-	signal.Notify(signalChan,
-		os.Interrupt,
-		os.Kill,
-		syscall.SIGALRM,
-		// syscall.SIGHUP,
-		syscall.SIGINFO,
-		syscall.SIGINT,
-		syscall.SIGTERM,
-		// syscall.SIGQUIT, // Quit from keyboard, "kill -3"
-	)
-	go func() {
-		for sig := range signalChan {
-			fn()
-			if sig != syscall.SIGINFO {
-				os.Exit(0)
-			}
-		}
-	}()
 }
