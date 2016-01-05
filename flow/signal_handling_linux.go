@@ -1,4 +1,4 @@
-// +build darwin freebsd netbsd openbsd, !plan9, !windows, !linux
+// +build linux
 
 package flow
 
@@ -18,7 +18,7 @@ func OnInterrupt(fn func()) {
 		os.Kill,
 		syscall.SIGALRM,
 		// syscall.SIGHUP,
-		syscall.SIGINFO, // this causes windows to fail
+		// syscall.SIGINFO, this causes windows to fail
 		syscall.SIGINT,
 		syscall.SIGTERM,
 		// syscall.SIGQUIT, // Quit from keyboard, "kill -3"
@@ -26,7 +26,7 @@ func OnInterrupt(fn func()) {
 	go func() {
 		for sig := range signalChan {
 			fn()
-			if sig != syscall.SIGINFO {
+			if sig != syscall.SIGTERM {
 				os.Exit(0)
 			}
 		}
