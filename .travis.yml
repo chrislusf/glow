@@ -3,6 +3,7 @@ os:
   - linux
   - osx
   - windows
+  - freebsd
 
 language: go
 go: 
