@@ -18,7 +18,7 @@ func OnInterrupt(fn func()) {
 		os.Kill,
 		syscall.SIGALRM,
 		// syscall.SIGHUP,
-		// syscall.SIGINFO, this causes windows to fail
+		// syscall.SIGINFO, // this causes windows to fail
 		syscall.SIGINT,
 		syscall.SIGTERM,
 		// syscall.SIGQUIT, // Quit from keyboard, "kill -3"
