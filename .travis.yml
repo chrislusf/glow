@@ -1,0 +1,14 @@
+sudo: false
+language: go
+go: 
+ - 1.5
+ - tip
+
+before_install:
+ - export PATH=/home/travis/gopath/bin:$PATH
+
+install:
+ - go get ./...
+ 
+script:
+ - go test ./...
