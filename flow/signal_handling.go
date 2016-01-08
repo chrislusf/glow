@@ -1,4 +1,5 @@
-// +build darwin freebsd netbsd openbsd, !plan9, !windows, !linux
+// +build darwin freebsd netbsd openbsd
+// +build !plan9,!windows,!linux
 
 package flow
 
