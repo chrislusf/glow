@@ -43,7 +43,7 @@ type AgentServer struct {
 	computeResource       *resource.ComputeResource
 	allocatedResource     *resource.ComputeResource
 	allocatedResourceLock sync.Mutex
-	storageBackend        *ManagedDatasetShards
+	storageBackend        *LocalDataShardsManager
 }
 
 func NewAgentServer(option *AgentServerOption) *AgentServer {
@@ -58,7 +58,7 @@ func NewAgentServer(option *AgentServerOption) *AgentServer {
 		Option:         option,
 		Master:         *option.Master,
 		Port:           *option.Port,
-		storageBackend: NewManagedDatasetShards(*option.Dir, *option.Port),
+		storageBackend: NewLocalDataShardsManager(*option.Dir, *option.Port),
 		computeResource: &resource.ComputeResource{
 			CPUCount: *option.MaxExecutor,
 			CPULevel: *option.CPULevel,
