@@ -8,7 +8,7 @@ import (
 	"github.com/chrislusf/glow/netchan/store"
 )
 
-type LocalDataShardsManager struct {
+type LocalDatasetShardsManager struct {
 	sync.Mutex
 	dir            string
 	port           int
@@ -16,8 +16,8 @@ type LocalDataShardsManager struct {
 	name2StoreCond *sync.Cond
 }
 
-func NewLocalDataShardsManager(dir string, port int) *LocalDataShardsManager {
-	m := &LocalDataShardsManager{
+func NewLocalDatasetShardsManager(dir string, port int) *LocalDatasetShardsManager {
+	m := &LocalDatasetShardsManager{
 		dir:        dir,
 		port:       port,
 		name2Store: make(map[string]store.DataStore),
@@ -26,7 +26,7 @@ func NewLocalDataShardsManager(dir string, port int) *LocalDataShardsManager {
 	return m
 }
 
-func (m *LocalDataShardsManager) doDelete(name string) {
+func (m *LocalDatasetShardsManager) doDelete(name string) {
 
 	ds, ok := m.name2Store[name]
 	if !ok {
@@ -38,7 +38,7 @@ func (m *LocalDataShardsManager) doDelete(name string) {
 	ds.Destroy()
 }
 
-func (m *LocalDataShardsManager) DeleteNamedDatasetShard(name string) {
+func (m *LocalDatasetShardsManager) DeleteNamedDatasetShard(name string) {
 
 	m.Lock()
 	defer m.Unlock()
@@ -47,7 +47,7 @@ func (m *LocalDataShardsManager) DeleteNamedDatasetShard(name string) {
 
 }
 
-func (m *LocalDataShardsManager) CreateNamedDatasetShard(name string) store.DataStore {
+func (m *LocalDatasetShardsManager) CreateNamedDatasetShard(name string) store.DataStore {
 
 	m.Lock()
 	defer m.Unlock()
@@ -71,7 +71,7 @@ func (m *LocalDataShardsManager) CreateNamedDatasetShard(name string) store.Data
 
 }
 
-func (m *LocalDataShardsManager) WaitForNamedDatasetShard(name string) store.DataStore {
+func (m *LocalDatasetShardsManager) WaitForNamedDatasetShard(name string) store.DataStore {
 
 	m.Lock()
 	defer m.Unlock()
