@@ -56,15 +56,8 @@ func (tr *TaskRunner) Run(fc *flow.FlowContext) {
 	}
 	fc.ChannelBufferSize = tr.option.ChannelBufferSize
 
-	taskGroups := plan.GroupTasks(fc)
-
-	tr.Tasks = taskGroups[tr.option.TaskGroupId].Tasks
+	tr.Tasks = plan.GroupTasks(fc)[tr.option.TaskGroupId].Tasks
 	tr.FlowContext = fc
-
-	if len(tr.Tasks) == 0 {
-		log.Println("How can the task group has no tasks!")
-		return
-	}
 
 	// println("taskGroup", tr.Tasks[0].Name(), "starts")
 	// 4. setup task input and output channels
@@ -124,16 +117,16 @@ func (tr *TaskRunner) connectInternalInputsAndOutputs(wg *sync.WaitGroup) {
 }
 
 func (tr *TaskRunner) connectExternalInputs(wg *sync.WaitGroup, name2Location map[string]string) {
-	task := tr.Tasks[0]
-	for i, shard := range task.Inputs {
+	firstTask := tr.Tasks[0]
+	for i, shard := range firstTask.Inputs {
 		d := shard.Parent
 		readChanName := tr.option.ExecutableFileHash + "-" + shard.Name()
-		// println("taskGroup", tr.option.TaskGroupId, "task", task.Name(), "trying to read from:", readChanName, len(task.InputChans))
+		// println("taskGroup", tr.option.TaskGroupId, "firstTask", firstTask.Name(), "trying to read from:", readChanName, len(firstTask.InputChans))
 		rawChan, err := netchan.GetDirectReadChannel(readChanName, name2Location[readChanName], tr.FlowContext.ChannelBufferSize)
 		if err != nil {
 			log.Panic(err)
 		}
-		netchan.ConnectRawReadChannelToTyped(rawChan, task.InputChans[i], d.Type, wg)
+		netchan.ConnectRawReadChannelToTyped(rawChan, firstTask.InputChans[i], d.Type, wg)
 	}
 }
 
@@ -157,10 +150,10 @@ func (tr *TaskRunner) connectExternalInputChannels(wg *sync.WaitGroup) {
 }
 
 func (tr *TaskRunner) connectExternalOutputs(wg *sync.WaitGroup) {
-	task := tr.Tasks[len(tr.Tasks)-1]
-	for _, shard := range task.Outputs {
+	lastTask := tr.Tasks[len(tr.Tasks)-1]
+	for _, shard := range lastTask.Outputs {
 		writeChanName := tr.option.ExecutableFileHash + "-" + shard.Name()
-		// println("taskGroup", tr.option.TaskGroupId, "step", task.Step.Id, "task", task.Id, "writing to:", writeChanName)
+		// println("taskGroup", tr.option.TaskGroupId, "step", lastTask.Step.Id, "lastTask", lastTask.Id, "writing to:", writeChanName)
 		rawChan, err := netchan.GetLocalSendChannel(writeChanName, wg)
 		if err != nil {
 			log.Panic(err)
