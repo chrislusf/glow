@@ -1,5 +1,5 @@
 # glow
-
+[![Build Status](https://travis-ci.org/chrislusf/glow.svg?branch=master)](https://travis-ci.org/chrislusf/glow)
 [![GoDoc](https://godoc.org/github.com/chrislusf/glow?status.svg)](https://godoc.org/github.com/chrislusf/glow)
 
 # Purpose
