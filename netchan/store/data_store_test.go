@@ -38,7 +38,7 @@ func xTestReadOffsets(t *testing.T) {
 	fmt.Println(string(buf))
 }
 
-func TestReadOffsets(t *testing.T) {
+func xxTestReadOffsets(t *testing.T) { // todo (alpe): refactor into proper test
 	s, err := NewLocalFileDataStore(".", "x")
 	if err != nil {
 		println("error: %s", err.Error())

@@ -72,7 +72,7 @@ func TestAllocation1(t *testing.T) {
 	}
 
 	tl := &TeamMaster{}
-	tl.channels = make(map[string][]*ChannelInformation)
+	tl.channels = &NamedChannelMap{name2Chans: make(map[string][]*ChannelInformation)}
 	tl.MasterResource = lr
 
 	result := tl.allocate(req)
@@ -138,7 +138,7 @@ func TestAllocation2(t *testing.T) {
 	})
 
 	tl := &TeamMaster{}
-	tl.channels = make(map[string][]*ChannelInformation)
+	tl.channels = &NamedChannelMap{name2Chans: make(map[string][]*ChannelInformation)}
 	tl.MasterResource = lr
 
 	req := &resource.AllocationRequest{

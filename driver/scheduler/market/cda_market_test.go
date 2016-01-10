@@ -7,7 +7,7 @@ import (
 
 func TestMarket(t *testing.T) {
 
-	m := NewMarket().SetScoreFunction(func(r Requirement, bid int, obj Object) float64 {
+	m := NewMarket().SetScoreFunction(func(r Requirement, bid float64, obj Object) float64 {
 		source := r.(float64)
 		target := obj.(float64)
 		return 1 / (1 + math.Abs(source-target))
