@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/chrislusf/glow/netchan"
+	"github.com/chrislusf/glow/util"
 )
 
 type Task struct {
@@ -74,5 +74,5 @@ func (t *Task) MergedInputChan() chan reflect.Value {
 	for _, c := range t.InputChans {
 		prevChans = append(prevChans, c)
 	}
-	return netchan.MergeChannel(prevChans)
+	return util.MergeChannel(prevChans)
 }

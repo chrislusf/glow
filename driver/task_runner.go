@@ -6,20 +6,34 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/chrislusf/glow/driver/plan"
 	"github.com/chrislusf/glow/flow"
 	"github.com/chrislusf/glow/netchan"
+	"github.com/chrislusf/glow/util"
 )
 
 type TaskRunner struct {
-	option      *TaskOption
-	Tasks       []*flow.Task
-	FlowContext *flow.FlowContext
+	option         *TaskOption
+	Tasks          []*flow.Task
+	FlowContext    *flow.FlowContext
+	executorStatus *ExecutorStatus
+}
+
+type ExecutorStatus struct {
+	InputChannelStatuses []*util.ChannelStatus
+	OutputChannelStatus  *util.ChannelStatus
+	ReadyTime            time.Time
+	StartTime            time.Time
+	StopTime             time.Time
 }
 
 func NewTaskRunner(option *TaskOption) *TaskRunner {
-	return &TaskRunner{option: option}
+	return &TaskRunner{
+		option:         option,
+		executorStatus: &ExecutorStatus{},
+	}
 }
 
 func (tr *TaskRunner) IsTaskMode() bool {
@@ -35,6 +49,8 @@ func (tr *TaskRunner) Run(fc *flow.FlowContext) {
 
 	tr.Tasks = plan.GroupTasks(fc)[tr.option.TaskGroupId].Tasks
 	tr.FlowContext = fc
+
+	tr.executorStatus.StartTime = time.Now()
 
 	// println("taskGroup", tr.Tasks[0].Name(), "starts")
 	// 4. setup task input and output channels
@@ -52,6 +68,7 @@ func (tr *TaskRunner) Run(fc *flow.FlowContext) {
 	// 7. need to close connected output channels
 	wg.Wait()
 	// println("taskGroup", tr.Tasks[0].Name(), "finishes")
+	tr.executorStatus.StopTime = time.Now()
 }
 
 func (tr *TaskRunner) connectInputsAndOutputs(wg *sync.WaitGroup) {
@@ -103,7 +120,8 @@ func (tr *TaskRunner) connectExternalInputs(wg *sync.WaitGroup, name2Location ma
 		if err != nil {
 			log.Panic(err)
 		}
-		netchan.ConnectRawReadChannelToTyped(rawChan, firstTask.InputChans[i], d.Type, wg)
+		inChanStatus := netchan.ConnectRawReadChannelToTyped(rawChan, firstTask.InputChans[i], d.Type, wg)
+		tr.executorStatus.InputChannelStatuses = append(tr.executorStatus.InputChannelStatuses, inChanStatus)
 	}
 }
 
@@ -121,7 +139,8 @@ func (tr *TaskRunner) connectExternalInputChannels(wg *sync.WaitGroup) {
 			log.Panic(err)
 		}
 		typedInputChan := make(chan reflect.Value)
-		netchan.ConnectRawReadChannelToTyped(rawChan, typedInputChan, ds.Type, wg)
+		inChanStatus := netchan.ConnectRawReadChannelToTyped(rawChan, typedInputChan, ds.Type, wg)
+		tr.executorStatus.InputChannelStatuses = append(tr.executorStatus.InputChannelStatuses, inChanStatus)
 		firstTask.InputChans = append(firstTask.InputChans, typedInputChan)
 	}
 }
@@ -135,6 +154,6 @@ func (tr *TaskRunner) connectExternalOutputs(wg *sync.WaitGroup) {
 		if err != nil {
 			log.Panic(err)
 		}
-		netchan.ConnectTypedWriteChannelToRaw(shard.WriteChan, rawChan, wg)
+		tr.executorStatus.OutputChannelStatus = netchan.ConnectTypedWriteChannelToRaw(shard.WriteChan, rawChan, wg)
 	}
 }

@@ -13,24 +13,25 @@ import (
 
 	"github.com/chrislusf/glow/netchan/receiver"
 	"github.com/chrislusf/glow/netchan/sender"
+	"github.com/chrislusf/glow/util"
 )
 
-type NetworkContext struct {
+type NetworkOption struct {
 	AgentPort int
 }
 
-var networkContext NetworkContext
+var networkOption NetworkOption
 
 func init() {
-	flag.IntVar(&networkContext.AgentPort, "glow.agent.port", 8931, "agent port")
+	flag.IntVar(&networkOption.AgentPort, "glow.agent.port", 8931, "agent port")
 }
 
 func GetLocalSendChannel(name string, wg *sync.WaitGroup) (chan []byte, error) {
-	return sender.NewSendChannel(name, networkContext.AgentPort, wg)
+	return sender.NewSendChannel(name, networkOption.AgentPort, wg)
 }
 
 func GetLocalReadChannel(name string, chanBufferSize int) (chan []byte, error) {
-	return GetDirectReadChannel(name, "localhost:"+strconv.Itoa(networkContext.AgentPort), chanBufferSize)
+	return GetDirectReadChannel(name, "localhost:"+strconv.Itoa(networkOption.AgentPort), chanBufferSize)
 }
 
 func GetDirectReadChannel(name, location string, chanBufferSize int) (chan []byte, error) {
@@ -42,11 +43,12 @@ func GetDirectSendChannel(name string, target string, wg *sync.WaitGroup) (chan 
 	return sender.NewDirectSendChannel(name, target, wg)
 }
 
-func ConnectRawReadChannelToTyped(c chan []byte, out chan reflect.Value, t reflect.Type, wg *sync.WaitGroup) chan reflect.Value {
-
+func ConnectRawReadChannelToTyped(c chan []byte, out chan reflect.Value, t reflect.Type, wg *sync.WaitGroup) (status *util.ChannelStatus) {
+	status = util.NewChannelStatus()
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		status.ReportStart()
 
 		for data := range c {
 			dec := gob.NewDecoder(bytes.NewBuffer(data))
@@ -55,20 +57,22 @@ func ConnectRawReadChannelToTyped(c chan []byte, out chan reflect.Value, t refle
 				log.Fatal("data type:", v.Kind(), " decode error:", err)
 			} else {
 				out <- reflect.Indirect(v)
+				status.ReportAdd(1)
 			}
 		}
 
 		close(out)
+		status.ReportClose()
 	}()
-
-	return out
-
+	return status
 }
 
-func ConnectTypedWriteChannelToRaw(writeChan reflect.Value, c chan []byte, wg *sync.WaitGroup) {
+func ConnectTypedWriteChannelToRaw(writeChan reflect.Value, c chan []byte, wg *sync.WaitGroup) (status *util.ChannelStatus) {
+	status = util.NewChannelStatus()
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		status.ReportStart()
 
 		var t reflect.Value
 		for ok := true; ok; {
@@ -79,39 +83,11 @@ func ConnectTypedWriteChannelToRaw(writeChan reflect.Value, c chan []byte, wg *s
 					log.Fatal("data type:", t.Type().String(), " ", t.Kind(), " encode error:", err)
 				}
 				c <- buf.Bytes()
+				status.ReportAdd(1)
 			}
 		}
 		close(c)
-
+		status.ReportClose()
 	}()
-
-}
-
-func MergeChannel(cs []chan reflect.Value) (out chan reflect.Value) {
-	out = make(chan reflect.Value)
-	MergeChannelTo(cs, nil, out)
-	return out
-}
-
-func MergeChannelTo(cs []chan reflect.Value, transformFn func(reflect.Value) reflect.Value, out chan reflect.Value) {
-	var wg sync.WaitGroup
-
-	for _, c := range cs {
-		wg.Add(1)
-		go func(c chan reflect.Value) {
-			defer wg.Done()
-			for n := range c {
-				if transformFn != nil {
-					n = transformFn(n)
-				}
-				out <- n
-			}
-		}(c)
-	}
-
-	go func() {
-		wg.Wait()
-		close(out)
-	}()
-	return
+	return status
 }
