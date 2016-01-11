@@ -100,21 +100,21 @@ func (tl *TeamMaster) findDataCenter(req *resource.AllocationRequest) (*resource
 		}
 	}
 	if dcName != "" {
-		dc, hasDc := tl.MasterResource.Topology.DataCenters[dcName]
+		dc, hasDc := tl.MasterResource.Topology.GetDataCenter(dcName)
 		if !hasDc {
 			return nil, fmt.Errorf("Failed to find existing data center: %s", dcName)
 		}
 		return dc, nil
 	}
 
-	if len(tl.MasterResource.Topology.DataCenters) == 0 {
+	if tl.MasterResource.Topology.ContainsDataCenters() {
 		return nil, fmt.Errorf("No data centers found.")
 	}
 
 	// weighted reservior sampling
 	var selectedDc *resource.DataCenter
 	var seenWeight int64
-	for _, dc := range tl.MasterResource.Topology.DataCenters {
+	for _, dc := range tl.MasterResource.Topology.DataCenters() {
 		available := dc.Resource.Minus(dc.Allocated)
 		weight := available.MemoryMB
 		if weight > 0 {

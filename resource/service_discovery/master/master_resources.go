@@ -25,9 +25,7 @@ type MasterResource struct {
 
 func NewMasterResource() *MasterResource {
 	l := &MasterResource{
-		Topology: resource.Topology{
-			DataCenters: make(map[string]*resource.DataCenter),
-		},
+		Topology:  *resource.NewTopology(),
 		EventChan: make(chan interface{}, 1),
 		EvictionQueue: util.NewPriorityQueue(func(a, b interface{}) bool {
 			x, y := a.(*resource.AgentInformation), b.(*resource.AgentInformation)
@@ -45,13 +43,13 @@ func (l *MasterResource) UpdateAgentInformation(ai *resource.AgentInformation) {
 	l.Lock()
 	defer l.Unlock()
 
-	dc, hasDc := l.Topology.DataCenters[ai.Location.DataCenter]
+	dc, hasDc := l.Topology.GetDataCenter(ai.Location.DataCenter)
 	if !hasDc {
 		dc = &resource.DataCenter{
 			Name:  ai.Location.DataCenter,
 			Racks: make(map[string]*resource.Rack),
 		}
-		l.Topology.DataCenters[ai.Location.DataCenter] = dc
+		l.Topology.AddDataCenter(dc)
 	}
 
 	rack, hasRack := dc.Racks[ai.Location.Rack]
@@ -105,7 +103,7 @@ func (l *MasterResource) deleteAgentInformation(ai *resource.AgentInformation) {
 	l.Lock()
 	defer l.Unlock()
 
-	dc, hasDc := l.Topology.DataCenters[ai.Location.DataCenter]
+	dc, hasDc := l.Topology.GetDataCenter(ai.Location.DataCenter)
 	if !hasDc {
 		return
 	}
@@ -139,7 +137,7 @@ func (l *MasterResource) deleteAgentInformation(ai *resource.AgentInformation) {
 }
 
 func (l *MasterResource) findAgentInformation(location resource.Location) (*resource.AgentInformation, bool) {
-	d, hasDc := l.Topology.DataCenters[location.DataCenter]
+	d, hasDc := l.Topology.GetDataCenter(location.DataCenter)
 	if !hasDc {
 		return nil, false
 	}
