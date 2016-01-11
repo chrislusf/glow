@@ -226,8 +226,9 @@ type StartRequest struct {
 	Envs             []string         `protobuf:"bytes,3,rep,name=envs" json:"envs,omitempty"`
 	Dir              *string          `protobuf:"bytes,4,req,name=dir" json:"dir,omitempty"`
 	Resource         *ComputeResource `protobuf:"bytes,5,req,name=resource" json:"resource,omitempty"`
-	Host             *string          `protobuf:"bytes,6,opt,name=host" json:"host,omitempty"`
-	Port             *int32           `protobuf:"varint,7,opt,name=port" json:"port,omitempty"`
+	HashCode         *int32           `protobuf:"varint,6,req,name=hashCode" json:"hashCode,omitempty"`
+	Host             *string          `protobuf:"bytes,7,opt,name=host" json:"host,omitempty"`
+	Port             *int32           `protobuf:"varint,8,opt,name=port" json:"port,omitempty"`
 	XXX_unrecognized []byte           `json:"-"`
 }
 
@@ -268,6 +269,13 @@ func (m *StartRequest) GetResource() *ComputeResource {
 		return m.Resource
 	}
 	return nil
+}
+
+func (m *StartRequest) GetHashCode() int32 {
+	if m != nil && m.HashCode != nil {
+		return *m.HashCode
+	}
+	return 0
 }
 
 func (m *StartRequest) GetHost() string {
@@ -325,23 +333,23 @@ func (m *StartResponse) GetOutputs() []*NetChan {
 }
 
 type StopRequest struct {
-	StartRequestHash *string `protobuf:"bytes,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	StartRequestHash *int32 `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
 }
 
 func (m *StopRequest) Reset()         { *m = StopRequest{} }
 func (m *StopRequest) String() string { return proto.CompactTextString(m) }
 func (*StopRequest) ProtoMessage()    {}
 
-func (m *StopRequest) GetStartRequestHash() string {
+func (m *StopRequest) GetStartRequestHash() int32 {
 	if m != nil && m.StartRequestHash != nil {
 		return *m.StartRequestHash
 	}
-	return ""
+	return 0
 }
 
 type StopResponse struct {
-	StartRequestHash *string `protobuf:"bytes,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
+	StartRequestHash *int32  `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
 	Error            *string `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
@@ -350,11 +358,11 @@ func (m *StopResponse) Reset()         { *m = StopResponse{} }
 func (m *StopResponse) String() string { return proto.CompactTextString(m) }
 func (*StopResponse) ProtoMessage()    {}
 
-func (m *StopResponse) GetStartRequestHash() string {
+func (m *StopResponse) GetStartRequestHash() int32 {
 	if m != nil && m.StartRequestHash != nil {
 		return *m.StartRequestHash
 	}
-	return ""
+	return 0
 }
 
 func (m *StopResponse) GetError() string {
@@ -365,23 +373,23 @@ func (m *StopResponse) GetError() string {
 }
 
 type GetStatusRequest struct {
-	StartRequestHash *string `protobuf:"bytes,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	StartRequestHash *int32 `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
 }
 
 func (m *GetStatusRequest) Reset()         { *m = GetStatusRequest{} }
 func (m *GetStatusRequest) String() string { return proto.CompactTextString(m) }
 func (*GetStatusRequest) ProtoMessage()    {}
 
-func (m *GetStatusRequest) GetStartRequestHash() string {
+func (m *GetStatusRequest) GetStartRequestHash() int32 {
 	if m != nil && m.StartRequestHash != nil {
 		return *m.StartRequestHash
 	}
-	return ""
+	return 0
 }
 
 type GetStatusResponse struct {
-	StartRequestHash *string `protobuf:"bytes,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
+	StartRequestHash *int32  `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
 	Error            *string `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
 	InputLength      *int64  `protobuf:"varint,3,opt,name=inputLength" json:"inputLength,omitempty"`
 	OutputLength     *int64  `protobuf:"varint,4,opt,name=outputLength" json:"outputLength,omitempty"`
@@ -395,11 +403,11 @@ func (m *GetStatusResponse) Reset()         { *m = GetStatusResponse{} }
 func (m *GetStatusResponse) String() string { return proto.CompactTextString(m) }
 func (*GetStatusResponse) ProtoMessage()    {}
 
-func (m *GetStatusResponse) GetStartRequestHash() string {
+func (m *GetStatusResponse) GetStartRequestHash() int32 {
 	if m != nil && m.StartRequestHash != nil {
 		return *m.StartRequestHash
 	}
-	return ""
+	return 0
 }
 
 func (m *GetStatusResponse) GetError() string {

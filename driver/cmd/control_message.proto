@@ -44,8 +44,9 @@ message StartRequest {
 	repeated string envs = 3;
 	required string dir = 4;
 	required ComputeResource resource = 5;
-	optional string host = 6;
-	optional int32 port = 7;
+	required int32 hashCode = 6;
+	optional string host = 7;
+	optional int32 port = 8;
 }
 
 message StartResponse {
@@ -56,20 +57,20 @@ message StartResponse {
 }
 
 message StopRequest {
-	required string startRequestHash = 1;
+	required int32 startRequestHash = 1;
 }
 
 message StopResponse {
-	required string startRequestHash = 1;
+	required int32 startRequestHash = 1;
 	optional string error = 2;
 }
 
 message GetStatusRequest {
-	required string startRequestHash = 1;
+	required int32 startRequestHash = 1;
 }
 
 message GetStatusResponse {
-	required string startRequestHash = 1;
+	required int32 startRequestHash = 1;
 	optional string error = 2;
 	optional int64 inputLength = 3;
 	optional int64 outputLength = 4;
