@@ -19,8 +19,12 @@ message ControlMessage {
 
 	optional StartRequest startRequest = 2;
 	optional StartResponse startResponse = 3;
-	optional DeleteDatasetShardRequest deleteDatasetShardRequest = 4;
-	optional DeleteDatasetShardResponse deleteDatasetShardResponse = 5;
+	optional StopRequest stopRequest = 4;
+	optional StopResponse stopResponse = 5;
+	optional GetStatusRequest getStatusRequest = 6;
+	optional GetStatusResponse getStatusResponse = 7;
+	optional DeleteDatasetShardRequest deleteDatasetShardRequest = 8;
+	optional DeleteDatasetShardResponse deleteDatasetShardResponse = 9;
 }
 
 message NetChan {
@@ -49,6 +53,29 @@ message StartResponse {
 	optional string error = 2;
 	optional NetChan stderr = 3;
 	repeated NetChan outputs = 4;
+}
+
+message StopRequest {
+	required string startRequestHash = 1;
+}
+
+message StopResponse {
+	required string startRequestHash = 1;
+	optional string error = 2;
+}
+
+message GetStatusRequest {
+	required string startRequestHash = 1;
+}
+
+message GetStatusResponse {
+	required string startRequestHash = 1;
+	optional string error = 2;
+	optional int64 inputLength = 3;
+	optional int64 outputLength = 4;
+	optional int64 readyTime = 5;
+	optional int64 startTime = 6;
+	optional int64 stopTime = 7;
 }
 
 message DeleteDatasetShardRequest {

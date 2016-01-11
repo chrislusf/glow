@@ -14,6 +14,10 @@ It has these top-level messages:
 	ComputeResource
 	StartRequest
 	StartResponse
+	StopRequest
+	StopResponse
+	GetStatusRequest
+	GetStatusResponse
 	DeleteDatasetShardRequest
 	DeleteDatasetShardResponse
 */
@@ -84,8 +88,12 @@ type ControlMessage struct {
 	Type                       *ControlMessage_Type        `protobuf:"varint,1,req,name=type,enum=cmd.ControlMessage_Type" json:"type,omitempty"`
 	StartRequest               *StartRequest               `protobuf:"bytes,2,opt,name=startRequest" json:"startRequest,omitempty"`
 	StartResponse              *StartResponse              `protobuf:"bytes,3,opt,name=startResponse" json:"startResponse,omitempty"`
-	DeleteDatasetShardRequest  *DeleteDatasetShardRequest  `protobuf:"bytes,4,opt,name=deleteDatasetShardRequest" json:"deleteDatasetShardRequest,omitempty"`
-	DeleteDatasetShardResponse *DeleteDatasetShardResponse `protobuf:"bytes,5,opt,name=deleteDatasetShardResponse" json:"deleteDatasetShardResponse,omitempty"`
+	StopRequest                *StopRequest                `protobuf:"bytes,4,opt,name=stopRequest" json:"stopRequest,omitempty"`
+	StopResponse               *StopResponse               `protobuf:"bytes,5,opt,name=stopResponse" json:"stopResponse,omitempty"`
+	GetStatusRequest           *GetStatusRequest           `protobuf:"bytes,6,opt,name=getStatusRequest" json:"getStatusRequest,omitempty"`
+	GetStatusResponse          *GetStatusResponse          `protobuf:"bytes,7,opt,name=getStatusResponse" json:"getStatusResponse,omitempty"`
+	DeleteDatasetShardRequest  *DeleteDatasetShardRequest  `protobuf:"bytes,8,opt,name=deleteDatasetShardRequest" json:"deleteDatasetShardRequest,omitempty"`
+	DeleteDatasetShardResponse *DeleteDatasetShardResponse `protobuf:"bytes,9,opt,name=deleteDatasetShardResponse" json:"deleteDatasetShardResponse,omitempty"`
 	XXX_unrecognized           []byte                      `json:"-"`
 }
 
@@ -110,6 +118,34 @@ func (m *ControlMessage) GetStartRequest() *StartRequest {
 func (m *ControlMessage) GetStartResponse() *StartResponse {
 	if m != nil {
 		return m.StartResponse
+	}
+	return nil
+}
+
+func (m *ControlMessage) GetStopRequest() *StopRequest {
+	if m != nil {
+		return m.StopRequest
+	}
+	return nil
+}
+
+func (m *ControlMessage) GetStopResponse() *StopResponse {
+	if m != nil {
+		return m.StopResponse
+	}
+	return nil
+}
+
+func (m *ControlMessage) GetGetStatusRequest() *GetStatusRequest {
+	if m != nil {
+		return m.GetStatusRequest
+	}
+	return nil
+}
+
+func (m *ControlMessage) GetGetStatusResponse() *GetStatusResponse {
+	if m != nil {
+		return m.GetStatusResponse
 	}
 	return nil
 }
@@ -286,6 +322,126 @@ func (m *StartResponse) GetOutputs() []*NetChan {
 		return m.Outputs
 	}
 	return nil
+}
+
+type StopRequest struct {
+	StartRequestHash *string `protobuf:"bytes,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (m *StopRequest) Reset()         { *m = StopRequest{} }
+func (m *StopRequest) String() string { return proto.CompactTextString(m) }
+func (*StopRequest) ProtoMessage()    {}
+
+func (m *StopRequest) GetStartRequestHash() string {
+	if m != nil && m.StartRequestHash != nil {
+		return *m.StartRequestHash
+	}
+	return ""
+}
+
+type StopResponse struct {
+	StartRequestHash *string `protobuf:"bytes,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
+	Error            *string `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (m *StopResponse) Reset()         { *m = StopResponse{} }
+func (m *StopResponse) String() string { return proto.CompactTextString(m) }
+func (*StopResponse) ProtoMessage()    {}
+
+func (m *StopResponse) GetStartRequestHash() string {
+	if m != nil && m.StartRequestHash != nil {
+		return *m.StartRequestHash
+	}
+	return ""
+}
+
+func (m *StopResponse) GetError() string {
+	if m != nil && m.Error != nil {
+		return *m.Error
+	}
+	return ""
+}
+
+type GetStatusRequest struct {
+	StartRequestHash *string `protobuf:"bytes,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (m *GetStatusRequest) Reset()         { *m = GetStatusRequest{} }
+func (m *GetStatusRequest) String() string { return proto.CompactTextString(m) }
+func (*GetStatusRequest) ProtoMessage()    {}
+
+func (m *GetStatusRequest) GetStartRequestHash() string {
+	if m != nil && m.StartRequestHash != nil {
+		return *m.StartRequestHash
+	}
+	return ""
+}
+
+type GetStatusResponse struct {
+	StartRequestHash *string `protobuf:"bytes,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
+	Error            *string `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
+	InputLength      *int64  `protobuf:"varint,3,opt,name=inputLength" json:"inputLength,omitempty"`
+	OutputLength     *int64  `protobuf:"varint,4,opt,name=outputLength" json:"outputLength,omitempty"`
+	ReadyTime        *int64  `protobuf:"varint,5,opt,name=readyTime" json:"readyTime,omitempty"`
+	StartTime        *int64  `protobuf:"varint,6,opt,name=startTime" json:"startTime,omitempty"`
+	StopTime         *int64  `protobuf:"varint,7,opt,name=stopTime" json:"stopTime,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (m *GetStatusResponse) Reset()         { *m = GetStatusResponse{} }
+func (m *GetStatusResponse) String() string { return proto.CompactTextString(m) }
+func (*GetStatusResponse) ProtoMessage()    {}
+
+func (m *GetStatusResponse) GetStartRequestHash() string {
+	if m != nil && m.StartRequestHash != nil {
+		return *m.StartRequestHash
+	}
+	return ""
+}
+
+func (m *GetStatusResponse) GetError() string {
+	if m != nil && m.Error != nil {
+		return *m.Error
+	}
+	return ""
+}
+
+func (m *GetStatusResponse) GetInputLength() int64 {
+	if m != nil && m.InputLength != nil {
+		return *m.InputLength
+	}
+	return 0
+}
+
+func (m *GetStatusResponse) GetOutputLength() int64 {
+	if m != nil && m.OutputLength != nil {
+		return *m.OutputLength
+	}
+	return 0
+}
+
+func (m *GetStatusResponse) GetReadyTime() int64 {
+	if m != nil && m.ReadyTime != nil {
+		return *m.ReadyTime
+	}
+	return 0
+}
+
+func (m *GetStatusResponse) GetStartTime() int64 {
+	if m != nil && m.StartTime != nil {
+		return *m.StartTime
+	}
+	return 0
+}
+
+func (m *GetStatusResponse) GetStopTime() int64 {
+	if m != nil && m.StopTime != nil {
+		return *m.StopTime
+	}
+	return 0
 }
 
 type DeleteDatasetShardRequest struct {
