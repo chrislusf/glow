@@ -12,6 +12,8 @@ go:
 
 before_install:
  - export PATH=/home/travis/gopath/bin:$PATH
+ - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
+ - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install bzr     ; fi
 
 install:
  - go get ./...
