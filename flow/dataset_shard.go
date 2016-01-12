@@ -3,6 +3,7 @@ package flow
 import (
 	"fmt"
 	"reflect"
+	"sync"
 	"time"
 )
 
@@ -12,10 +13,12 @@ type DatasetShard struct {
 	WriteChan    reflect.Value
 	ReadingTasks []*Task
 
+	Counter   int
+	ReadyTime time.Time
+	CloseTime time.Time
+
+	lock         sync.RWMutex
 	readingChans []chan reflect.Value
-	Counter      int
-	ReadyTime    time.Time
-	CloseTime    time.Time
 }
 
 func (d *Dataset) SetupShard(n int) {
@@ -47,7 +50,8 @@ func (shard *DatasetShard) SetupReadingChans() {
 		seenTasks[task] = true
 		uniqTasks = append(uniqTasks, task)
 	}
-
+	shard.lock.Lock()
+	defer shard.lock.Unlock()
 	for _, task := range uniqTasks {
 		for i, s := range task.Inputs {
 			if s == shard {
@@ -60,7 +64,10 @@ func (shard *DatasetShard) SetupReadingChans() {
 }
 
 func (s *DatasetShard) SendForRead(t reflect.Value) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
 	s.Counter++
+
 	for _, c := range s.readingChans {
 		// println(s.Name(), "send chan", i, "entry:", s.counter)
 		c <- t
@@ -68,6 +75,9 @@ func (s *DatasetShard) SendForRead(t reflect.Value) {
 }
 
 func (s *DatasetShard) CloseRead() {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
 	for _, c := range s.readingChans {
 		close(c)
 	}

@@ -146,7 +146,7 @@ func newChannelOfValuesWithSameKey(sortedChan chan reflect.Value, compareFunc in
 			} else {
 				outChan <- keyValues
 				keyValues.Key = nextKey
-				keyValues.Values = append(keyValues.Values[:0], nextValue)
+				keyValues.Values = []interface{}{nextValue}
 			}
 		}
 	}()
