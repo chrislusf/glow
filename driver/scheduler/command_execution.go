@@ -27,8 +27,9 @@ func NewStartRequest(path string, dir string, args []string, allocated resource.
 				CpuLevel: proto.Int32(int32(allocated.CPULevel)),
 				Memory:   proto.Int32(int32(allocated.MemoryMB)),
 			},
-			Envs: envs,
-			Port: proto.Int32(port),
+			Envs:     envs,
+			Port:     proto.Int32(port),
+			HashCode: proto.Int32(0),
 		},
 	}
 
