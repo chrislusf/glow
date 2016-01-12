@@ -3,6 +3,7 @@ package flow
 import (
 	"fmt"
 	"reflect"
+	"time"
 )
 
 type DatasetShard struct {
@@ -12,8 +13,9 @@ type DatasetShard struct {
 	ReadingTasks []*Task
 
 	readingChans []chan reflect.Value
-	counter      int
-	closed       bool
+	Counter      int
+	ReadyTime    time.Time
+	CloseTime    time.Time
 }
 
 func (d *Dataset) SetupShard(n int) {
@@ -53,11 +55,12 @@ func (shard *DatasetShard) SetupReadingChans() {
 			}
 		}
 	}
+	shard.ReadyTime = time.Now()
 	// fmt.Printf("shard %s has reading tasks:%d channel:%d\n", shard.Name(), len(shard.ReadingTasks), len(shard.readingChans))
 }
 
 func (s *DatasetShard) SendForRead(t reflect.Value) {
-	s.counter++
+	s.Counter++
 	for _, c := range s.readingChans {
 		// println(s.Name(), "send chan", i, "entry:", s.counter)
 		c <- t
@@ -68,5 +71,16 @@ func (s *DatasetShard) CloseRead() {
 	for _, c := range s.readingChans {
 		close(c)
 	}
-	s.closed = true
+	s.CloseTime = time.Now()
+}
+
+func (s *DatasetShard) Closed() bool {
+	return !s.CloseTime.IsZero()
+}
+
+func (s *DatasetShard) TimeTaken() time.Duration {
+	if s.Closed() {
+		return s.CloseTime.Sub(s.ReadyTime)
+	}
+	return time.Now().Sub(s.ReadyTime)
 }
