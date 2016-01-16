@@ -9,7 +9,7 @@ import (
 type ExecutorStatus struct {
 	InputChannelStatuses []*util.ChannelStatus
 	OutputChannelStatus  *util.ChannelStatus
-	ReadyTime            time.Time
+	RequestTime          time.Time
 	StartTime            time.Time
 	StopTime             time.Time
 }
@@ -20,7 +20,7 @@ func (s *ExecutorStatus) Closed() bool {
 
 func (s *ExecutorStatus) TimeTaken() time.Duration {
 	if s.Closed() {
-		return s.StopTime.Sub(s.ReadyTime)
+		return s.StopTime.Sub(s.RequestTime)
 	}
-	return time.Now().Sub(s.ReadyTime)
+	return time.Now().Sub(s.RequestTime)
 }

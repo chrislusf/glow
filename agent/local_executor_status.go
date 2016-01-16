@@ -9,8 +9,7 @@ type ExecutorStatus struct {
 	RequestTime    time.Time
 	InputLength    int
 	OutputLength   int
-	ReadyTime      time.Time
-	RunTime        time.Time
+	StartTime      time.Time
 	StopTime       time.Time
 	LastAccessTime time.Time // used for expiring entries
 }

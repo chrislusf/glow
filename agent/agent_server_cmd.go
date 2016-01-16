@@ -17,6 +17,7 @@ func (as *AgentServer) handleCommandConnection(conn net.Conn,
 		host := remoteAddress[:strings.LastIndex(remoteAddress, ":")]
 		command.StartRequest.Host = &host
 		reply.StartResponse = as.handleStart(conn, command.StartRequest)
+		return nil
 	}
 	if command.GetType() == cmd.ControlMessage_DeleteDatasetShardRequest {
 		reply.Type = cmd.ControlMessage_DeleteDatasetShardResponse.Enum()
@@ -26,6 +27,5 @@ func (as *AgentServer) handleCommandConnection(conn net.Conn,
 		reply.Type = cmd.ControlMessage_GetStatusResponse.Enum()
 		reply.GetStatusResponse = as.handleStatus(command.GetStatusRequest)
 	}
-	// TODO: skip return reply for now
-	return nil
+	return reply
 }

@@ -44,6 +44,7 @@ type AgentServer struct {
 	allocatedResource     *resource.ComputeResource
 	allocatedResourceLock sync.Mutex
 	storageBackend        *LocalDatasetShardsManager
+	localExecutorManager  *LocalExecutorManager
 }
 
 func NewAgentServer(option *AgentServerOption) *AgentServer {
@@ -64,7 +65,8 @@ func NewAgentServer(option *AgentServerOption) *AgentServer {
 			CPULevel: *option.CPULevel,
 			MemoryMB: *option.MemoryMB,
 		},
-		allocatedResource: &resource.ComputeResource{},
+		allocatedResource:    &resource.ComputeResource{},
+		localExecutorManager: newLocalExecutorsManager(),
 	}
 
 	err = as.Init()

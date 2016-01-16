@@ -31,6 +31,10 @@ func (fcd *FlowContextDriver) printDistributedStatus(sched *scheduler.Scheduler,
 		for _, tg := range stepGroup.TaskGroups {
 			stat := stats[tg.Id]
 			firstTask := tg.Tasks[0]
+			if stat == nil {
+				fmt.Printf("  No status.\n")
+				continue
+			}
 			if stat.Closed() {
 				fmt.Printf("  %s taskId:%d time:%v completed %d\n", stat.Allocation.Location.URL(), firstTask.Id, stat.TimeTaken(), 0)
 			} else {
@@ -62,11 +66,13 @@ func (fcd *FlowContextDriver) collectStatusFromRemoteExecutors(sched *scheduler.
 				fmt.Printf("No executors for %v\n", tg)
 				return
 			}
+			// println("checking", request.Allocation.Location.URL(), requestId)
 			stat, err := askExecutorStatusForRequest(request.Allocation.Location.URL(), requestId)
 			if err != nil {
 				fmt.Printf("Error to request status from %s: %v\n", request.Allocation.Location.URL(), err)
 				return
 			}
+			// println("back from", request.Allocation.Location.URL(), requestId)
 			stat.Allocation = request.Allocation
 			stat.taskGroup = tg
 			stats[tg.Id] = stat
@@ -87,18 +93,22 @@ func askExecutorStatusForRequest(server string, requestId int32) (*RemoteExecuto
 
 	var inputStatuses []*util.ChannelStatus
 	for _, inputStatus := range response.GetInputStatuses() {
-
+		inputStatuses = append(inputStatuses, &util.ChannelStatus{
+			Length:    inputStatus.GetLength(),
+			StartTime: time.Unix(inputStatus.GetStartTime(), 0),
+			StopTime:  time.Unix(inputStatus.GetStopTime(), 0),
+		})
 	}
 
 	return &RemoteExecutorStatus{
 		ExecutorStatus: ExecutorStatus{
-			InputChannelStatuses: response.GetInputLength(),
+			InputChannelStatuses: inputStatuses,
 			OutputChannelStatus: &util.ChannelStatus{
-				Length: response.GetOutputLength(),
+				Length: response.GetOutputStatus().GetLength(),
 			},
-			ReadyTime: time.Unix(response.GetReadyTime(), 0),
-			StartTime: time.Unix(response.GetStartTime(), 0),
-			StopTime:  time.Unix(response.GetStopTime(), 0),
+			RequestTime: time.Unix(response.GetRequestTime(), 0),
+			StartTime:   time.Unix(response.GetStartTime(), 0),
+			StopTime:    time.Unix(response.GetStopTime(), 0),
 		},
 	}, nil
 }

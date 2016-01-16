@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
+	"time"
 
 	"github.com/chrislusf/glow/driver/cmd"
 	"github.com/chrislusf/glow/driver/rsync"
@@ -17,6 +18,8 @@ import (
 func (as *AgentServer) handleStart(conn net.Conn,
 	startRequest *cmd.StartRequest) *cmd.StartResponse {
 	reply := &cmd.StartResponse{}
+	stat := as.localExecutorManager.getExecutorStatus(startRequest.GetHashCode())
+	stat.RequestTime = time.Now()
 
 	dir := path.Join(*as.Option.Dir, startRequest.GetDir())
 	os.MkdirAll(dir, 0755)
@@ -35,6 +38,7 @@ func (as *AgentServer) handleStart(conn net.Conn,
 	as.plusAllocated(allocated)
 	defer as.minusAllocated(allocated)
 
+	stat.StartTime = time.Now()
 	cmd := exec.Command(
 		startRequest.GetPath(),
 		startRequest.Args...,
@@ -53,6 +57,7 @@ func (as *AgentServer) handleStart(conn net.Conn,
 	}
 
 	cmd.Wait()
+	stat.StopTime = time.Now()
 
 	// log.Printf("Finish command %v", cmd)
 
