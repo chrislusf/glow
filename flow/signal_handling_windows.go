@@ -8,7 +8,7 @@ import (
 	"syscall"
 )
 
-func OnInterrupt(fn func()) {
+func OnInterrupt(fn func(), onExitFunc func()) {
 	// deal with control+c,etc
 	signalChan := make(chan os.Signal, 1)
 	// controlling terminal close, daemon not exit
@@ -26,6 +26,9 @@ func OnInterrupt(fn func()) {
 	go func() {
 		for _ = range signalChan {
 			fn()
+			if onExitFunc != nil {
+				onExitFunc()
+			}
 			os.Exit(0)
 		}
 	}()

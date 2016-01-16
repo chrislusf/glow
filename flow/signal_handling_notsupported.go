@@ -2,5 +2,5 @@
 
 package flow
 
-func OnInterrupt(fn func()) {
+func OnInterrupt(fn func(), onExitFunc func()) {
 }

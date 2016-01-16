@@ -8,7 +8,7 @@ import (
 	"syscall"
 )
 
-func OnInterrupt(fn func()) {
+func OnInterrupt(fn func(), onExitFunc func()) {
 	// deal with control+c,etc
 	signalChan := make(chan os.Signal, 1)
 	// controlling terminal close, daemon not exit
@@ -24,11 +24,12 @@ func OnInterrupt(fn func()) {
 		// syscall.SIGQUIT, // Quit from keyboard, "kill -3"
 	)
 	go func() {
-		for sig := range signalChan {
+		for _ = range signalChan {
 			fn()
-			if sig != syscall.SIGTERM {
-				os.Exit(0)
+			if onExitFunc != nil {
+				onExitFunc()
 			}
+			os.Exit(0)
 		}
 	}()
 }
