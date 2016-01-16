@@ -2,6 +2,7 @@ package util
 
 import (
 	"container/heap"
+	"sync"
 )
 
 // An Item is something we manage in a priority queue.
@@ -14,8 +15,9 @@ type Item struct {
 
 // A PriorityQueue implements heap.Interface and holds Items.
 type PriorityQueue struct {
-	items    []*Item
 	lessFunc func(a, b interface{}) bool
+	lock     sync.RWMutex
+	items    []*Item
 }
 
 func NewPriorityQueue(lessFunc func(a, b interface{}) bool) *PriorityQueue {
@@ -35,19 +37,29 @@ func (pq *PriorityQueue) Dequeue() (interface{}, int) {
 	return item.value, item.sourceId
 }
 
-func (pq *PriorityQueue) Len() int { return len(pq.items) }
+func (pq *PriorityQueue) Len() int {
+	pq.lock.RLock()
+	defer pq.lock.RUnlock()
+	return len(pq.items)
+}
 
 func (pq *PriorityQueue) Less(i, j int) bool {
+	pq.lock.RLock()
+	defer pq.lock.RUnlock()
 	return pq.lessFunc(pq.items[i].value, pq.items[j].value)
 }
 
 func (pq *PriorityQueue) Swap(i, j int) {
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
 	pq.items[i], pq.items[j] = pq.items[j], pq.items[i]
 	pq.items[i].index = i
 	pq.items[j].index = j
 }
 
 func (pq *PriorityQueue) Push(x interface{}) {
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
 	n := len(pq.items)
 	item := x.(*Item)
 	item.index = n
@@ -55,6 +67,8 @@ func (pq *PriorityQueue) Push(x interface{}) {
 }
 
 func (pq *PriorityQueue) Pop() interface{} {
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
 	old := pq.items
 	n := len(old)
 	item := old[n-1]

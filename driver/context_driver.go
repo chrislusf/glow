@@ -66,18 +66,22 @@ func (fcd *FlowContextDriver) Plot(fc *flow.FlowContext) {
 // driver runs on local, controlling all tasks
 func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 
+	// task fusion to minimize disk IO
 	taskGroups := plan.GroupTasks(fc)
+	// plot the execution graph
 	if fcd.option.PlotOutput {
 		plan.PlotGraph(taskGroups, fc)
 		return
 	}
 
+	// start server to serve files to agents to run exectuors
 	rsyncServer, err := rsync.NewRsyncServer(os.Args[0], fcd.option.RelatedFileNames())
 	if err != nil {
 		log.Fatalf("Failed to start local server: %v", err)
 	}
 	rsyncServer.Start()
 
+	// create thes cheduler
 	sched := scheduler.NewScheduler(
 		fcd.option.Leader,
 		&scheduler.SchedulerOption{
@@ -90,9 +94,16 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 			ExecutableFileHash: rsyncServer.ExecutableFileHash(),
 		},
 	)
+
+	// best effort to clean data on agent disk
+	// this may need more improvements
 	defer fcd.Cleanup(sched, fc, taskGroups)
 
 	go sched.EventLoop()
+
+	flow.OnInterrupt(func() {
+		fcd.OnInterrupt(fc, taskGroups, sched)
+	})
 
 	// schedule to run the steps
 	var wg sync.WaitGroup

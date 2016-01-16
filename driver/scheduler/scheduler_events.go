@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/chrislusf/glow/driver/plan"
 	"github.com/chrislusf/glow/driver/scheduler/market"
@@ -96,10 +97,14 @@ func (s *Scheduler) EventLoop() {
 					int32(s.option.DriverPort),
 				)
 
+				requestId := request.StartRequest.GetHashCode()
+				s.getRemoteExecutorStatus(requestId).RequestTime = time.Now()
+
 				// fmt.Printf("starting on %s: %v\n", allocation.Allocated, request)
 				if err := RemoteDirectExecute(allocation.Location.URL(), request); err != nil {
 					log.Printf("exeuction error %v: %v", err, request)
 				}
+				s.getRemoteExecutorStatus(requestId).StopTime = time.Now()
 			}()
 		case ReleaseTaskGroupInputs:
 			go func() {

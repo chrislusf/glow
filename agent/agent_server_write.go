@@ -2,7 +2,9 @@ package agent
 
 import (
 	"io"
+	"net"
 
+	"github.com/chrislusf/glow/driver/cmd"
 	"github.com/chrislusf/glow/util"
 )
 
@@ -30,8 +32,10 @@ func (as *AgentServer) handleLocalWriteConnection(r io.Reader, name string) {
 	}
 }
 
-func (as *AgentServer) handleDelete(name string) {
+func (as *AgentServer) handleDeleteDatasetShard(conn net.Conn,
+	deleteRequest *cmd.DeleteDatasetShardRequest) *cmd.DeleteDatasetShardResponse {
 
-	as.storageBackend.DeleteNamedDatasetShard(name)
+	as.storageBackend.DeleteNamedDatasetShard(*deleteRequest.Name)
 
+	return nil
 }

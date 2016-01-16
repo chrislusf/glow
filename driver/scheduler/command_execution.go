@@ -3,6 +3,7 @@ package scheduler
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"time"
@@ -15,7 +16,7 @@ import (
 )
 
 func NewStartRequest(path string, dir string, args []string, allocated resource.ComputeResource, envs []string, port int32) *cmd.ControlMessage {
-	return &cmd.ControlMessage{
+	request := &cmd.ControlMessage{
 		Type: cmd.ControlMessage_StartRequest.Enum(),
 		StartRequest: &cmd.StartRequest{
 			Path: proto.String(path),
@@ -26,10 +27,21 @@ func NewStartRequest(path string, dir string, args []string, allocated resource.
 				CpuLevel: proto.Int32(int32(allocated.CPULevel)),
 				Memory:   proto.Int32(int32(allocated.MemoryMB)),
 			},
-			Envs: envs,
-			Port: proto.Int32(port),
+			Envs:     envs,
+			Port:     proto.Int32(port),
+			HashCode: proto.Int32(0),
 		},
 	}
+
+	// generate a unique hash code for the request
+	data, err := proto.Marshal(request)
+	if err != nil {
+		log.Fatalf("marshaling start request error: %v", err)
+		return nil
+	}
+	request.StartRequest.HashCode = proto.Int32(int32(util.Hash(data)))
+
+	return request
 }
 
 func NewDeleteDatasetShardRequest(name string) *cmd.ControlMessage {
@@ -51,16 +63,7 @@ func RemoteDirectExecute(server string, command *cmd.ControlMessage) error {
 	return doExecute(conn, command)
 }
 
-func RemoteExecute(leader string, agentName string, command *cmd.ControlMessage) error {
-	conn, err := getCommandConnection(leader, agentName)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-
-	return doExecute(conn, command)
-}
-
+// doExecute() sends a request and expects the output from the connection
 func doExecute(conn net.Conn, command *cmd.ControlMessage) error {
 
 	buf := make([]byte, 4)
@@ -68,15 +71,14 @@ func doExecute(conn net.Conn, command *cmd.ControlMessage) error {
 	// serialize the commend
 	data, err := proto.Marshal(command)
 	if err != nil {
-		log.Fatal("marshaling error: ", err)
+		return fmt.Errorf("marshaling execute request error: %v", err)
 	}
 
 	remoteAddress := conn.RemoteAddr().String()
 
 	// send the command
 	if err = util.WriteData(conn, buf, []byte("CMD "), data); err != nil {
-		println("failed to write to", remoteAddress, ":", err.Error())
-		return err
+		return fmt.Errorf("failed to write to %s: %v", remoteAddress, err)
 	}
 
 	// println("command sent")
@@ -91,6 +93,52 @@ func doExecute(conn net.Conn, command *cmd.ControlMessage) error {
 	}
 
 	return err
+}
+
+func RemoteDirectCommand(server string, command *cmd.ControlMessage) (response *cmd.ControlMessage, err error) {
+	conn, err := getDirectCommandConnection(server)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	return doCommand(conn, command)
+}
+
+// doCommand() sends a request and expects a response object
+func doCommand(conn net.Conn, command *cmd.ControlMessage) (response *cmd.ControlMessage, err error) {
+
+	buf := make([]byte, 4)
+
+	// serialize the commend
+	data, err := proto.Marshal(command)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling command error: %v", err)
+	}
+
+	remoteAddress := conn.RemoteAddr().String()
+
+	// send the command
+	if err = util.WriteData(conn, buf, []byte("CMD "), data); err != nil {
+		return nil, fmt.Errorf("failed to write command to %s: %v", remoteAddress, err)
+	}
+
+	// println("command sent")
+
+	// read response
+	replyBytes, err := ioutil.ReadAll(conn)
+	if err != nil {
+		return nil, fmt.Errorf("cmd response: %v", err)
+	}
+
+	// unmarshal the bytes
+	response = &cmd.ControlMessage{}
+	err = proto.Unmarshal(replyBytes, response)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshaling error: %v", err)
+	}
+
+	return response, err
 }
 
 func getCommandConnection(leader string, agentName string) (net.Conn, error) {

@@ -12,12 +12,14 @@ go:
 
 before_install:
  - export PATH=/home/travis/gopath/bin:$PATH
+ - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
+ - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install bzr     ; fi
 
 install:
  - go get ./...
  
 script:
- - go test -race -timeout=60s ./...
+ - go test -race -timeout=90s ./...
 
 env:
 - GOMAXPROCS=4 GORACE="halt_on_error=1"
