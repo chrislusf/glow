@@ -11,7 +11,6 @@ import (
 	"github.com/chrislusf/glow/driver/plan"
 	"github.com/chrislusf/glow/flow"
 	"github.com/chrislusf/glow/netchan"
-	"github.com/chrislusf/glow/util"
 )
 
 type TaskRunner struct {
@@ -19,14 +18,6 @@ type TaskRunner struct {
 	Tasks          []*flow.Task
 	FlowContext    *flow.FlowContext
 	executorStatus *ExecutorStatus
-}
-
-type ExecutorStatus struct {
-	InputChannelStatuses []*util.ChannelStatus
-	OutputChannelStatus  *util.ChannelStatus
-	ReadyTime            time.Time
-	StartTime            time.Time
-	StopTime             time.Time
 }
 
 func NewTaskRunner(option *TaskOption) *TaskRunner {
@@ -47,7 +38,8 @@ func (tr *TaskRunner) Run(fc *flow.FlowContext) {
 	}
 	fc.ChannelBufferSize = tr.option.ChannelBufferSize
 
-	tr.Tasks = plan.GroupTasks(fc)[tr.option.TaskGroupId].Tasks
+	_, taskGroups := plan.GroupTasks(fc)
+	tr.Tasks = taskGroups[tr.option.TaskGroupId].Tasks
 	tr.FlowContext = fc
 
 	tr.executorStatus.StartTime = time.Now()

@@ -7,22 +7,12 @@ import (
 	"github.com/chrislusf/glow/flow"
 )
 
-type TaskGroupStatus int
-
-const (
-	New TaskGroupStatus = iota
-	Waiting
-	Scheduled
-	Completed
-	Failed
-)
-
 type TaskGroup struct {
 	Id              int
 	Tasks           []*flow.Task
 	Parents         []*TaskGroup
 	ParentStepGroup *StepGroup
-	Status          TaskGroupStatus
+	RequestId       int32 // id for actual request when running
 }
 
 type StepGroup struct {
@@ -31,9 +21,9 @@ type StepGroup struct {
 	TaskGroups []*TaskGroup
 }
 
-func GroupTasks(fc *flow.FlowContext) []*TaskGroup {
+func GroupTasks(fc *flow.FlowContext) ([]*StepGroup, []*TaskGroup) {
 	stepGroups := translateToStepGroups(fc)
-	return translateToTaskGroups(stepGroups)
+	return stepGroups, translateToTaskGroups(stepGroups)
 }
 
 func isMergeableDataset(ds *flow.Dataset, taskCount int) bool {

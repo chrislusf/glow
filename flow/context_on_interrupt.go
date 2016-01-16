@@ -6,6 +6,7 @@ import (
 
 func (fc *FlowContext) OnInterrupt() {
 
+	fmt.Print("\n")
 	for _, step := range fc.Steps {
 		if step.Output != nil {
 			fmt.Printf("step:%s%d\n", step.Name, step.Id)
@@ -23,6 +24,7 @@ func (fc *FlowContext) OnInterrupt() {
 			}
 		}
 	}
+	fmt.Print("\n")
 }
 
 func printShardStatus(shard *DatasetShard) {

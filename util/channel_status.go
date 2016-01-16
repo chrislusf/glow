@@ -5,7 +5,7 @@ import (
 )
 
 type ChannelStatus struct {
-	Length    int
+	Length    int64
 	StartTime time.Time
 	StopTime  time.Time
 }
@@ -19,7 +19,7 @@ func (s *ChannelStatus) ReportStart() {
 }
 
 func (s *ChannelStatus) ReportAdd(delta int) {
-	s.Length += delta
+	s.Length += int64(delta)
 }
 
 func (s *ChannelStatus) ReportClose() {
