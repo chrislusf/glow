@@ -59,52 +59,7 @@ func (s *Scheduler) EventLoop() {
 				allocation := supply.Object.(resource.Allocation)
 				defer s.Market.ReturnSupply(supply)
 
-				s.setupInputChannels(event.FlowContext, tasks[0], allocation.Location, event.WaitGroup)
-
-				for _, shard := range tasks[len(tasks)-1].Outputs {
-					s.shardLocator.SetShardLocation(s.option.ExecutableFileHash+"-"+shard.Name(), allocation.Location)
-				}
-				s.setupOutputChannels(tasks[len(tasks)-1].Outputs, event.WaitGroup)
-
-				// fmt.Printf("allocated %s on %v\n", tasks[0].Name(), allocation.Location)
-				// create reqeust
-				args := []string{
-					"-glow.flow.id",
-					strconv.Itoa(event.FlowContext.Id),
-					"-glow.taskGroup.id",
-					strconv.Itoa(taskGroup.Id),
-					"-glow.task.name",
-					tasks[0].Name(),
-					"-glow.agent.port",
-					strconv.Itoa(allocation.Location.Port),
-					"-glow.taskGroup.inputs",
-					s.shardLocator.allInputLocations(tasks[0]),
-					"-glow.exe.hash",
-					s.shardLocator.executableFileHash,
-					"-glow.channel.bufferSize",
-					strconv.Itoa(event.FlowContext.ChannelBufferSize),
-				}
-				for _, arg := range os.Args[1:] {
-					args = append(args, arg)
-				}
-				request := NewStartRequest(
-					"./"+filepath.Base(os.Args[0]),
-					// filepath.Join(".", filepath.Base(os.Args[0])),
-					s.option.Module,
-					args,
-					allocation.Allocated,
-					os.Environ(),
-					int32(s.option.DriverPort),
-				)
-
-				requestId := request.StartRequest.GetHashCode()
-				s.getRemoteExecutorStatus(requestId).RequestTime = time.Now()
-
-				// fmt.Printf("starting on %s: %v\n", allocation.Allocated, request)
-				if err := RemoteDirectExecute(allocation.Location.URL(), request); err != nil {
-					log.Printf("exeuction error %v: %v", err, request)
-				}
-				s.getRemoteExecutorStatus(requestId).StopTime = time.Now()
+				s.remoteExecuteOnLocation(event.FlowContext, taskGroup, allocation, event.WaitGroup)
 			}()
 		case ReleaseTaskGroupInputs:
 			go func() {
@@ -126,6 +81,57 @@ func (s *Scheduler) EventLoop() {
 			}()
 		}
 	}
+}
+
+func (s *Scheduler) remoteExecuteOnLocation(flowContext *flow.FlowContext, taskGroup *plan.TaskGroup, allocation resource.Allocation, wg *sync.WaitGroup) {
+	tasks := taskGroup.Tasks
+
+	s.setupInputChannels(flowContext, tasks[0], allocation.Location, wg)
+
+	for _, shard := range tasks[len(tasks)-1].Outputs {
+		s.shardLocator.SetShardLocation(s.option.ExecutableFileHash+"-"+shard.Name(), allocation.Location)
+	}
+	s.setupOutputChannels(tasks[len(tasks)-1].Outputs, wg)
+
+	// fmt.Printf("allocated %s on %v\n", tasks[0].Name(), allocation.Location)
+	// create reqeust
+	args := []string{
+		"-glow.flow.id",
+		strconv.Itoa(flowContext.Id),
+		"-glow.taskGroup.id",
+		strconv.Itoa(taskGroup.Id),
+		"-glow.task.name",
+		tasks[0].Name(),
+		"-glow.agent.port",
+		strconv.Itoa(allocation.Location.Port),
+		"-glow.taskGroup.inputs",
+		s.shardLocator.allInputLocations(tasks[0]),
+		"-glow.exe.hash",
+		s.shardLocator.executableFileHash,
+		"-glow.channel.bufferSize",
+		strconv.Itoa(flowContext.ChannelBufferSize),
+	}
+	for _, arg := range os.Args[1:] {
+		args = append(args, arg)
+	}
+	request := NewStartRequest(
+		"./"+filepath.Base(os.Args[0]),
+		// filepath.Join(".", filepath.Base(os.Args[0])),
+		s.option.Module,
+		args,
+		allocation.Allocated,
+		os.Environ(),
+		int32(s.option.DriverPort),
+	)
+
+	requestId := request.StartRequest.GetHashCode()
+	s.getRemoteExecutorStatus(requestId).RequestTime = time.Now()
+
+	// fmt.Printf("starting on %s: %v\n", allocation.Allocated, request)
+	if err := RemoteDirectExecute(allocation.Location.URL(), request); err != nil {
+		log.Printf("exeuction error %v: %v", err, request)
+	}
+	s.getRemoteExecutorStatus(requestId).StopTime = time.Now()
 }
 
 func (s *Scheduler) setupInputChannels(fc *flow.FlowContext, task *flow.Task, location resource.Location, waitGroup *sync.WaitGroup) {
