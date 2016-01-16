@@ -80,7 +80,7 @@ message GetStatusResponse {
 	optional string error = 2;
 	repeated ChannelStatus inputStatuses = 3;
 	optional ChannelStatus outputStatus = 4;
-	optional int64 readyTime = 5;
+	optional int64 requestTime = 5;
 	optional int64 startTime = 6;
 	optional int64 stopTime = 7;
 }

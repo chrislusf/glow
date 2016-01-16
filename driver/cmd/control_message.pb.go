@@ -426,7 +426,7 @@ type GetStatusResponse struct {
 	Error            *string          `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
 	InputStatuses    []*ChannelStatus `protobuf:"bytes,3,rep,name=inputStatuses" json:"inputStatuses,omitempty"`
 	OutputStatus     *ChannelStatus   `protobuf:"bytes,4,opt,name=outputStatus" json:"outputStatus,omitempty"`
-	ReadyTime        *int64           `protobuf:"varint,5,opt,name=readyTime" json:"readyTime,omitempty"`
+	RequestTime      *int64           `protobuf:"varint,5,opt,name=requestTime" json:"requestTime,omitempty"`
 	StartTime        *int64           `protobuf:"varint,6,opt,name=startTime" json:"startTime,omitempty"`
 	StopTime         *int64           `protobuf:"varint,7,opt,name=stopTime" json:"stopTime,omitempty"`
 	XXX_unrecognized []byte           `json:"-"`
@@ -464,9 +464,9 @@ func (m *GetStatusResponse) GetOutputStatus() *ChannelStatus {
 	return nil
 }
 
-func (m *GetStatusResponse) GetReadyTime() int64 {
-	if m != nil && m.ReadyTime != nil {
-		return *m.ReadyTime
+func (m *GetStatusResponse) GetRequestTime() int64 {
+	if m != nil && m.RequestTime != nil {
+		return *m.RequestTime
 	}
 	return 0
 }
