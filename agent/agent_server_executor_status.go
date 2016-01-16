@@ -1,8 +1,6 @@
 package agent
 
 import (
-	"fmt"
-
 	"github.com/chrislusf/glow/driver/cmd"
 	"github.com/golang/protobuf/proto"
 )
@@ -18,7 +16,18 @@ func (as *AgentServer) handleStatus(getStatusRequest *cmd.GetStatusRequest) *cmd
 		StopTime:         proto.Int64(stat.StopTime.Unix()),
 	}
 
-	fmt.Printf("stat: %v\n", stat)
+	return reply
+}
+
+func (as *AgentServer) handleStopRequest(stopRequest *cmd.StopRequest) *cmd.StopResponse {
+	requestId := stopRequest.GetStartRequestHash()
+	stat := as.localExecutorManager.getExecutorStatus(requestId)
+
+	stat.Process.Kill()
+
+	reply := &cmd.StopResponse{
+		StartRequestHash: proto.Int32(requestId),
+	}
 
 	return reply
 }

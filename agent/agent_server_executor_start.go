@@ -55,6 +55,7 @@ func (as *AgentServer) handleStart(conn net.Conn,
 	} else {
 		reply.Pid = proto.Int32(int32(cmd.Process.Pid))
 	}
+	stat.Process = cmd.Process
 
 	cmd.Wait()
 	stat.StopTime = time.Now()

@@ -53,6 +53,15 @@ func NewGetStatusRequest(requestId int32) *cmd.ControlMessage {
 	}
 }
 
+func NewStopRequest(requestId int32) *cmd.ControlMessage {
+	return &cmd.ControlMessage{
+		Type: cmd.ControlMessage_StopRequest.Enum(),
+		StopRequest: &cmd.StopRequest{
+			StartRequestHash: proto.Int32(requestId),
+		},
+	}
+}
+
 func NewDeleteDatasetShardRequest(name string) *cmd.ControlMessage {
 	return &cmd.ControlMessage{
 		Type: cmd.ControlMessage_DeleteDatasetShardRequest.Enum(),

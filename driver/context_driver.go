@@ -106,6 +106,8 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 
 	flow.OnInterrupt(func() {
 		fcd.OnInterrupt(fc, sched)
+	}, func() {
+		fcd.OnExit(fc, sched)
 	})
 
 	// schedule to run the steps

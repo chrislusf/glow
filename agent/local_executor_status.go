@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"os"
 	"time"
 )
 
@@ -11,6 +12,7 @@ type ExecutorStatus struct {
 	OutputLength   int
 	StartTime      time.Time
 	StopTime       time.Time
+	Process        *os.Process
 	LastAccessTime time.Time // used for expiring entries
 }
 

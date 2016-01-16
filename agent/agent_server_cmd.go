@@ -27,5 +27,9 @@ func (as *AgentServer) handleCommandConnection(conn net.Conn,
 		reply.Type = cmd.ControlMessage_GetStatusResponse.Enum()
 		reply.GetStatusResponse = as.handleStatus(command.GetStatusRequest)
 	}
+	if command.GetType() == cmd.ControlMessage_StopRequest {
+		reply.Type = cmd.ControlMessage_StopResponse.Enum()
+		reply.StopResponse = as.handleStopRequest(command.StopRequest)
+	}
 	return reply
 }

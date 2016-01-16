@@ -19,6 +19,32 @@ func (fcd *FlowContextDriver) OnInterrupt(
 	fcd.printDistributedStatus(sched, status)
 }
 
+func (fcd *FlowContextDriver) OnExit(
+	fc *flow.FlowContext,
+	sched *scheduler.Scheduler) {
+	var wg sync.WaitGroup
+	for _, tg := range fcd.taskGroups {
+		wg.Add(1)
+		go func(tg *plan.TaskGroup) {
+			defer wg.Done()
+
+			requestId := tg.RequestId
+			request, ok := sched.RemoteExecutorStatuses[requestId]
+			if !ok {
+				fmt.Printf("No executors for %v\n", tg)
+				return
+			}
+			// println("checking", request.Allocation.Location.URL(), requestId)
+			if err := askExecutorToStopRequest(request.Allocation.Location.URL(), requestId); err != nil {
+				fmt.Printf("Error to stop request %d on %s: %v\n", request.Allocation.Location.URL(), requestId, err)
+				return
+			}
+		}(tg)
+	}
+	wg.Wait()
+
+}
+
 func (fcd *FlowContextDriver) printDistributedStatus(sched *scheduler.Scheduler, stats []*RemoteExecutorStatus) {
 	fmt.Print("\n")
 	for _, stepGroup := range fcd.stepGroups {
@@ -111,4 +137,9 @@ func askExecutorStatusForRequest(server string, requestId int32) (*RemoteExecuto
 			StopTime:    time.Unix(response.GetStopTime(), 0),
 		},
 	}, nil
+}
+
+func askExecutorToStopRequest(server string, requestId int32) (err error) {
+	_, err = scheduler.RemoteDirectCommand(server, scheduler.NewStopRequest(requestId))
+	return
 }

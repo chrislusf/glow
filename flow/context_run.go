@@ -71,7 +71,7 @@ func (fc *FlowContext) runFlowContextInStandAloneMode() {
 
 	isDatasetStarted := make(map[int]bool)
 
-	OnInterrupt(fc.OnInterrupt)
+	OnInterrupt(fc.OnInterrupt, nil)
 
 	// start all task edges
 	for _, step := range fc.Steps {
