@@ -44,6 +44,9 @@ func init() {
 
 type FlowContextDriver struct {
 	option *DriverOption
+
+	stepGroups []*plan.StepGroup
+	taskGroups []*plan.TaskGroup
 }
 
 func NewFlowContextDriver(option *DriverOption) *FlowContextDriver {
@@ -59,18 +62,18 @@ func (fcd *FlowContextDriver) IsDriverPlotMode() bool {
 }
 
 func (fcd *FlowContextDriver) Plot(fc *flow.FlowContext) {
-	taskGroups := plan.GroupTasks(fc)
-	plan.PlotGraph(taskGroups, fc)
+	_, fcd.taskGroups = plan.GroupTasks(fc)
+	plan.PlotGraph(fcd.taskGroups, fc)
 }
 
 // driver runs on local, controlling all tasks
 func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 
 	// task fusion to minimize disk IO
-	taskGroups := plan.GroupTasks(fc)
+	fcd.stepGroups, fcd.taskGroups = plan.GroupTasks(fc)
 	// plot the execution graph
 	if fcd.option.PlotOutput {
-		plan.PlotGraph(taskGroups, fc)
+		plan.PlotGraph(fcd.taskGroups, fc)
 		return
 	}
 
@@ -97,22 +100,22 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 
 	// best effort to clean data on agent disk
 	// this may need more improvements
-	defer fcd.Cleanup(sched, fc, taskGroups)
+	defer fcd.Cleanup(sched, fc)
 
 	go sched.EventLoop()
 
 	flow.OnInterrupt(func() {
-		fcd.OnInterrupt(fc, taskGroups, sched)
+		fcd.OnInterrupt(fc, sched)
 	})
 
 	// schedule to run the steps
 	var wg sync.WaitGroup
-	for _, taskGroup := range taskGroups {
+	for _, taskGroup := range fcd.taskGroups {
 		wg.Add(1)
 		sched.EventChan <- scheduler.SubmitTaskGroup{
 			FlowContext: fc,
 			TaskGroup:   taskGroup,
-			Bid:         fcd.option.FlowBid / float64(len(taskGroups)),
+			Bid:         fcd.option.FlowBid / float64(len(fcd.taskGroups)),
 			WaitGroup:   &wg,
 		}
 	}
@@ -124,12 +127,12 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 
 }
 
-func (fcd *FlowContextDriver) Cleanup(sched *scheduler.Scheduler, fc *flow.FlowContext, taskGroups []*plan.TaskGroup) {
+func (fcd *FlowContextDriver) Cleanup(sched *scheduler.Scheduler, fc *flow.FlowContext) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	sched.EventChan <- scheduler.ReleaseTaskGroupInputs{
 		FlowContext: fc,
-		TaskGroups:  taskGroups,
+		TaskGroups:  fcd.taskGroups,
 		WaitGroup:   &wg,
 	}
 

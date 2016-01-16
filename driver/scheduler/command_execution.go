@@ -44,6 +44,15 @@ func NewStartRequest(path string, dir string, args []string, allocated resource.
 	return request
 }
 
+func NewGetStatusRequest(requestId int32) *cmd.ControlMessage {
+	return &cmd.ControlMessage{
+		Type: cmd.ControlMessage_GetStatusRequest.Enum(),
+		GetStatusRequest: &cmd.GetStatusRequest{
+			StartRequestHash: proto.Int32(requestId),
+		},
+	}
+}
+
 func NewDeleteDatasetShardRequest(name string) *cmd.ControlMessage {
 	return &cmd.ControlMessage{
 		Type: cmd.ControlMessage_DeleteDatasetShardRequest.Enum(),

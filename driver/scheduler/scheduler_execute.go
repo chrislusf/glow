@@ -58,13 +58,20 @@ func (s *Scheduler) remoteExecuteOnLocation(flowContext *flow.FlowContext, taskG
 	)
 
 	requestId := request.StartRequest.GetHashCode()
-	s.getRemoteExecutorStatus(requestId).RequestTime = time.Now()
+	status, isOld := s.getRemoteExecutorStatus(requestId)
+	if isOld {
+		log.Printf("Replacing old request: %v", status)
+	}
+	status.RequestTime = time.Now()
+	status.Allocation = allocation
+	status.Request = request
+	taskGroup.RequestId = requestId
 
 	// fmt.Printf("starting on %s: %v\n", allocation.Allocated, request)
 	if err := RemoteDirectExecute(allocation.Location.URL(), request); err != nil {
 		log.Printf("exeuction error %v: %v", err, request)
 	}
-	s.getRemoteExecutorStatus(requestId).StopTime = time.Now()
+	status.StopTime = time.Now()
 }
 
 func (s *Scheduler) setupInputChannels(fc *flow.FlowContext, task *flow.Task, location resource.Location, waitGroup *sync.WaitGroup) {

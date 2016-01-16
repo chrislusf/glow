@@ -5,7 +5,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/chrislusf/glow/driver/cmd"
 	"github.com/chrislusf/glow/driver/scheduler/market"
+	"github.com/chrislusf/glow/resource"
 )
 
 type Scheduler struct {
@@ -20,6 +22,8 @@ type Scheduler struct {
 }
 
 type RemoteExecutorStatus struct {
+	Request      *cmd.ControlMessage
+	Allocation   resource.Allocation
 	RequestTime  time.Time
 	InputLength  int
 	OutputLength int
@@ -51,15 +55,15 @@ func NewScheduler(leader string, option *SchedulerOption) *Scheduler {
 	return s
 }
 
-func (s *Scheduler) getRemoteExecutorStatus(id int32) *RemoteExecutorStatus {
+func (s *Scheduler) getRemoteExecutorStatus(id int32) (status *RemoteExecutorStatus, isOld bool) {
 	s.Lock()
 	defer s.Unlock()
 
-	status, ok := s.RemoteExecutorStatuses[id]
-	if ok {
-		return status
+	status, isOld = s.RemoteExecutorStatuses[id]
+	if isOld {
+		return status, isOld
 	}
 	status = &RemoteExecutorStatus{}
 	s.RemoteExecutorStatuses[id] = status
-	return status
+	return status, false
 }
