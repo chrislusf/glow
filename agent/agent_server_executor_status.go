@@ -23,7 +23,10 @@ func (as *AgentServer) handleStopRequest(stopRequest *cmd.StopRequest) *cmd.Stop
 	requestId := stopRequest.GetStartRequestHash()
 	stat := as.localExecutorManager.getExecutorStatus(requestId)
 
-	stat.Process.Kill()
+	if stat.Process != nil {
+		stat.Process.Kill()
+		stat.Process = nil
+	}
 
 	reply := &cmd.StopResponse{
 		StartRequestHash: proto.Int32(requestId),
