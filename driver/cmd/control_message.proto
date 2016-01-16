@@ -69,11 +69,17 @@ message GetStatusRequest {
 	required int32 startRequestHash = 1;
 }
 
+message ChannelStatus {
+	required int64 length = 1;
+	optional int64 startTime = 2;
+	optional int64 stopTime = 3;
+}
+
 message GetStatusResponse {
 	required int32 startRequestHash = 1;
 	optional string error = 2;
-	optional int64 inputLength = 3;
-	optional int64 outputLength = 4;
+	repeated ChannelStatus inputStatuses = 3;
+	optional ChannelStatus outputStatus = 4;
 	optional int64 readyTime = 5;
 	optional int64 startTime = 6;
 	optional int64 stopTime = 7;

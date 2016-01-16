@@ -17,6 +17,7 @@ It has these top-level messages:
 	StopRequest
 	StopResponse
 	GetStatusRequest
+	ChannelStatus
 	GetStatusResponse
 	DeleteDatasetShardRequest
 	DeleteDatasetShardResponse
@@ -388,15 +389,47 @@ func (m *GetStatusRequest) GetStartRequestHash() int32 {
 	return 0
 }
 
+type ChannelStatus struct {
+	Length           *int64 `protobuf:"varint,1,req,name=length" json:"length,omitempty"`
+	StartTime        *int64 `protobuf:"varint,2,opt,name=startTime" json:"startTime,omitempty"`
+	StopTime         *int64 `protobuf:"varint,3,opt,name=stopTime" json:"stopTime,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
+}
+
+func (m *ChannelStatus) Reset()         { *m = ChannelStatus{} }
+func (m *ChannelStatus) String() string { return proto.CompactTextString(m) }
+func (*ChannelStatus) ProtoMessage()    {}
+
+func (m *ChannelStatus) GetLength() int64 {
+	if m != nil && m.Length != nil {
+		return *m.Length
+	}
+	return 0
+}
+
+func (m *ChannelStatus) GetStartTime() int64 {
+	if m != nil && m.StartTime != nil {
+		return *m.StartTime
+	}
+	return 0
+}
+
+func (m *ChannelStatus) GetStopTime() int64 {
+	if m != nil && m.StopTime != nil {
+		return *m.StopTime
+	}
+	return 0
+}
+
 type GetStatusResponse struct {
-	StartRequestHash *int32  `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
-	Error            *string `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
-	InputLength      *int64  `protobuf:"varint,3,opt,name=inputLength" json:"inputLength,omitempty"`
-	OutputLength     *int64  `protobuf:"varint,4,opt,name=outputLength" json:"outputLength,omitempty"`
-	ReadyTime        *int64  `protobuf:"varint,5,opt,name=readyTime" json:"readyTime,omitempty"`
-	StartTime        *int64  `protobuf:"varint,6,opt,name=startTime" json:"startTime,omitempty"`
-	StopTime         *int64  `protobuf:"varint,7,opt,name=stopTime" json:"stopTime,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	StartRequestHash *int32           `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
+	Error            *string          `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
+	InputStatuses    []*ChannelStatus `protobuf:"bytes,3,rep,name=inputStatuses" json:"inputStatuses,omitempty"`
+	OutputStatus     *ChannelStatus   `protobuf:"bytes,4,opt,name=outputStatus" json:"outputStatus,omitempty"`
+	ReadyTime        *int64           `protobuf:"varint,5,opt,name=readyTime" json:"readyTime,omitempty"`
+	StartTime        *int64           `protobuf:"varint,6,opt,name=startTime" json:"startTime,omitempty"`
+	StopTime         *int64           `protobuf:"varint,7,opt,name=stopTime" json:"stopTime,omitempty"`
+	XXX_unrecognized []byte           `json:"-"`
 }
 
 func (m *GetStatusResponse) Reset()         { *m = GetStatusResponse{} }
@@ -417,18 +450,18 @@ func (m *GetStatusResponse) GetError() string {
 	return ""
 }
 
-func (m *GetStatusResponse) GetInputLength() int64 {
-	if m != nil && m.InputLength != nil {
-		return *m.InputLength
+func (m *GetStatusResponse) GetInputStatuses() []*ChannelStatus {
+	if m != nil {
+		return m.InputStatuses
 	}
-	return 0
+	return nil
 }
 
-func (m *GetStatusResponse) GetOutputLength() int64 {
-	if m != nil && m.OutputLength != nil {
-		return *m.OutputLength
+func (m *GetStatusResponse) GetOutputStatus() *ChannelStatus {
+	if m != nil {
+		return m.OutputStatus
 	}
-	return 0
+	return nil
 }
 
 func (m *GetStatusResponse) GetReadyTime() int64 {
