@@ -251,7 +251,7 @@ type StartRequest struct {
 	Envs             []string         `protobuf:"bytes,3,rep,name=envs" json:"envs,omitempty"`
 	Dir              *string          `protobuf:"bytes,4,req,name=dir" json:"dir,omitempty"`
 	Resource         *ComputeResource `protobuf:"bytes,5,req,name=resource" json:"resource,omitempty"`
-	HashCode         *int32           `protobuf:"varint,6,req,name=hashCode" json:"hashCode,omitempty"`
+	HashCode         *uint32          `protobuf:"varint,6,req,name=hashCode" json:"hashCode,omitempty"`
 	Host             *string          `protobuf:"bytes,7,opt,name=host" json:"host,omitempty"`
 	Port             *int32           `protobuf:"varint,8,opt,name=port" json:"port,omitempty"`
 	XXX_unrecognized []byte           `json:"-"`
@@ -296,7 +296,7 @@ func (m *StartRequest) GetResource() *ComputeResource {
 	return nil
 }
 
-func (m *StartRequest) GetHashCode() int32 {
+func (m *StartRequest) GetHashCode() uint32 {
 	if m != nil && m.HashCode != nil {
 		return *m.HashCode
 	}
@@ -358,15 +358,15 @@ func (m *StartResponse) GetOutputs() []*NetChan {
 }
 
 type StopRequest struct {
-	StartRequestHash *int32 `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
-	XXX_unrecognized []byte `json:"-"`
+	StartRequestHash *uint32 `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
 }
 
 func (m *StopRequest) Reset()         { *m = StopRequest{} }
 func (m *StopRequest) String() string { return proto.CompactTextString(m) }
 func (*StopRequest) ProtoMessage()    {}
 
-func (m *StopRequest) GetStartRequestHash() int32 {
+func (m *StopRequest) GetStartRequestHash() uint32 {
 	if m != nil && m.StartRequestHash != nil {
 		return *m.StartRequestHash
 	}
@@ -374,7 +374,7 @@ func (m *StopRequest) GetStartRequestHash() int32 {
 }
 
 type StopResponse struct {
-	StartRequestHash *int32  `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
+	StartRequestHash *uint32 `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
 	Error            *string `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
@@ -383,7 +383,7 @@ func (m *StopResponse) Reset()         { *m = StopResponse{} }
 func (m *StopResponse) String() string { return proto.CompactTextString(m) }
 func (*StopResponse) ProtoMessage()    {}
 
-func (m *StopResponse) GetStartRequestHash() int32 {
+func (m *StopResponse) GetStartRequestHash() uint32 {
 	if m != nil && m.StartRequestHash != nil {
 		return *m.StartRequestHash
 	}
@@ -398,15 +398,15 @@ func (m *StopResponse) GetError() string {
 }
 
 type GetStatusRequest struct {
-	StartRequestHash *int32 `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
-	XXX_unrecognized []byte `json:"-"`
+	StartRequestHash *uint32 `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
 }
 
 func (m *GetStatusRequest) Reset()         { *m = GetStatusRequest{} }
 func (m *GetStatusRequest) String() string { return proto.CompactTextString(m) }
 func (*GetStatusRequest) ProtoMessage()    {}
 
-func (m *GetStatusRequest) GetStartRequestHash() int32 {
+func (m *GetStatusRequest) GetStartRequestHash() uint32 {
 	if m != nil && m.StartRequestHash != nil {
 		return *m.StartRequestHash
 	}
@@ -446,7 +446,7 @@ func (m *ChannelStatus) GetStopTime() int64 {
 }
 
 type GetStatusResponse struct {
-	StartRequestHash *int32           `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
+	StartRequestHash *uint32          `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
 	Error            *string          `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
 	InputStatuses    []*ChannelStatus `protobuf:"bytes,3,rep,name=inputStatuses" json:"inputStatuses,omitempty"`
 	OutputStatus     *ChannelStatus   `protobuf:"bytes,4,opt,name=outputStatus" json:"outputStatus,omitempty"`
@@ -460,7 +460,7 @@ func (m *GetStatusResponse) Reset()         { *m = GetStatusResponse{} }
 func (m *GetStatusResponse) String() string { return proto.CompactTextString(m) }
 func (*GetStatusResponse) ProtoMessage()    {}
 
-func (m *GetStatusResponse) GetStartRequestHash() int32 {
+func (m *GetStatusResponse) GetStartRequestHash() uint32 {
 	if m != nil && m.StartRequestHash != nil {
 		return *m.StartRequestHash
 	}
@@ -542,7 +542,7 @@ func (m *DeleteDatasetShardResponse) GetError() string {
 }
 
 type LocalStatusReportRequest struct {
-	StartRequestHash *int32           `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
+	StartRequestHash *uint32          `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
 	Error            *string          `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
 	InputStatuses    []*ChannelStatus `protobuf:"bytes,3,rep,name=inputStatuses" json:"inputStatuses,omitempty"`
 	OutputStatus     *ChannelStatus   `protobuf:"bytes,4,opt,name=outputStatus" json:"outputStatus,omitempty"`
@@ -553,7 +553,7 @@ func (m *LocalStatusReportRequest) Reset()         { *m = LocalStatusReportReque
 func (m *LocalStatusReportRequest) String() string { return proto.CompactTextString(m) }
 func (*LocalStatusReportRequest) ProtoMessage()    {}
 
-func (m *LocalStatusReportRequest) GetStartRequestHash() int32 {
+func (m *LocalStatusReportRequest) GetStartRequestHash() uint32 {
 	if m != nil && m.StartRequestHash != nil {
 		return *m.StartRequestHash
 	}

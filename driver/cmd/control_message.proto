@@ -48,7 +48,7 @@ message StartRequest {
 	repeated string envs = 3;
 	required string dir = 4;
 	required ComputeResource resource = 5;
-	required int32 hashCode = 6;
+	required uint32 hashCode = 6;
 	optional string host = 7;
 	optional int32 port = 8;
 }
@@ -61,16 +61,16 @@ message StartResponse {
 }
 
 message StopRequest {
-	required int32 startRequestHash = 1;
+	required uint32 startRequestHash = 1;
 }
 
 message StopResponse {
-	required int32 startRequestHash = 1;
+	required uint32 startRequestHash = 1;
 	optional string error = 2;
 }
 
 message GetStatusRequest {
-	required int32 startRequestHash = 1;
+	required uint32 startRequestHash = 1;
 }
 
 message ChannelStatus {
@@ -80,7 +80,7 @@ message ChannelStatus {
 }
 
 message GetStatusResponse {
-	required int32 startRequestHash = 1;
+	required uint32 startRequestHash = 1;
 	optional string error = 2;
 	repeated ChannelStatus inputStatuses = 3;
 	optional ChannelStatus outputStatus = 4;
@@ -98,7 +98,7 @@ message DeleteDatasetShardResponse {
 }
 
 message LocalStatusReportRequest {
-	required int32 startRequestHash = 1;
+	required uint32 startRequestHash = 1;
 	optional string error = 2;
 	repeated ChannelStatus inputStatuses = 3;
 	optional ChannelStatus outputStatus = 4;
