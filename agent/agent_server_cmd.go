@@ -10,7 +10,8 @@ import (
 func (as *AgentServer) handleCommandConnection(conn net.Conn,
 	command *cmd.ControlMessage) *cmd.ControlMessage {
 	reply := &cmd.ControlMessage{}
-	if command.GetType() == cmd.ControlMessage_StartRequest {
+	switch command.GetType() {
+	case cmd.ControlMessage_StartRequest:
 		reply.Type = cmd.ControlMessage_StartResponse.Enum()
 		remoteAddress := conn.RemoteAddr().String()
 		// println("remote address is", remoteAddress)
@@ -18,16 +19,13 @@ func (as *AgentServer) handleCommandConnection(conn net.Conn,
 		command.StartRequest.Host = &host
 		reply.StartResponse = as.handleStart(conn, command.StartRequest)
 		return nil
-	}
-	if command.GetType() == cmd.ControlMessage_DeleteDatasetShardRequest {
+	case cmd.ControlMessage_DeleteDatasetShardRequest:
 		reply.Type = cmd.ControlMessage_DeleteDatasetShardResponse.Enum()
 		reply.DeleteDatasetShardResponse = as.handleDeleteDatasetShard(conn, command.DeleteDatasetShardRequest)
-	}
-	if command.GetType() == cmd.ControlMessage_GetStatusRequest {
+	case cmd.ControlMessage_GetStatusRequest:
 		reply.Type = cmd.ControlMessage_GetStatusResponse.Enum()
 		reply.GetStatusResponse = as.handleStatus(command.GetStatusRequest)
-	}
-	if command.GetType() == cmd.ControlMessage_StopRequest {
+	case cmd.ControlMessage_StopRequest:
 		reply.Type = cmd.ControlMessage_StopResponse.Enum()
 		reply.StopResponse = as.handleStopRequest(command.StopRequest)
 	}
