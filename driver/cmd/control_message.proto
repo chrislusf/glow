@@ -14,6 +14,8 @@ message ControlMessage {
 		GetStatusResponse = 7;
 		DeleteDatasetShardRequest = 8;
 		DeleteDatasetShardResponse = 9;
+		LocalStatusReportRequest = 10;
+		LocalStatusReportResponse = 11;
 	}
 	required Type type = 1;
 
@@ -25,6 +27,8 @@ message ControlMessage {
 	optional GetStatusResponse getStatusResponse = 7;
 	optional DeleteDatasetShardRequest deleteDatasetShardRequest = 8;
 	optional DeleteDatasetShardResponse deleteDatasetShardResponse = 9;
+	optional LocalStatusReportRequest localStatusReportRequest = 10;
+	optional LocalStatusReportResponse localStatusReportResponse = 11;
 }
 
 message NetChan {
@@ -88,6 +92,18 @@ message GetStatusResponse {
 message DeleteDatasetShardRequest {
 	required string name = 1;
 }
+
 message DeleteDatasetShardResponse {
+	optional string error = 1;
+}
+
+message LocalStatusReportRequest {
+	required int32 startRequestHash = 1;
+	optional string error = 2;
+	repeated ChannelStatus inputStatuses = 3;
+	optional ChannelStatus outputStatus = 4;
+}
+
+message LocalStatusReportResponse {
 	optional string error = 1;
 }

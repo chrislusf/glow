@@ -21,6 +21,8 @@ It has these top-level messages:
 	GetStatusResponse
 	DeleteDatasetShardRequest
 	DeleteDatasetShardResponse
+	LocalStatusReportRequest
+	LocalStatusReportResponse
 */
 package cmd
 
@@ -43,18 +45,22 @@ const (
 	ControlMessage_GetStatusResponse          ControlMessage_Type = 7
 	ControlMessage_DeleteDatasetShardRequest  ControlMessage_Type = 8
 	ControlMessage_DeleteDatasetShardResponse ControlMessage_Type = 9
+	ControlMessage_LocalStatusReportRequest   ControlMessage_Type = 10
+	ControlMessage_LocalStatusReportResponse  ControlMessage_Type = 11
 )
 
 var ControlMessage_Type_name = map[int32]string{
-	1: "NoOp",
-	2: "StartRequest",
-	3: "StartResponse",
-	4: "StopRequest",
-	5: "StopResponse",
-	6: "GetStatusRequest",
-	7: "GetStatusResponse",
-	8: "DeleteDatasetShardRequest",
-	9: "DeleteDatasetShardResponse",
+	1:  "NoOp",
+	2:  "StartRequest",
+	3:  "StartResponse",
+	4:  "StopRequest",
+	5:  "StopResponse",
+	6:  "GetStatusRequest",
+	7:  "GetStatusResponse",
+	8:  "DeleteDatasetShardRequest",
+	9:  "DeleteDatasetShardResponse",
+	10: "LocalStatusReportRequest",
+	11: "LocalStatusReportResponse",
 }
 var ControlMessage_Type_value = map[string]int32{
 	"NoOp":                       1,
@@ -66,6 +72,8 @@ var ControlMessage_Type_value = map[string]int32{
 	"GetStatusResponse":          7,
 	"DeleteDatasetShardRequest":  8,
 	"DeleteDatasetShardResponse": 9,
+	"LocalStatusReportRequest":   10,
+	"LocalStatusReportResponse":  11,
 }
 
 func (x ControlMessage_Type) Enum() *ControlMessage_Type {
@@ -95,6 +103,8 @@ type ControlMessage struct {
 	GetStatusResponse          *GetStatusResponse          `protobuf:"bytes,7,opt,name=getStatusResponse" json:"getStatusResponse,omitempty"`
 	DeleteDatasetShardRequest  *DeleteDatasetShardRequest  `protobuf:"bytes,8,opt,name=deleteDatasetShardRequest" json:"deleteDatasetShardRequest,omitempty"`
 	DeleteDatasetShardResponse *DeleteDatasetShardResponse `protobuf:"bytes,9,opt,name=deleteDatasetShardResponse" json:"deleteDatasetShardResponse,omitempty"`
+	LocalStatusReportRequest   *LocalStatusReportRequest   `protobuf:"bytes,10,opt,name=localStatusReportRequest" json:"localStatusReportRequest,omitempty"`
+	LocalStatusReportResponse  *LocalStatusReportResponse  `protobuf:"bytes,11,opt,name=localStatusReportResponse" json:"localStatusReportResponse,omitempty"`
 	XXX_unrecognized           []byte                      `json:"-"`
 }
 
@@ -161,6 +171,20 @@ func (m *ControlMessage) GetDeleteDatasetShardRequest() *DeleteDatasetShardReque
 func (m *ControlMessage) GetDeleteDatasetShardResponse() *DeleteDatasetShardResponse {
 	if m != nil {
 		return m.DeleteDatasetShardResponse
+	}
+	return nil
+}
+
+func (m *ControlMessage) GetLocalStatusReportRequest() *LocalStatusReportRequest {
+	if m != nil {
+		return m.LocalStatusReportRequest
+	}
+	return nil
+}
+
+func (m *ControlMessage) GetLocalStatusReportResponse() *LocalStatusReportResponse {
+	if m != nil {
+		return m.LocalStatusReportResponse
 	}
 	return nil
 }
@@ -511,6 +535,62 @@ func (m *DeleteDatasetShardResponse) String() string { return proto.CompactTextS
 func (*DeleteDatasetShardResponse) ProtoMessage()    {}
 
 func (m *DeleteDatasetShardResponse) GetError() string {
+	if m != nil && m.Error != nil {
+		return *m.Error
+	}
+	return ""
+}
+
+type LocalStatusReportRequest struct {
+	StartRequestHash *int32           `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
+	Error            *string          `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
+	InputStatuses    []*ChannelStatus `protobuf:"bytes,3,rep,name=inputStatuses" json:"inputStatuses,omitempty"`
+	OutputStatus     *ChannelStatus   `protobuf:"bytes,4,opt,name=outputStatus" json:"outputStatus,omitempty"`
+	XXX_unrecognized []byte           `json:"-"`
+}
+
+func (m *LocalStatusReportRequest) Reset()         { *m = LocalStatusReportRequest{} }
+func (m *LocalStatusReportRequest) String() string { return proto.CompactTextString(m) }
+func (*LocalStatusReportRequest) ProtoMessage()    {}
+
+func (m *LocalStatusReportRequest) GetStartRequestHash() int32 {
+	if m != nil && m.StartRequestHash != nil {
+		return *m.StartRequestHash
+	}
+	return 0
+}
+
+func (m *LocalStatusReportRequest) GetError() string {
+	if m != nil && m.Error != nil {
+		return *m.Error
+	}
+	return ""
+}
+
+func (m *LocalStatusReportRequest) GetInputStatuses() []*ChannelStatus {
+	if m != nil {
+		return m.InputStatuses
+	}
+	return nil
+}
+
+func (m *LocalStatusReportRequest) GetOutputStatus() *ChannelStatus {
+	if m != nil {
+		return m.OutputStatus
+	}
+	return nil
+}
+
+type LocalStatusReportResponse struct {
+	Error            *string `protobuf:"bytes,1,opt,name=error" json:"error,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
+}
+
+func (m *LocalStatusReportResponse) Reset()         { *m = LocalStatusReportResponse{} }
+func (m *LocalStatusReportResponse) String() string { return proto.CompactTextString(m) }
+func (*LocalStatusReportResponse) ProtoMessage()    {}
+
+func (m *LocalStatusReportResponse) GetError() string {
 	if m != nil && m.Error != nil {
 		return *m.Error
 	}
