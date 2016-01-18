@@ -8,7 +8,6 @@ import (
 	"github.com/chrislusf/glow/driver/plan"
 	"github.com/chrislusf/glow/driver/scheduler"
 	"github.com/chrislusf/glow/flow"
-	"github.com/chrislusf/glow/resource"
 	"github.com/chrislusf/glow/util"
 )
 
@@ -57,25 +56,29 @@ func (fcd *FlowContextDriver) printDistributedStatus(sched *scheduler.Scheduler,
 		for _, tg := range stepGroup.TaskGroups {
 			stat := stats[tg.Id]
 			firstTask := tg.Tasks[0]
+			// lastTask := tg.Tasks[len(tg.Tasks)-1]
+			step := firstTask.Step
 			if stat == nil {
 				fmt.Printf("  No status.\n")
 				continue
 			}
-			if stat.Closed() {
-				fmt.Printf("  %s taskId:%d time:%v completed %d\n", stat.Allocation.Location.URL(), firstTask.Id, stat.TimeTaken(), 0)
+			if stat.IsClosed() {
+				fmt.Printf("  %s taskId:%d time:%v\n", stat.Allocation.Location.URL(), firstTask.Id, stat.TimeTaken())
 			} else {
-				fmt.Printf("  %s taskId:%d time:%v processed %d\n", stat.Allocation.Location.URL(), firstTask.Id, stat.TimeTaken(), 0)
+				fmt.Printf("  %s taskId:%d time:%v\n", stat.Allocation.Location.URL(), firstTask.Id, stat.TimeTaken())
+			}
+			if !stat.IsClosed() {
+				for _, inputStat := range stat.InputChannelStatuses {
+					fmt.Printf("    input  : d%d_%d  %d\n", step.Id, firstTask.Id, inputStat.Length)
+				}
+			}
+			for _, outputStat := range stat.OutputChannelStatuses {
+				fmt.Printf("    output : d%d_%d  %d\n", step.Id, firstTask.Id, outputStat.Length)
 			}
 		}
 
 	}
 	fmt.Print("\n")
-}
-
-type RemoteExecutorStatus struct {
-	ExecutorStatus
-	Allocation resource.Allocation
-	taskGroup  *plan.TaskGroup
 }
 
 func (fcd *FlowContextDriver) collectStatusFromRemoteExecutors(sched *scheduler.Scheduler) []*RemoteExecutorStatus {
@@ -108,7 +111,7 @@ func (fcd *FlowContextDriver) collectStatusFromRemoteExecutors(sched *scheduler.
 	return stats
 }
 
-func askExecutorStatusForRequest(server string, requestId int32) (*RemoteExecutorStatus, error) {
+func askExecutorStatusForRequest(server string, requestId uint32) (*RemoteExecutorStatus, error) {
 
 	reply, err := scheduler.RemoteDirectCommand(server, scheduler.NewGetStatusRequest(requestId))
 	if err != nil {
@@ -117,29 +120,18 @@ func askExecutorStatusForRequest(server string, requestId int32) (*RemoteExecuto
 
 	response := reply.GetGetStatusResponse()
 
-	var inputStatuses []*util.ChannelStatus
-	for _, inputStatus := range response.GetInputStatuses() {
-		inputStatuses = append(inputStatuses, &util.ChannelStatus{
-			Length:    inputStatus.GetLength(),
-			StartTime: time.Unix(inputStatus.GetStartTime(), 0),
-			StopTime:  time.Unix(inputStatus.GetStopTime(), 0),
-		})
-	}
-
 	return &RemoteExecutorStatus{
-		ExecutorStatus: ExecutorStatus{
-			InputChannelStatuses: inputStatuses,
-			OutputChannelStatus: &util.ChannelStatus{
-				Length: response.GetOutputStatus().GetLength(),
-			},
-			RequestTime: time.Unix(response.GetRequestTime(), 0),
-			StartTime:   time.Unix(response.GetStartTime(), 0),
-			StopTime:    time.Unix(response.GetStopTime(), 0),
+		ExecutorStatus: util.ExecutorStatus{
+			InputChannelStatuses:  FromProto(response.GetInputStatuses()),
+			OutputChannelStatuses: FromProto(response.GetOutputStatuses()),
+			RequestTime:           time.Unix(response.GetRequestTime(), 0),
+			StartTime:             time.Unix(response.GetStartTime(), 0),
+			StopTime:              time.Unix(response.GetStopTime(), 0),
 		},
 	}, nil
 }
 
-func askExecutorToStopRequest(server string, requestId int32) (err error) {
+func askExecutorToStopRequest(server string, requestId uint32) (err error) {
 	_, err = scheduler.RemoteDirectCommand(server, scheduler.NewStopRequest(requestId))
 	return
 }

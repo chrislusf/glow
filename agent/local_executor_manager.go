@@ -7,18 +7,18 @@ import (
 
 type LocalExecutorManager struct {
 	sync.Mutex
-	id2ExecutorStatus map[int32]*ExecutorStatus
+	id2ExecutorStatus map[uint32]*AgentExecutorStatus
 }
 
 func newLocalExecutorsManager() *LocalExecutorManager {
 	m := &LocalExecutorManager{
-		id2ExecutorStatus: make(map[int32]*ExecutorStatus),
+		id2ExecutorStatus: make(map[uint32]*AgentExecutorStatus),
 	}
 	go m.purgeExpiredEntries()
 	return m
 }
 
-func (m *LocalExecutorManager) getExecutorStatus(id int32) *ExecutorStatus {
+func (m *LocalExecutorManager) getExecutorStatus(id uint32) *AgentExecutorStatus {
 	m.Lock()
 	defer m.Unlock()
 	executorStatus, ok := m.id2ExecutorStatus[id]
@@ -26,7 +26,7 @@ func (m *LocalExecutorManager) getExecutorStatus(id int32) *ExecutorStatus {
 		return executorStatus
 	}
 
-	executorStatus = &ExecutorStatus{LastAccessTime: time.Now()}
+	executorStatus = &AgentExecutorStatus{LastAccessTime: time.Now()}
 	m.id2ExecutorStatus[id] = executorStatus
 
 	return executorStatus

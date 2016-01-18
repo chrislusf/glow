@@ -18,7 +18,7 @@ type Scheduler struct {
 	Market                 *market.Market
 	option                 *SchedulerOption
 	shardLocator           *DatasetShardLocator
-	RemoteExecutorStatuses map[int32]*RemoteExecutorStatus
+	RemoteExecutorStatuses map[uint32]*RemoteExecutorStatus
 }
 
 type RemoteExecutorStatus struct {
@@ -49,13 +49,13 @@ func NewScheduler(leader string, option *SchedulerOption) *Scheduler {
 		Market:                 market.NewMarket(),
 		shardLocator:           NewDatasetShardLocator(option.ExecutableFileHash),
 		option:                 option,
-		RemoteExecutorStatuses: make(map[int32]*RemoteExecutorStatus),
+		RemoteExecutorStatuses: make(map[uint32]*RemoteExecutorStatus),
 	}
 	s.Market.SetScoreFunction(s.Score).SetFetchFunction(s.Fetch)
 	return s
 }
 
-func (s *Scheduler) getRemoteExecutorStatus(id int32) (status *RemoteExecutorStatus, isOld bool) {
+func (s *Scheduler) getRemoteExecutorStatus(id uint32) (status *RemoteExecutorStatus, isOld bool) {
 	s.Lock()
 	defer s.Unlock()
 

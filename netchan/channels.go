@@ -20,18 +20,18 @@ type NetworkOption struct {
 	AgentPort int
 }
 
-var networkOption NetworkOption
+var Option NetworkOption
 
 func init() {
-	flag.IntVar(&networkOption.AgentPort, "glow.agent.port", 8931, "agent port")
+	flag.IntVar(&Option.AgentPort, "glow.agent.port", 8931, "agent port")
 }
 
 func GetLocalSendChannel(name string, wg *sync.WaitGroup) (chan []byte, error) {
-	return sender.NewSendChannel(name, networkOption.AgentPort, wg)
+	return sender.NewSendChannel(name, Option.AgentPort, wg)
 }
 
 func GetLocalReadChannel(name string, chanBufferSize int) (chan []byte, error) {
-	return GetDirectReadChannel(name, "localhost:"+strconv.Itoa(networkOption.AgentPort), chanBufferSize)
+	return GetDirectReadChannel(name, "localhost:"+strconv.Itoa(Option.AgentPort), chanBufferSize)
 }
 
 func GetDirectReadChannel(name, location string, chanBufferSize int) (chan []byte, error) {

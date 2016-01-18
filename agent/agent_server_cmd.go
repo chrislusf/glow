@@ -24,10 +24,13 @@ func (as *AgentServer) handleCommandConnection(conn net.Conn,
 		reply.DeleteDatasetShardResponse = as.handleDeleteDatasetShard(conn, command.DeleteDatasetShardRequest)
 	case cmd.ControlMessage_GetStatusRequest:
 		reply.Type = cmd.ControlMessage_GetStatusResponse.Enum()
-		reply.GetStatusResponse = as.handleStatus(command.GetStatusRequest)
+		reply.GetStatusResponse = as.handleGetStatusRequest(command.GetStatusRequest)
 	case cmd.ControlMessage_StopRequest:
 		reply.Type = cmd.ControlMessage_StopResponse.Enum()
 		reply.StopResponse = as.handleStopRequest(command.StopRequest)
+	case cmd.ControlMessage_LocalStatusReportRequest:
+		reply.Type = cmd.ControlMessage_LocalStatusReportResponse.Enum()
+		reply.LocalStatusReportResponse = as.handleLocalStatusReportRequest(command.LocalStatusReportRequest)
 	}
 	return reply
 }

@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -41,7 +42,7 @@ func (as *AgentServer) handleStart(conn net.Conn,
 	stat.StartTime = time.Now()
 	cmd := exec.Command(
 		startRequest.GetPath(),
-		startRequest.Args...,
+		adjustArgs(startRequest.Args, startRequest.GetHashCode())...,
 	)
 	cmd.Env = startRequest.Envs
 	cmd.Dir = dir
@@ -63,6 +64,12 @@ func (as *AgentServer) handleStart(conn net.Conn,
 	// log.Printf("Finish command %v", cmd)
 
 	return reply
+}
+
+func adjustArgs(args []string, requestId uint32) (ret []string) {
+	ret = append(args, "-glow.request.id")
+	ret = append(ret, fmt.Sprintf("%d", requestId))
+	return
 }
 
 func (as *AgentServer) plusAllocated(allocated resource.ComputeResource) {

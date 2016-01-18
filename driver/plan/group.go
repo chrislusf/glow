@@ -12,7 +12,7 @@ type TaskGroup struct {
 	Tasks           []*flow.Task
 	Parents         []*TaskGroup
 	ParentStepGroup *StepGroup
-	RequestId       int32 // id for actual request when running
+	RequestId       uint32 // id for actual request when running
 }
 
 type StepGroup struct {

@@ -8,22 +8,26 @@ import (
 	"sync"
 	"time"
 
+	"github.com/chrislusf/glow/driver/cmd"
 	"github.com/chrislusf/glow/driver/plan"
+	"github.com/chrislusf/glow/driver/scheduler"
 	"github.com/chrislusf/glow/flow"
 	"github.com/chrislusf/glow/netchan"
+	"github.com/chrislusf/glow/util"
+	"github.com/golang/protobuf/proto"
 )
 
 type TaskRunner struct {
 	option         *TaskOption
 	Tasks          []*flow.Task
 	FlowContext    *flow.FlowContext
-	executorStatus *ExecutorStatus
+	executorStatus *util.ExecutorStatus
 }
 
 func NewTaskRunner(option *TaskOption) *TaskRunner {
 	return &TaskRunner{
 		option:         option,
-		executorStatus: &ExecutorStatus{},
+		executorStatus: &util.ExecutorStatus{},
 	}
 }
 
@@ -44,6 +48,8 @@ func (tr *TaskRunner) Run(fc *flow.FlowContext) {
 
 	tr.executorStatus.StartTime = time.Now()
 
+	go tr.reportLocalExecutorStatus()
+
 	// println("taskGroup", tr.Tasks[0].Name(), "starts")
 	// 4. setup task input and output channels
 	var wg sync.WaitGroup
@@ -59,8 +65,10 @@ func (tr *TaskRunner) Run(fc *flow.FlowContext) {
 	}
 	// 7. need to close connected output channels
 	wg.Wait()
-	// println("taskGroup", tr.Tasks[0].Name(), "finishes")
+	// println("taskGroup", tr.Tasks[0].Name(), "finishes", tr.option.RequestId)
 	tr.executorStatus.StopTime = time.Now()
+
+	tr.reportLocalExecutorStatusOnce()
 }
 
 func (tr *TaskRunner) connectInputsAndOutputs(wg *sync.WaitGroup) {
@@ -146,6 +154,25 @@ func (tr *TaskRunner) connectExternalOutputs(wg *sync.WaitGroup) {
 		if err != nil {
 			log.Panic(err)
 		}
-		tr.executorStatus.OutputChannelStatus = netchan.ConnectTypedWriteChannelToRaw(shard.WriteChan, rawChan, wg)
+		outChanStatus := netchan.ConnectTypedWriteChannelToRaw(shard.WriteChan, rawChan, wg)
+		tr.executorStatus.OutputChannelStatuses = append(tr.executorStatus.OutputChannelStatuses, outChanStatus)
+	}
+}
+
+func (tr *TaskRunner) reportLocalExecutorStatusOnce() {
+	scheduler.RemoteDirectCommand(fmt.Sprintf("localhost:%d", netchan.Option.AgentPort), &cmd.ControlMessage{
+		Type: cmd.ControlMessage_LocalStatusReportRequest.Enum(),
+		LocalStatusReportRequest: &cmd.LocalStatusReportRequest{
+			StartRequestHash: proto.Uint32(uint32(tr.option.RequestId)),
+			InputStatuses:    ToProto(tr.executorStatus.InputChannelStatuses),
+			OutputStatuses:   ToProto(tr.executorStatus.OutputChannelStatuses),
+		},
+	})
+}
+
+func (tr *TaskRunner) reportLocalExecutorStatus() {
+	for {
+		time.Sleep(time.Second)
+		tr.reportLocalExecutorStatusOnce()
 	}
 }

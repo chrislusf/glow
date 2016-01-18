@@ -29,7 +29,7 @@ func NewStartRequest(path string, dir string, args []string, allocated resource.
 			},
 			Envs:     envs,
 			Port:     proto.Int32(port),
-			HashCode: proto.Int32(0),
+			HashCode: proto.Uint32(0),
 		},
 	}
 
@@ -39,25 +39,25 @@ func NewStartRequest(path string, dir string, args []string, allocated resource.
 		log.Fatalf("marshaling start request error: %v", err)
 		return nil
 	}
-	request.StartRequest.HashCode = proto.Int32(int32(util.Hash(data)))
+	request.StartRequest.HashCode = proto.Uint32(uint32(util.Hash(data)))
 
 	return request
 }
 
-func NewGetStatusRequest(requestId int32) *cmd.ControlMessage {
+func NewGetStatusRequest(requestId uint32) *cmd.ControlMessage {
 	return &cmd.ControlMessage{
 		Type: cmd.ControlMessage_GetStatusRequest.Enum(),
 		GetStatusRequest: &cmd.GetStatusRequest{
-			StartRequestHash: proto.Int32(requestId),
+			StartRequestHash: proto.Uint32(requestId),
 		},
 	}
 }
 
-func NewStopRequest(requestId int32) *cmd.ControlMessage {
+func NewStopRequest(requestId uint32) *cmd.ControlMessage {
 	return &cmd.ControlMessage{
 		Type: cmd.ControlMessage_StopRequest.Enum(),
 		StopRequest: &cmd.StopRequest{
-			StartRequestHash: proto.Int32(requestId),
+			StartRequestHash: proto.Uint32(requestId),
 		},
 	}
 }
