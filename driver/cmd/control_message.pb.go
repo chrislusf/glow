@@ -414,10 +414,11 @@ func (m *GetStatusRequest) GetStartRequestHash() uint32 {
 }
 
 type ChannelStatus struct {
-	Length           *int64 `protobuf:"varint,1,req,name=length" json:"length,omitempty"`
-	StartTime        *int64 `protobuf:"varint,2,opt,name=startTime" json:"startTime,omitempty"`
-	StopTime         *int64 `protobuf:"varint,3,opt,name=stopTime" json:"stopTime,omitempty"`
-	XXX_unrecognized []byte `json:"-"`
+	Length           *int64  `protobuf:"varint,1,req,name=length" json:"length,omitempty"`
+	StartTime        *int64  `protobuf:"varint,2,opt,name=startTime" json:"startTime,omitempty"`
+	StopTime         *int64  `protobuf:"varint,3,opt,name=stopTime" json:"stopTime,omitempty"`
+	Name             *string `protobuf:"bytes,4,opt,name=name" json:"name,omitempty"`
+	XXX_unrecognized []byte  `json:"-"`
 }
 
 func (m *ChannelStatus) Reset()         { *m = ChannelStatus{} }
@@ -443,6 +444,13 @@ func (m *ChannelStatus) GetStopTime() int64 {
 		return *m.StopTime
 	}
 	return 0
+}
+
+func (m *ChannelStatus) GetName() string {
+	if m != nil && m.Name != nil {
+		return *m.Name
+	}
+	return ""
 }
 
 type GetStatusResponse struct {

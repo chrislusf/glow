@@ -77,6 +77,7 @@ message ChannelStatus {
 	required int64 length = 1;
 	optional int64 startTime = 2;
 	optional int64 stopTime = 3;
+	optional string name = 4;
 }
 
 message GetStatusResponse {
