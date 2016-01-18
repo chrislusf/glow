@@ -449,7 +449,7 @@ type GetStatusResponse struct {
 	StartRequestHash *uint32          `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
 	Error            *string          `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
 	InputStatuses    []*ChannelStatus `protobuf:"bytes,3,rep,name=inputStatuses" json:"inputStatuses,omitempty"`
-	OutputStatus     *ChannelStatus   `protobuf:"bytes,4,opt,name=outputStatus" json:"outputStatus,omitempty"`
+	OutputStatuses   []*ChannelStatus `protobuf:"bytes,4,rep,name=outputStatuses" json:"outputStatuses,omitempty"`
 	RequestTime      *int64           `protobuf:"varint,5,opt,name=requestTime" json:"requestTime,omitempty"`
 	StartTime        *int64           `protobuf:"varint,6,opt,name=startTime" json:"startTime,omitempty"`
 	StopTime         *int64           `protobuf:"varint,7,opt,name=stopTime" json:"stopTime,omitempty"`
@@ -481,9 +481,9 @@ func (m *GetStatusResponse) GetInputStatuses() []*ChannelStatus {
 	return nil
 }
 
-func (m *GetStatusResponse) GetOutputStatus() *ChannelStatus {
+func (m *GetStatusResponse) GetOutputStatuses() []*ChannelStatus {
 	if m != nil {
-		return m.OutputStatus
+		return m.OutputStatuses
 	}
 	return nil
 }
@@ -545,7 +545,7 @@ type LocalStatusReportRequest struct {
 	StartRequestHash *uint32          `protobuf:"varint,1,req,name=startRequestHash" json:"startRequestHash,omitempty"`
 	Error            *string          `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
 	InputStatuses    []*ChannelStatus `protobuf:"bytes,3,rep,name=inputStatuses" json:"inputStatuses,omitempty"`
-	OutputStatus     *ChannelStatus   `protobuf:"bytes,4,opt,name=outputStatus" json:"outputStatus,omitempty"`
+	OutputStatuses   []*ChannelStatus `protobuf:"bytes,4,rep,name=outputStatuses" json:"outputStatuses,omitempty"`
 	XXX_unrecognized []byte           `json:"-"`
 }
 
@@ -574,9 +574,9 @@ func (m *LocalStatusReportRequest) GetInputStatuses() []*ChannelStatus {
 	return nil
 }
 
-func (m *LocalStatusReportRequest) GetOutputStatus() *ChannelStatus {
+func (m *LocalStatusReportRequest) GetOutputStatuses() []*ChannelStatus {
 	if m != nil {
-		return m.OutputStatus
+		return m.OutputStatuses
 	}
 	return nil
 }

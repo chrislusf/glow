@@ -83,7 +83,7 @@ message GetStatusResponse {
 	required uint32 startRequestHash = 1;
 	optional string error = 2;
 	repeated ChannelStatus inputStatuses = 3;
-	optional ChannelStatus outputStatus = 4;
+	repeated ChannelStatus outputStatuses = 4;
 	optional int64 requestTime = 5;
 	optional int64 startTime = 6;
 	optional int64 stopTime = 7;
@@ -101,7 +101,7 @@ message LocalStatusReportRequest {
 	required uint32 startRequestHash = 1;
 	optional string error = 2;
 	repeated ChannelStatus inputStatuses = 3;
-	optional ChannelStatus outputStatus = 4;
+	repeated ChannelStatus outputStatuses = 4;
 }
 
 message LocalStatusReportResponse {
