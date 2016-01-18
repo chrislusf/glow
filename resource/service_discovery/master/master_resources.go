@@ -51,14 +51,11 @@ func (l *MasterResource) UpdateAgentInformation(ai *resource.AgentInformation) {
 
 	rack, hasRack := dc.GetRack(ai.Location.Rack)
 	if !hasRack {
-		rack = &resource.Rack{
-			Name:   ai.Location.Rack,
-			Agents: make(map[string]*resource.AgentInformation),
-		}
+		rack = resource.NewRack(ai.Location.Rack)
 		dc.AddRack(rack)
 	}
 
-	oldInfo, hasOldInfo := rack.Agents[ai.Location.URL()]
+	oldInfo, hasOldInfo := rack.GetAgent(ai.Location.URL())
 	deltaResource := ai.Resource
 	// fmt.Printf("hasOldInfo %+v, oldInfo %+v\n", hasOldInfo, oldInfo)
 	if hasOldInfo {
@@ -69,7 +66,7 @@ func (l *MasterResource) UpdateAgentInformation(ai *resource.AgentInformation) {
 		oldInfo.LastHeartBeat = time.Now()
 		l.EvictionQueue.Enqueue(ai, 0)
 	} else {
-		rack.Agents[ai.Location.URL()] = ai
+		rack.AddAgent(ai)
 		ai.LastHeartBeat = time.Now()
 		l.EvictionQueue.Enqueue(ai, 0)
 	}
@@ -110,7 +107,7 @@ func (l *MasterResource) deleteAgentInformation(ai *resource.AgentInformation) {
 		return
 	}
 
-	oldInfo, hasOldInfo := rack.Agents[ai.Location.URL()]
+	oldInfo, hasOldInfo := rack.GetAgent(ai.Location.URL())
 	if !hasOldInfo {
 		return
 	}
@@ -120,7 +117,7 @@ func (l *MasterResource) deleteAgentInformation(ai *resource.AgentInformation) {
 
 	if !deltaResource.IsZero() {
 		// fmt.Printf("deleting %+v\n", oldInfo)
-		delete(rack.Agents, ai.Location.URL())
+		rack.DropAgent(ai)
 		l.EventChan <- ResourceUpdateEvent{ai.Location.DataCenter, ai.Location.Rack}
 
 		rack.Resource = rack.Resource.Minus(deltaResource)
@@ -144,7 +141,7 @@ func (l *MasterResource) findAgentInformation(location resource.Location) (*reso
 		return nil, false
 	}
 
-	ai, ok := r.Agents[location.URL()]
+	ai, ok := r.GetAgent(location.URL())
 	return ai, ok
 }
 

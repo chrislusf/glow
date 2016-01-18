@@ -25,7 +25,7 @@ func (tl *TeamMaster) allocate(req *resource.AllocationRequest) (result *resourc
 func (tl *TeamMaster) allocateServersOnRack(dc *resource.DataCenter, rack *resource.Rack, requests []*resource.ComputeRequest) (
 	allocated []resource.Allocation, remainingRequests []*resource.ComputeRequest) {
 	var j = -1
-	for _, agent := range rack.Agents {
+	for _, agent := range rack.Agents() {
 		if j >= len(requests) {
 			break
 		}

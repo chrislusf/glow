@@ -15,7 +15,7 @@ type AgentInformation struct {
 type Rack struct {
 	sync.RWMutex
 	Name      string
-	Agents    map[string]*AgentInformation
+	agents    map[string]*AgentInformation
 	Resource  ComputeResource
 	Allocated ComputeResource
 }
@@ -29,8 +29,8 @@ type DataCenter struct {
 }
 
 type Topology struct {
-	Resource    ComputeResource
-	Allocated   ComputeResource
+	Resource  ComputeResource
+	Allocated ComputeResource
 	sync.RWMutex
 	dataCenters map[string]*DataCenter
 }
@@ -43,8 +43,15 @@ func NewTopology() *Topology {
 
 func NewDataCenter(name string) *DataCenter {
 	return &DataCenter{
-		Name: name,
+		Name:  name,
 		racks: make(map[string]*Rack),
+	}
+}
+
+func NewRack(name string) *Rack {
+	return &Rack{
+		Name:   name,
+		agents: make(map[string]*AgentInformation),
 	}
 }
 
@@ -68,6 +75,14 @@ func (dc *DataCenter) GetRack(name string) (*Rack, bool) {
 
 	rack, ok := dc.racks[name]
 	return rack, ok
+}
+
+func (rack *Rack) GetAgent(name string) (*AgentInformation, bool) {
+	rack.RLock()
+	defer rack.RUnlock()
+
+	agentInformation, ok := rack.agents[name]
+	return agentInformation, ok
 }
 
 func (tp *Topology) AddDataCenter(dc *DataCenter) {
@@ -104,4 +119,29 @@ func (dc *DataCenter) AddRack(rack *Rack) {
 	defer dc.Unlock()
 
 	dc.racks[rack.Name] = rack
+}
+
+func (rack *Rack) AddAgent(a *AgentInformation) {
+	rack.Lock()
+	defer rack.Unlock()
+
+	rack.agents[a.Location.URL()] = a
+}
+
+func (rack *Rack) DropAgent(a *AgentInformation) {
+	rack.Lock()
+	defer rack.Unlock()
+
+	delete(rack.agents, a.Location.URL())
+}
+
+func (rack *Rack) Agents() map[string]*AgentInformation {
+	rack.RLock()
+	defer rack.RUnlock()
+
+	s := make(map[string]*AgentInformation, len(rack.agents))
+	for k, v := range rack.agents {
+		s[k] = v
+	}
+	return s
 }
