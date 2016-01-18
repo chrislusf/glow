@@ -45,20 +45,17 @@ func (l *MasterResource) UpdateAgentInformation(ai *resource.AgentInformation) {
 
 	dc, hasDc := l.Topology.GetDataCenter(ai.Location.DataCenter)
 	if !hasDc {
-		dc = &resource.DataCenter{
-			Name:  ai.Location.DataCenter,
-			Racks: make(map[string]*resource.Rack),
-		}
+		dc = resource.NewDataCenter(ai.Location.DataCenter)
 		l.Topology.AddDataCenter(dc)
 	}
 
-	rack, hasRack := dc.Racks[ai.Location.Rack]
+	rack, hasRack := dc.GetRack(ai.Location.Rack)
 	if !hasRack {
 		rack = &resource.Rack{
 			Name:   ai.Location.Rack,
 			Agents: make(map[string]*resource.AgentInformation),
 		}
-		dc.Racks[ai.Location.Rack] = rack
+		dc.AddRack(rack)
 	}
 
 	oldInfo, hasOldInfo := rack.Agents[ai.Location.URL()]
@@ -108,7 +105,7 @@ func (l *MasterResource) deleteAgentInformation(ai *resource.AgentInformation) {
 		return
 	}
 
-	rack, hasRack := dc.Racks[ai.Location.Rack]
+	rack, hasRack := dc.GetRack(ai.Location.Rack)
 	if !hasRack {
 		return
 	}
@@ -142,7 +139,7 @@ func (l *MasterResource) findAgentInformation(location resource.Location) (*reso
 		return nil, false
 	}
 
-	r, hasRack := d.Racks[location.Rack]
+	r, hasRack := d.GetRack(location.Rack)
 	if !hasRack {
 		return nil, false
 	}

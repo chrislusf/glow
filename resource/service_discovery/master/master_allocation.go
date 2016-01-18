@@ -62,8 +62,8 @@ func (tl *TeamMaster) allocateServersOnRack(dc *resource.DataCenter, rack *resou
 
 func (tl *TeamMaster) findServers(dc *resource.DataCenter, req *resource.AllocationRequest) (ret []resource.Allocation) {
 	// sort racks by unallocated resources
-	racks := make([]*resource.Rack, 0, len(dc.Racks))
-	for _, rack := range dc.Racks {
+	var racks []*resource.Rack
+	for _, rack := range dc.Racks() {
 		racks = append(racks, rack)
 	}
 	sort.Sort(ByAvailableResources(racks))

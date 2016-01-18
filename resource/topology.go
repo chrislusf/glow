@@ -13,6 +13,7 @@ type AgentInformation struct {
 }
 
 type Rack struct {
+	sync.RWMutex
 	Name      string
 	Agents    map[string]*AgentInformation
 	Resource  ComputeResource
@@ -20,8 +21,9 @@ type Rack struct {
 }
 
 type DataCenter struct {
+	sync.RWMutex
 	Name      string
-	Racks     map[string]*Rack
+	racks     map[string]*Rack
 	Resource  ComputeResource
 	Allocated ComputeResource
 }
@@ -29,7 +31,7 @@ type DataCenter struct {
 type Topology struct {
 	Resource    ComputeResource
 	Allocated   ComputeResource
-	lock        sync.RWMutex
+	sync.RWMutex
 	dataCenters map[string]*DataCenter
 }
 
@@ -39,34 +41,67 @@ func NewTopology() *Topology {
 	}
 }
 
+func NewDataCenter(name string) *DataCenter {
+	return &DataCenter{
+		Name: name,
+		racks: make(map[string]*Rack),
+	}
+}
+
 func (tp *Topology) ContainsDataCenters() bool {
-	tp.lock.RLock()
-	defer tp.lock.RUnlock()
+	tp.RLock()
+	defer tp.RUnlock()
 	return len(tp.dataCenters) == 0
 }
 
 func (tp *Topology) GetDataCenter(name string) (*DataCenter, bool) {
-	tp.lock.RLock()
-	defer tp.lock.RUnlock()
+	tp.RLock()
+	defer tp.RUnlock()
 
 	dc, ok := tp.dataCenters[name]
 	return dc, ok
 }
 
+func (dc *DataCenter) GetRack(name string) (*Rack, bool) {
+	dc.RLock()
+	defer dc.RUnlock()
+
+	rack, ok := dc.racks[name]
+	return rack, ok
+}
+
 func (tp *Topology) AddDataCenter(dc *DataCenter) {
-	tp.lock.Lock()
-	defer tp.lock.Unlock()
+	tp.Lock()
+	defer tp.Unlock()
 
 	tp.dataCenters[dc.Name] = dc
 }
 
 func (tp *Topology) DataCenters() map[string]*DataCenter {
-	tp.lock.RLock()
-	defer tp.lock.RUnlock()
+	tp.RLock()
+	defer tp.RUnlock()
 
 	s := make(map[string]*DataCenter, len(tp.dataCenters))
 	for k, v := range tp.dataCenters {
 		s[k] = v
 	}
 	return s
+}
+
+func (dc *DataCenter) Racks() map[string]*Rack {
+	dc.RLock()
+	defer dc.RUnlock()
+
+	s := make(map[string]*Rack, len(dc.racks))
+	for k, v := range dc.racks {
+		s[k] = v
+	}
+	return s
+}
+
+func (dc *DataCenter) AddRack(rack *Rack) {
+	dc.Lock()
+	defer dc.Unlock()
+
+	dc.racks[rack.Name] = rack
 }
