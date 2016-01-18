@@ -8,6 +8,7 @@ type ChannelStatus struct {
 	Length    int64
 	StartTime time.Time
 	StopTime  time.Time
+	Name      string
 }
 
 func NewChannelStatus() *ChannelStatus {

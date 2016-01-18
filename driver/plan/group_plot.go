@@ -124,19 +124,11 @@ func (fg *FlowGraph) i(x int) *FlowGraph {
 	return fg
 }
 func (fg *FlowGraph) t(t *flow.Task) *FlowGraph {
-	if t.Step.Name != "" {
-		fg.w(t.Step.Name)
-	} else {
-		fg.w("t")
-	}
-	fg.i(t.Step.Id)
-	if len(t.Step.Tasks) > 1 {
-		fg.w("_").i(t.Id).w("_").i(len(t.Step.Tasks))
-	}
+	fg.w(t.Name())
 	return fg
 }
 func (fg *FlowGraph) d(dss *flow.DatasetShard) *FlowGraph {
-	fg.w("d").i(dss.Parent.Id).w("_").i(dss.Id)
+	fg.w(dss.DisplayName())
 	return fg
 }
 func (fg *FlowGraph) input(t *flow.Task, i, length int) *FlowGraph {

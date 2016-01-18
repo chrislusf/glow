@@ -38,6 +38,10 @@ func (s *DatasetShard) Name() string {
 	return fmt.Sprintf("ct-%d-ds-%d-shard-%d", s.Parent.context.Id, s.Parent.Id, s.Id)
 }
 
+func (s *DatasetShard) DisplayName() string {
+	return fmt.Sprintf("d%d_%d", s.Parent.Id, s.Id)
+}
+
 func (shard *DatasetShard) SetupReadingChans() {
 	// get unique list of tasks since ReadingTasks can have duplicates
 	// especially when one dataset is used twice in a task, e.g. selfJoin()

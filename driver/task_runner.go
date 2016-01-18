@@ -121,6 +121,7 @@ func (tr *TaskRunner) connectExternalInputs(wg *sync.WaitGroup, name2Location ma
 			log.Panic(err)
 		}
 		inChanStatus := netchan.ConnectRawReadChannelToTyped(rawChan, firstTask.InputChans[i], d.Type, wg)
+		inChanStatus.Name = shard.DisplayName()
 		tr.executorStatus.InputChannelStatuses = append(tr.executorStatus.InputChannelStatuses, inChanStatus)
 	}
 }
@@ -155,6 +156,7 @@ func (tr *TaskRunner) connectExternalOutputs(wg *sync.WaitGroup) {
 			log.Panic(err)
 		}
 		outChanStatus := netchan.ConnectTypedWriteChannelToRaw(shard.WriteChan, rawChan, wg)
+		outChanStatus.Name = shard.DisplayName()
 		tr.executorStatus.OutputChannelStatuses = append(tr.executorStatus.OutputChannelStatuses, outChanStatus)
 	}
 }

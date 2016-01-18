@@ -16,15 +16,16 @@ import (
 )
 
 type DriverOption struct {
-	ShouldStart  bool
-	Leader       string
-	DataCenter   string
-	Rack         string
-	PlotOutput   bool
-	TaskMemoryMB int
-	FlowBid      float64
-	Module       string
-	RelatedFiles string
+	ShouldStart   bool
+	Leader        string
+	DataCenter    string
+	Rack          string
+	PlotOutput    bool
+	TaskMemoryMB  int
+	FlowBid       float64
+	Module        string
+	RelatedFiles  string
+	ShowFlowStats bool
 }
 
 func init() {
@@ -38,6 +39,7 @@ func init() {
 	flag.BoolVar(&driverOption.PlotOutput, "glow.flow.plot", false, "print out task group flow in graphviz dot format")
 	flag.StringVar(&driverOption.Module, "glow.module", "", "a name to group related jobs together on agent")
 	flag.StringVar(&driverOption.RelatedFiles, "glow.related.files", "", strconv.QuoteRune(os.PathListSeparator)+" separated list of files")
+	flag.BoolVar(&driverOption.ShowFlowStats, "glow.flow.stat", false, "show flow details at the end of execution")
 
 	flow.RegisterContextRunner(NewFlowContextDriver(&driverOption))
 }
@@ -126,6 +128,10 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 	wg.Wait()
 
 	fcd.CloseOutputChannels(fc)
+
+	if fcd.option.ShowFlowStats {
+		fcd.ShowFlowStatus(fc, sched)
+	}
 
 }
 

@@ -11,11 +11,17 @@ import (
 	"github.com/chrislusf/glow/util"
 )
 
-func (fcd *FlowContextDriver) OnInterrupt(
+func (fcd *FlowContextDriver) ShowFlowStatus(
 	fc *flow.FlowContext,
 	sched *scheduler.Scheduler) {
 	status := fcd.collectStatusFromRemoteExecutors(sched)
 	fcd.printDistributedStatus(sched, status)
+}
+
+func (fcd *FlowContextDriver) OnInterrupt(
+	fc *flow.FlowContext,
+	sched *scheduler.Scheduler) {
+	fcd.ShowFlowStatus(fc, sched)
 }
 
 func (fcd *FlowContextDriver) OnExit(
@@ -56,24 +62,21 @@ func (fcd *FlowContextDriver) printDistributedStatus(sched *scheduler.Scheduler,
 		for _, tg := range stepGroup.TaskGroups {
 			stat := stats[tg.Id]
 			firstTask := tg.Tasks[0]
-			// lastTask := tg.Tasks[len(tg.Tasks)-1]
-			step := firstTask.Step
+			lastTask := tg.Tasks[len(tg.Tasks)-1]
 			if stat == nil {
 				fmt.Printf("  No status.\n")
 				continue
 			}
 			if stat.IsClosed() {
-				fmt.Printf("  %s taskId:%d time:%v\n", stat.Allocation.Location.URL(), firstTask.Id, stat.TimeTaken())
+				fmt.Printf("  %s task:%s took time:%v\n", stat.Allocation.Location.URL(), lastTask.Name(), stat.TimeTaken())
 			} else {
-				fmt.Printf("  %s taskId:%d time:%v\n", stat.Allocation.Location.URL(), firstTask.Id, stat.TimeTaken())
+				fmt.Printf("  %s first task:%s time:%v\n", stat.Allocation.Location.URL(), firstTask.Name(), stat.TimeTaken())
 			}
-			if !stat.IsClosed() {
-				for _, inputStat := range stat.InputChannelStatuses {
-					fmt.Printf("    input  : d%d_%d  %d\n", step.Id, firstTask.Id, inputStat.Length)
-				}
+			for _, inputStat := range stat.InputChannelStatuses {
+				fmt.Printf("    input  : %s  length:%d\n", inputStat.Name, inputStat.Length)
 			}
 			for _, outputStat := range stat.OutputChannelStatuses {
-				fmt.Printf("    output : d%d_%d  %d\n", step.Id, firstTask.Id, outputStat.Length)
+				fmt.Printf("    output : %s  length:%d\n", outputStat.Name, outputStat.Length)
 			}
 		}
 
