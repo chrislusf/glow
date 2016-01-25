@@ -98,6 +98,18 @@ To understand how each executor works, you can visualize the flow by generating 
 
 ![Glow Hello World Execution Plan](https://raw.githubusercontent.com/chrislusf/glow/master/etc/helloworld.png)
 
+## Docker container
+
+### OSX
+Cross compile artefact for docker
+```
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build .
+```
+Build container
+```
+docker build -t glow .
+```
+See `examples/` directory for docker-compose setups.
 
 # Read More
 
