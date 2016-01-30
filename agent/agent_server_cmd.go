@@ -18,6 +18,8 @@ func (as *AgentServer) handleCommandConnection(conn net.Conn,
 		host := remoteAddress[:strings.LastIndex(remoteAddress, ":")]
 		command.StartRequest.Host = &host
 		reply.StartResponse = as.handleStart(conn, command.StartRequest)
+		// return nil to avoid writing the response to the connection.
+		// Currently the connection is used for reading outputs
 		return nil
 	case cmd.ControlMessage_DeleteDatasetShardRequest:
 		reply.Type = cmd.ControlMessage_DeleteDatasetShardResponse.Enum()
