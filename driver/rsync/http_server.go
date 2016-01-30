@@ -24,14 +24,16 @@ type FileHash struct {
 
 type RsyncServer struct {
 	Port           int
+	listenOn       string
 	ExecutableFile string
 	RelatedFiles   []string
 
 	fileHashes []FileHash
 }
 
-func NewRsyncServer(file string, relatedFiles []string) (*RsyncServer, error) {
+func NewRsyncServer(listenOn string, file string, relatedFiles []string) (*RsyncServer, error) {
 	rs := &RsyncServer{
+		listenOn:       listenOn,
 		ExecutableFile: file,
 		RelatedFiles:   relatedFiles,
 	}
@@ -88,7 +90,7 @@ func (rs *RsyncServer) Start() {
 	s.HandleFunc("/list", rs.listHandler)
 	s.HandleFunc("/file/", rs.fileHandler)
 
-	listener, err := net.Listen("tcp", ":0")
+	listener, err := net.Listen("tcp", rs.listenOn)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -26,6 +26,7 @@ type DriverOption struct {
 	Module        string
 	RelatedFiles  string
 	ShowFlowStats bool
+	ListenOn      string
 }
 
 func init() {
@@ -40,6 +41,7 @@ func init() {
 	flag.StringVar(&driverOption.Module, "glow.module", "", "a name to group related jobs together on agent")
 	flag.StringVar(&driverOption.RelatedFiles, "glow.related.files", "", strconv.QuoteRune(os.PathListSeparator)+" separated list of files")
 	flag.BoolVar(&driverOption.ShowFlowStats, "glow.flow.stat", false, "show flow details at the end of execution")
+	flag.StringVar(&driverOption.ListenOn, "glow.driver.listenOn", ":0", "listen on this address to copy itself and related files to agents")
 
 	flow.RegisterContextRunner(NewFlowContextDriver(&driverOption))
 }
@@ -80,7 +82,7 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 	}
 
 	// start server to serve files to agents to run exectuors
-	rsyncServer, err := rsync.NewRsyncServer(os.Args[0], fcd.option.RelatedFileNames())
+	rsyncServer, err := rsync.NewRsyncServer(fcd.option.ListenOn, os.Args[0], fcd.option.RelatedFileNames())
 	if err != nil {
 		log.Fatalf("Failed to start local server: %v", err)
 	}
