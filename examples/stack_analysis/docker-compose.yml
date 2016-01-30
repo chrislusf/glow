@@ -1,0 +1,40 @@
+agent1:
+  read_only: true
+  image: glow
+  command: agent --dir /data --max.executors=8 --memory=768 --master="master:8930" --port 8931
+  expose:
+    - "8931"
+  links:
+    - master
+  volumes:
+    - ./work/agent1:/data
+    - ./Posts100k.xml:/data/Posts100k.xml
+
+agent2:
+  read_only: true
+  image: glow
+  command: agent --dir /data --max.executors=8 --memory=768 --master="master:8930" --port 8932
+  expose:
+    - "8932"
+  links:
+    - master
+  volumes:
+    - ./work/agent2:/data
+    - ./Posts100k.xml:/data/Posts100k.xml
+
+master:
+  read_only: true
+  image: glow
+  command: master --ip 0.0.0.0
+  expose:
+    - "8930"
+
+stack_analysis:
+  image: stack_analysis
+  command: -glow -glow.leader="master:8930"
+  links:
+    - master
+    - agent1
+    - agent2
+  volumes:
+    - ./Posts100k.xml:/Posts100k.xml
