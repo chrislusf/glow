@@ -13,7 +13,7 @@ func TestNormalHttpCopy(t *testing.T) {
 		os.Args[0], "http_server.go", "../scheduler/scheduler.go", "fetch_url.go",
 	}
 
-	rsyncServer, err := NewRsyncServer(files[0], files[1:])
+	rsyncServer, err := NewRsyncServer(":0", files[0], files[1:])
 	if err != nil {
 		t.Fatalf("Failed to start local server: %v", err)
 	}
