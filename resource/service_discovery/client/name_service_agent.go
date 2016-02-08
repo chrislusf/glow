@@ -23,7 +23,7 @@ func NewNameServiceProxy(leaders ...string) *NameServiceProxy {
 
 func (n *NameServiceProxy) Find(name string) (locations []string) {
 	for _, l := range n.Leaders {
-		jsonBlob, err := util.Get("http://" + l + "/channel/" + name)
+		jsonBlob, err := util.Get(util.SchemePrefix + l + "/channel/" + name)
 		if err != nil {
 			log.Printf("Failed to list from %s:%v", l, err)
 		}

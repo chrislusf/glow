@@ -69,7 +69,7 @@ func Assign(leader string, request *resource.AllocationRequest) (*resource.Alloc
 	values := make(url.Values)
 	requestBlob, _ := json.Marshal(request)
 	values.Add("request", string(requestBlob))
-	jsonBlob, err := util.Post("http://"+leader+"/agent/assign", values)
+	jsonBlob, err := util.Post(util.SchemePrefix+leader+"/agent/assign", values)
 	if err != nil {
 		return nil, err
 	}

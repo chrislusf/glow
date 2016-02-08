@@ -1,9 +1,8 @@
 package util
 
 import (
-	"bytes"
+	"crypto/tls"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -11,28 +10,22 @@ import (
 )
 
 var (
-	client    *http.Client
-	Transport *http.Transport
+	client       *http.Client
+	Transport    *http.Transport
+	SchemePrefix string
 )
 
-func init() {
+func SetupHttpClient(tlsConfig *tls.Config) {
+	if tlsConfig == nil {
+		SchemePrefix = "http://"
+	} else {
+		SchemePrefix = "https://"
+	}
 	Transport = &http.Transport{
 		MaxIdleConnsPerHost: 1024,
+		TLSClientConfig:     tlsConfig,
 	}
 	client = &http.Client{Transport: Transport}
-}
-
-func PostBytes(url string, body []byte) ([]byte, error) {
-	r, err := client.Post(url, "application/octet-stream", bytes.NewReader(body))
-	if err != nil {
-		return nil, fmt.Errorf("Post to %s: %v", url, err)
-	}
-	defer r.Body.Close()
-	b, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return nil, fmt.Errorf("Read response body: %v", err)
-	}
-	return b, nil
 }
 
 func Post(url string, values url.Values) ([]byte, error) {
@@ -64,43 +57,6 @@ func Get(url string) ([]byte, error) {
 	return b, nil
 }
 
-func GetBufferStream(url string, values url.Values, allocatedBytes []byte, eachBuffer func([]byte)) error {
-	r, err := client.PostForm(url, values)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-	if r.StatusCode != 200 {
-		return fmt.Errorf("%s: %s", url, r.Status)
-	}
-	bufferSize := len(allocatedBytes)
-	for {
-		n, err := r.Body.Read(allocatedBytes)
-		if n == bufferSize {
-			eachBuffer(allocatedBytes)
-		}
-		if err != nil {
-			if err == io.EOF {
-				return nil
-			}
-			return err
-		}
-	}
-	return nil
-}
-
-func GetUrlStream(url string, values url.Values, readFn func(io.Reader) error) error {
-	r, err := client.PostForm(url, values)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-	if r.StatusCode != 200 {
-		return fmt.Errorf("%s: %s", url, r.Status)
-	}
-	return readFn(r.Body)
-}
-
 func DownloadUrl(fileUrl string) (filename string, content []byte, e error) {
 	response, err := client.Get(fileUrl)
 	if err != nil {
@@ -116,15 +72,4 @@ func DownloadUrl(fileUrl string) (filename string, content []byte, e error) {
 	}
 	content, e = ioutil.ReadAll(response.Body)
 	return
-}
-
-func Do(req *http.Request) (resp *http.Response, err error) {
-	return client.Do(req)
-}
-
-func NormalizeUrl(url string) string {
-	if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
-		return url
-	}
-	return "http://" + url
 }

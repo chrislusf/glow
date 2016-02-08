@@ -2,7 +2,9 @@
 package sender
 
 import (
+	"crypto/tls"
 	"fmt"
+	"io"
 	"net"
 	"strconv"
 	"sync"
@@ -11,7 +13,9 @@ import (
 )
 
 // Talk with local agent
-func NewDirectSendChannel(name string, target string, wg *sync.WaitGroup) (chan []byte, error) {
+func NewDirectSendChannel(tlsConfig *tls.Config, name string, target string, wg *sync.WaitGroup) (chan []byte, error) {
+
+	var readerWriter io.ReadWriteCloser
 
 	ch := make(chan []byte)
 
@@ -27,23 +31,29 @@ func NewDirectSendChannel(name string, target string, wg *sync.WaitGroup) (chan 
 		return ch, fmt.Errorf("Fail to dial send %s: %v", raddr, err)
 	}
 
+	if tlsConfig != nil {
+		readerWriter = tls.Client(conn, tlsConfig)
+	} else {
+		readerWriter = conn
+	}
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		defer conn.Close()
+		defer readerWriter.Close()
 		buf := make([]byte, 4)
-		util.WriteBytes(conn, buf, util.NewMessage(util.Data, []byte("PUT "+name)))
+		util.WriteBytes(readerWriter, buf, util.NewMessage(util.Data, []byte("PUT "+name)))
 
 		for data := range ch {
-			util.WriteBytes(conn, buf, util.NewMessage(util.Data, data))
+			util.WriteBytes(readerWriter, buf, util.NewMessage(util.Data, data))
 		}
 
-		util.WriteBytes(conn, buf, util.NewMessage(util.CloseChannel, nil))
+		util.WriteBytes(readerWriter, buf, util.NewMessage(util.CloseChannel, nil))
 	}()
 
 	return ch, nil
 }
 
-func NewSendChannel(name string, port int, wg *sync.WaitGroup) (chan []byte, error) {
-	return NewDirectSendChannel(name, "localhost:"+strconv.Itoa(port), wg)
+func NewSendChannel(tlsConfig *tls.Config, name string, port int, wg *sync.WaitGroup) (chan []byte, error) {
+	return NewDirectSendChannel(tlsConfig, name, "localhost:"+strconv.Itoa(port), wg)
 }

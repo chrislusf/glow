@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"crypto/tls"
 	"flag"
 
 	"github.com/chrislusf/glow/flow"
@@ -14,6 +15,7 @@ type TaskOption struct {
 	ExecutableFileHash string
 	ChannelBufferSize  int
 	RequestId          uint64
+	TlsConfig          *tls.Config
 }
 
 var taskOption TaskOption

@@ -4,6 +4,7 @@ package netchan
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/gob"
 	"flag"
 	"log"
@@ -26,21 +27,21 @@ func init() {
 	flag.IntVar(&Option.AgentPort, "glow.agent.port", 8931, "agent port")
 }
 
-func GetLocalSendChannel(name string, wg *sync.WaitGroup) (chan []byte, error) {
-	return sender.NewSendChannel(name, Option.AgentPort, wg)
+func GetLocalSendChannel(tlsConfig *tls.Config, name string, wg *sync.WaitGroup) (chan []byte, error) {
+	return sender.NewSendChannel(tlsConfig, name, Option.AgentPort, wg)
 }
 
-func GetLocalReadChannel(name string, chanBufferSize int) (chan []byte, error) {
-	return GetDirectReadChannel(name, "localhost:"+strconv.Itoa(Option.AgentPort), chanBufferSize)
+func GetLocalReadChannel(tlsConfig *tls.Config, name string, chanBufferSize int) (chan []byte, error) {
+	return GetDirectReadChannel(tlsConfig, name, "localhost:"+strconv.Itoa(Option.AgentPort), chanBufferSize)
 }
 
-func GetDirectReadChannel(name, location string, chanBufferSize int) (chan []byte, error) {
-	rc := receiver.NewReceiveChannel(name, 0)
+func GetDirectReadChannel(tlsConfig *tls.Config, name, location string, chanBufferSize int) (chan []byte, error) {
+	rc := receiver.NewReceiveChannel(tlsConfig, name, 0)
 	return rc.GetDirectChannel(location, chanBufferSize)
 }
 
-func GetDirectSendChannel(name string, target string, wg *sync.WaitGroup) (chan []byte, error) {
-	return sender.NewDirectSendChannel(name, target, wg)
+func GetDirectSendChannel(tlsConfig *tls.Config, name string, target string, wg *sync.WaitGroup) (chan []byte, error) {
+	return sender.NewDirectSendChannel(tlsConfig, name, target, wg)
 }
 
 func ConnectRawReadChannelToTyped(c chan []byte, out chan reflect.Value, t reflect.Type, wg *sync.WaitGroup) (status *util.ChannelStatus) {

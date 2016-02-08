@@ -116,7 +116,7 @@ func (tr *TaskRunner) connectExternalInputs(wg *sync.WaitGroup, name2Location ma
 		d := shard.Parent
 		readChanName := tr.option.ExecutableFileHash + "-" + shard.Name()
 		// println("taskGroup", tr.option.TaskGroupId, "firstTask", firstTask.Name(), "trying to read from:", readChanName, len(firstTask.InputChans))
-		rawChan, err := netchan.GetDirectReadChannel(readChanName, name2Location[readChanName], tr.FlowContext.ChannelBufferSize)
+		rawChan, err := netchan.GetDirectReadChannel(tr.option.TlsConfig, readChanName, name2Location[readChanName], tr.FlowContext.ChannelBufferSize)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -135,7 +135,7 @@ func (tr *TaskRunner) connectExternalInputChannels(wg *sync.WaitGroup) {
 	ds := firstTask.Outputs[0].Parent
 	for i, _ := range ds.ExternalInputChans {
 		inputChanName := fmt.Sprintf("%s-ct-%d-input-%d-p-%d", tr.option.ExecutableFileHash, tr.option.ContextId, ds.Id, i)
-		rawChan, err := netchan.GetLocalReadChannel(inputChanName, tr.FlowContext.ChannelBufferSize)
+		rawChan, err := netchan.GetLocalReadChannel(tr.option.TlsConfig, inputChanName, tr.FlowContext.ChannelBufferSize)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -151,7 +151,7 @@ func (tr *TaskRunner) connectExternalOutputs(wg *sync.WaitGroup) {
 	for _, shard := range lastTask.Outputs {
 		writeChanName := tr.option.ExecutableFileHash + "-" + shard.Name()
 		// println("taskGroup", tr.option.TaskGroupId, "step", lastTask.Step.Id, "lastTask", lastTask.Id, "writing to:", writeChanName)
-		rawChan, err := netchan.GetLocalSendChannel(writeChanName, wg)
+		rawChan, err := netchan.GetLocalSendChannel(tr.option.TlsConfig, writeChanName, wg)
 		if err != nil {
 			log.Panic(err)
 		}

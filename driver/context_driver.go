@@ -13,6 +13,8 @@ import (
 	"github.com/chrislusf/glow/driver/rsync"
 	"github.com/chrislusf/glow/driver/scheduler"
 	"github.com/chrislusf/glow/flow"
+	"github.com/chrislusf/glow/netchan"
+	"github.com/chrislusf/glow/util"
 )
 
 type DriverOption struct {
@@ -27,6 +29,7 @@ type DriverOption struct {
 	RelatedFiles  string
 	ShowFlowStats bool
 	ListenOn      string
+	CertFiles     netchan.CertFiles
 }
 
 func init() {
@@ -42,6 +45,9 @@ func init() {
 	flag.StringVar(&driverOption.RelatedFiles, "glow.related.files", "", strconv.QuoteRune(os.PathListSeparator)+" separated list of files")
 	flag.BoolVar(&driverOption.ShowFlowStats, "glow.flow.stat", false, "show flow details at the end of execution")
 	flag.StringVar(&driverOption.ListenOn, "glow.driver.listenOn", ":0", "listen on this address to copy itself and related files to agents")
+	flag.StringVar(&driverOption.CertFiles.CertFile, "cert.file", "", "A PEM eoncoded certificate file")
+	flag.StringVar(&driverOption.CertFiles.KeyFile, "key.file", "", "A PEM encoded private key file")
+	flag.StringVar(&driverOption.CertFiles.CaFile, "ca.file", "", "A PEM eoncoded CA's certificate file")
 
 	flow.RegisterContextRunner(NewFlowContextDriver(&driverOption))
 }
@@ -81,6 +87,9 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 		return
 	}
 
+	tlsConfig := fcd.option.CertFiles.MakeTLSConfig()
+	util.SetupHttpClient(tlsConfig)
+
 	// start server to serve files to agents to run exectuors
 	rsyncServer, err := rsync.NewRsyncServer(fcd.option.ListenOn, os.Args[0], fcd.option.RelatedFileNames())
 	if err != nil {
@@ -99,6 +108,7 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 			Module:             fcd.option.Module,
 			ExecutableFile:     os.Args[0],
 			ExecutableFileHash: rsyncServer.ExecutableFileHash(),
+			TlsConfig:          tlsConfig,
 		},
 	)
 

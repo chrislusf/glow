@@ -59,7 +59,7 @@ func (h *HeartBeater) beat(fn func(url.Values) string) {
 	beatToPath := fn(values)
 	values.Add("servicePort", strconv.Itoa(h.ServicePort))
 	for _, leader := range h.Leaders {
-		_, err := util.Post("http://"+leader+beatToPath, values)
+		_, err := util.Post(util.SchemePrefix+leader+beatToPath, values)
 		// println("heart beat to", leader, beatToPath)
 		if err != nil {
 			println("Failed to heart beat to", leader, beatToPath)

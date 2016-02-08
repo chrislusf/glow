@@ -3,6 +3,9 @@
 package master
 
 import (
+	"crypto/tls"
+	"log"
+	"net"
 	"net/http"
 	"sync"
 
@@ -36,17 +39,33 @@ func (tl *TeamMaster) statusHandler(w http.ResponseWriter, r *http.Request) {
 	util.Json(w, r, http.StatusOK, infos)
 }
 
-func RunMaster(listenOn string) {
+func RunMaster(tlsConfig *tls.Config, listenOn string) {
 	tl := &TeamMaster{}
 	tl.channels = &NamedChannelMap{name2Chans: make(map[string][]*ChannelInformation)}
 	tl.MasterResource = NewMasterResource()
 
-	http.HandleFunc("/", tl.statusHandler)
-	http.HandleFunc("/agent/assign", tl.requestAgentHandler)
-	http.HandleFunc("/agent/update", tl.updateAgentHandler)
-	http.HandleFunc("/agent/", tl.listAgentsHandler)
-	http.HandleFunc("/channel/", tl.handleChannel)
+	masterMux := http.NewServeMux()
 
-	http.ListenAndServe(listenOn, nil)
+	masterMux.HandleFunc("/", tl.statusHandler)
+	masterMux.HandleFunc("/agent/assign", tl.requestAgentHandler)
+	masterMux.HandleFunc("/agent/update", tl.updateAgentHandler)
+	masterMux.HandleFunc("/agent/", tl.listAgentsHandler)
+	masterMux.HandleFunc("/channel/", tl.handleChannel)
+
+	var listener net.Listener
+	var err error
+	if tlsConfig == nil {
+		listener, err = net.Listen("tcp", listenOn)
+	} else {
+		listener, err = tls.Listen("tcp", listenOn, tlsConfig)
+	}
+	if err != nil {
+		log.Fatalf("Volume server fail to serve public: %v", err)
+	}
+	util.SetupHttpClient(tlsConfig)
+
+	if e := http.Serve(listener, masterMux); e != nil {
+		log.Fatalf("Volume server fail to serve public: %v", e)
+	}
 
 }

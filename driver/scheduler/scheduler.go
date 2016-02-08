@@ -2,6 +2,7 @@
 package scheduler
 
 import (
+	"crypto/tls"
 	"sync"
 	"time"
 
@@ -40,6 +41,7 @@ type SchedulerOption struct {
 	Module             string
 	ExecutableFile     string
 	ExecutableFileHash string
+	TlsConfig          *tls.Config
 }
 
 func NewScheduler(leader string, option *SchedulerOption) *Scheduler {

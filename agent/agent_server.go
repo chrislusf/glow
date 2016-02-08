@@ -4,6 +4,7 @@ package agent
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -16,6 +17,7 @@ import (
 	"sync"
 
 	"github.com/chrislusf/glow/driver/cmd"
+	"github.com/chrislusf/glow/netchan"
 	"github.com/chrislusf/glow/resource"
 	"github.com/chrislusf/glow/resource/service_discovery/client"
 	"github.com/chrislusf/glow/util"
@@ -32,6 +34,7 @@ type AgentServerOption struct {
 	MemoryMB     *int64
 	CPULevel     *int
 	CleanRestart *bool
+	CertFiles    netchan.CertFiles
 }
 
 type AgentServer struct {
@@ -69,7 +72,7 @@ func NewAgentServer(option *AgentServerOption) *AgentServer {
 		localExecutorManager: newLocalExecutorsManager(),
 	}
 
-	err = as.Init()
+	err = as.init()
 	if err != nil {
 		panic(err)
 	}
@@ -80,11 +83,17 @@ func NewAgentServer(option *AgentServerOption) *AgentServer {
 // Start starts to listen on a port, returning the listening port
 // r.Port can be pre-set or leave it as zero
 // The actual port set to r.Port
-func (r *AgentServer) Init() (err error) {
-	r.listener, err = net.Listen("tcp", ":"+strconv.Itoa(r.Port))
+func (r *AgentServer) init() (err error) {
+	tlsConfig := r.Option.CertFiles.MakeTLSConfig()
+	if tlsConfig == nil {
+		r.listener, err = net.Listen("tcp", ":"+strconv.Itoa(r.Port))
+	} else {
+		r.listener, err = tls.Listen("tcp", ":"+strconv.Itoa(r.Port), tlsConfig)
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
+	util.SetupHttpClient(tlsConfig)
 
 	r.Port = r.listener.Addr().(*net.TCPAddr).Port
 	fmt.Println("AgentServer starts on:", r.Port)

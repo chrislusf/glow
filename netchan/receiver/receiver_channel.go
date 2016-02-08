@@ -2,6 +2,7 @@
 package receiver
 
 import (
+	"crypto/tls"
 	"io"
 	"log"
 	"math/rand"
@@ -13,9 +14,10 @@ import (
 )
 
 type ReceiveChannel struct {
-	Ch     chan []byte
-	offset uint64
-	name   string
+	Ch        chan []byte
+	offset    uint64
+	name      string
+	tlsConfig *tls.Config
 }
 
 func FindTarget(name string, leader string) (target string) {
@@ -35,10 +37,11 @@ func FindTarget(name string, leader string) (target string) {
 	return
 }
 
-func NewReceiveChannel(name string, offset uint64) *ReceiveChannel {
+func NewReceiveChannel(tlsConfig *tls.Config, name string, offset uint64) *ReceiveChannel {
 	return &ReceiveChannel{
-		name:   name,
-		offset: offset,
+		name:      name,
+		offset:    offset,
+		tlsConfig: tlsConfig,
 	}
 }
 
@@ -56,6 +59,8 @@ func (rc *ReceiveChannel) GetDirectChannel(target string, chanBufferSize int) (c
 }
 
 func (rc *ReceiveChannel) receiveTopicFrom(target string) {
+	var readWriter io.ReadWriter
+
 	// connect to a TCP server
 	network := "tcp"
 	raddr, err := net.ResolveTCPAddr(network, target)
@@ -73,26 +78,32 @@ func (rc *ReceiveChannel) receiveTopicFrom(target string) {
 	}
 	defer conn.Close()
 
+	if rc.tlsConfig != nil {
+		readWriter = tls.Client(conn, rc.tlsConfig)
+	} else {
+		readWriter = conn
+	}
+
 	buf := make([]byte, 4)
 
-	util.WriteBytes(conn, buf, util.NewMessage(util.Data, []byte("GET "+rc.name)))
+	util.WriteBytes(readWriter, buf, util.NewMessage(util.Data, []byte("GET "+rc.name)))
 
-	util.WriteUint64(conn, rc.offset)
+	util.WriteUint64(readWriter, rc.offset)
 
-	util.WriteBytes(conn, buf, util.NewMessage(util.Data, []byte("ok")))
+	util.WriteBytes(readWriter, buf, util.NewMessage(util.Data, []byte("ok")))
 
 	ticker := time.NewTicker(time.Millisecond * 1100)
 	defer ticker.Stop()
 	go func() {
 		buf := make([]byte, 4)
 		for range ticker.C {
-			util.WriteBytes(conn, buf, util.NewMessage(util.Data, []byte("ok")))
+			util.WriteBytes(readWriter, buf, util.NewMessage(util.Data, []byte("ok")))
 			// print(".")
 		}
 	}()
 
 	for {
-		f, data, err := util.ReadBytes(conn, buf)
+		f, data, err := util.ReadBytes(readWriter, buf)
 		if err == io.EOF {
 			// print("recieve close chan2: eof")
 			break

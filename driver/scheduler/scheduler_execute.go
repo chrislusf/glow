@@ -88,7 +88,7 @@ func (s *Scheduler) setupInputChannels(fc *flow.FlowContext, task *flow.Task, lo
 		inputChanName := fmt.Sprintf("%s-ct-%d-input-%d-p-%d", s.option.ExecutableFileHash, fc.Id, ds.Id, i)
 		// println("setup input channel for", task.Name(), "on", location.URL())
 		s.shardLocator.SetShardLocation(inputChanName, location)
-		rawChan, err := netchan.GetDirectSendChannel(inputChanName, location.URL(), waitGroup)
+		rawChan, err := netchan.GetDirectSendChannel(s.option.TlsConfig, inputChanName, location.URL(), waitGroup)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -106,7 +106,7 @@ func (s *Scheduler) setupOutputChannels(shards []*flow.DatasetShard, waitGroup *
 		// connect remote raw chan to local typed chan
 		readChanName := s.option.ExecutableFileHash + "-" + shard.Name()
 		location, _ := s.shardLocator.GetShardLocation(readChanName)
-		rawChan, err := netchan.GetDirectReadChannel(readChanName, location.URL(), 1024)
+		rawChan, err := netchan.GetDirectReadChannel(s.option.TlsConfig, readChanName, location.URL(), 1024)
 		if err != nil {
 			log.Panic(err)
 		}

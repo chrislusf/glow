@@ -17,7 +17,7 @@ type ListFileResult struct {
 }
 
 func ListFiles(server string) ([]FileHash, error) {
-	jsonBlob, err := util.Get("http://" + server + "/list")
+	jsonBlob, err := util.Get(util.SchemePrefix + server + "/list")
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func FetchFilesTo(driverAddress string, dir string) error {
 			// println("skip downloading same", fh.File)
 			continue
 		}
-		if err = FetchUrl("http://"+driverAddress+"/file/"+fh.File, toFile); err != nil {
+		if err = FetchUrl(util.SchemePrefix+driverAddress+"/file/"+fh.File, toFile); err != nil {
 			return fmt.Errorf("Failed to download file %s: %v", fh.File, err)
 		}
 	}
