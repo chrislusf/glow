@@ -5,9 +5,13 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/chrislusf/glow/util"
 )
 
 func TestNormalHttpCopy(t *testing.T) {
+
+	util.SetupHttpClient(nil)
 
 	files := []string{
 		os.Args[0], "http_server.go", "../scheduler/scheduler.go", "fetch_url.go",
