@@ -24,12 +24,8 @@ var (
 
 	master      = app.Command("master", "Start a master process")
 	masterPort  = master.Flag("port", "listening port").Default("8930").Int()
-	masterIp    = master.Flag("ip", "listening IP adress").Default("localhost").String()
-	masterCerts = netchan.CertFiles{
-		CertFile: *master.Flag("cert.file", "A PEM eoncoded certificate file").Default("").String(),
-		KeyFile:  *master.Flag("key.file", "A PEM encoded private key file.").Default("").String(),
-		CaFile:   *master.Flag("ca.file", "A PEM eoncoded CA's certificate file.").Default("").String(),
-	}
+	masterIp    = master.Flag("ip", "listening IP adress").Default("").String()
+	masterCerts = netchan.CertFiles{}
 
 	agent       = app.Command("agent", "Channel Agent")
 	agentOption = &a.AgentServerOption{
@@ -42,35 +38,40 @@ var (
 		CPULevel:     agent.Flag("cpu.level", "relative computing power of single cpu core").Default("1").Int(),
 		MemoryMB:     agent.Flag("memory", "memory size in MB").Default("1024").Int64(),
 		CleanRestart: agent.Flag("clean.restart", "clean up previous dataset files").Default("true").Bool(),
-		CertFiles: netchan.CertFiles{
-			CertFile: *master.Flag("cert.file", "A PEM eoncoded certificate file").Default("").String(),
-			KeyFile:  *master.Flag("key.file", "A PEM encoded private key file.").Default("").String(),
-			CaFile:   *master.Flag("ca.file", "A PEM eoncoded CA's certificate file.").Default("").String(),
-		},
+		CertFiles:    netchan.CertFiles{},
 	}
 
 	sender          = app.Command("send", "Send data to a channel")
 	sendToChanName  = sender.Flag("to", "Name of a channel").Required().String()
 	sendFile        = sender.Flag("file", "file to post.").ExistingFile()
 	senderAgentPort = sender.Flag("port", "agent listening port").Default("8931").Int()
-	senderCerts     = netchan.CertFiles{
-		CertFile: *sender.Flag("cert.file", "A PEM eoncoded certificate file").Default("").String(),
-		KeyFile:  *sender.Flag("key.file", "A PEM encoded private key file.").Default("").String(),
-		CaFile:   *sender.Flag("ca.file", "A PEM eoncoded CA's certificate file.").Default("").String(),
-	}
+	senderCerts     = netchan.CertFiles{}
 	// sendDelimiter  = sender.Flag("delimiter", "Verbose mode.").Short('d').String()
 
 	receiver            = app.Command("receive", "Receive data from a channel")
 	receiveFromChanName = receiver.Flag("from", "Name of a source channel").Required().String()
 	receiverMaster      = receiver.Flag("master", "ip:port format").Default("localhost:8930").String()
-	receiverCerts       = netchan.CertFiles{
-		CertFile: *receiver.Flag("cert.file", "A PEM eoncoded certificate file").Default("").String(),
-		KeyFile:  *receiver.Flag("key.file", "A PEM encoded private key file.").Default("").String(),
-		CaFile:   *receiver.Flag("ca.file", "A PEM eoncoded CA's certificate file.").Default("").String(),
-	}
+	receiverCerts       = netchan.CertFiles{}
 )
 
 func main() {
+
+	master.Flag("cert.file", "A PEM eoncoded certificate file").Default("").StringVar(&masterCerts.CertFile)
+	master.Flag("key.file", "A PEM encoded private key file.").Default("").StringVar(&masterCerts.KeyFile)
+	master.Flag("ca.file", "A PEM eoncoded CA's certificate file.").Default("").StringVar(&masterCerts.CaFile)
+
+	agent.Flag("cert.file", "A PEM eoncoded certificate file").Default("").StringVar(&agentOption.CertFiles.CertFile)
+	agent.Flag("key.file", "A PEM encoded private key file.").Default("").StringVar(&agentOption.CertFiles.KeyFile)
+	agent.Flag("ca.file", "A PEM eoncoded CA's certificate file.").Default("").StringVar(&agentOption.CertFiles.CaFile)
+
+	sender.Flag("cert.file", "A PEM eoncoded certificate file").Default("").StringVar(&senderCerts.CertFile)
+	sender.Flag("key.file", "A PEM encoded private key file.").Default("").StringVar(&senderCerts.KeyFile)
+	sender.Flag("ca.file", "A PEM eoncoded CA's certificate file.").Default("").StringVar(&senderCerts.CaFile)
+
+	receiver.Flag("cert.file", "A PEM eoncoded certificate file").Default("").StringVar(&receiverCerts.CertFile)
+	receiver.Flag("key.file", "A PEM encoded private key file.").Default("").StringVar(&receiverCerts.KeyFile)
+	receiver.Flag("ca.file", "A PEM eoncoded CA's certificate file.").Default("").StringVar(&receiverCerts.CaFile)
+
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
 	case master.FullCommand():
 		println("listening on", (*masterIp)+":"+strconv.Itoa(*masterPort))

@@ -3,8 +3,12 @@ package netchan
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"path/filepath"
+
+	"github.com/chrislusf/glow/util"
 )
 
 type CertFiles struct {
@@ -22,14 +26,27 @@ func (c *CertFiles) MakeTLSConfig() *tls.Config {
 		return nil
 	}
 
-	// Load client cert
-	cert, err := tls.LoadX509KeyPair(c.CertFile, c.KeyFile)
+	certFile, err := filepath.Abs(util.CleanPath(c.CertFile))
+	if err != nil {
+		panic(fmt.Errorf("Failed to load cert file %s: %v", c.CertFile, err))
+	}
+	keyFile, err := filepath.Abs(util.CleanPath(c.KeyFile))
+	if err != nil {
+		panic(fmt.Errorf("Failed to load cert file %s: %v", c.KeyFile, err))
+	}
+	caFile, err := filepath.Abs(util.CleanPath(c.CaFile))
+	if err != nil {
+		panic(fmt.Errorf("Failed to load cert file %s: %v", c.CaFile, err))
+	}
+
+	// Load cert
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Load CA cert
-	caCert, err := ioutil.ReadFile(c.CaFile)
+	caCert, err := ioutil.ReadFile(caFile)
 	if err != nil {
 		log.Fatal(err)
 	}

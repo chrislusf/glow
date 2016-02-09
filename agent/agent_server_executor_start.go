@@ -42,7 +42,7 @@ func (as *AgentServer) handleStart(conn net.Conn,
 	stat.StartTime = time.Now()
 	cmd := exec.Command(
 		startRequest.GetPath(),
-		adjustArgs(startRequest.Args, startRequest.GetHashCode())...,
+		as.adjustArgs(startRequest.Args, startRequest.GetHashCode())...,
 	)
 	cmd.Env = startRequest.Envs
 	cmd.Dir = dir
@@ -66,8 +66,26 @@ func (as *AgentServer) handleStart(conn net.Conn,
 	return reply
 }
 
-func adjustArgs(args []string, requestId uint32) (ret []string) {
-	ret = append(args, "-glow.request.id")
+func (as *AgentServer) adjustArgs(args []string, requestId uint32) (ret []string) {
+	if as.Option.CertFiles.IsEnabled() {
+		for i := 0; i < len(args); i++ {
+			ret = append(ret, args[i])
+			switch args[i] {
+			case "-cert.file":
+				ret = append(ret, as.Option.CertFiles.CertFile)
+				i++
+			case "-key.file":
+				ret = append(ret, as.Option.CertFiles.KeyFile)
+				i++
+			case "-ca.file":
+				ret = append(ret, as.Option.CertFiles.CaFile)
+				i++
+			}
+		}
+	} else {
+		ret = args
+	}
+	ret = append(ret, "-glow.request.id")
 	ret = append(ret, fmt.Sprintf("%d", requestId))
 	return
 }
