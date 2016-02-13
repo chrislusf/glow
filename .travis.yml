@@ -1,4 +1,4 @@
-sudo: false
+sudo: required
 os:
   - linux
   - osx
@@ -10,6 +10,13 @@ go:
  - 1.5
  - tip
 
+services:
+ - docker
+
+env:
+- GOMAXPROCS=4 GORACE="halt_on_error=1"
+- DOCKER_REPO=alpetest/glow
+
 before_install:
  - export PATH=/home/travis/gopath/bin:$PATH
  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
@@ -17,9 +24,15 @@ before_install:
 
 install:
  - go get ./...
- 
+
 script:
  - go test -race -timeout=90s ./...
+ - GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build .
+ - docker build -f Dockerfile -t $DOCKER_REPO:$COMMIT .
 
-env:
-- GOMAXPROCS=4 GORACE="halt_on_error=1"
+after_success:
+  - docker login -e $DOCKER_EMAIL -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+  - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo "$TRAVIS_BRANCH" ; fi`
+  - docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:$TAG
+  - docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:travis-$TRAVIS_BUILD_NUMBER
+  - if [["$TRAVIS_GO_VERSION" == "1.5"]] && [["$TRAVIS_OS_NAME" == "linux"]]; then docker push $DOCKER_REPO ;fi
