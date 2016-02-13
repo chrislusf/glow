@@ -57,6 +57,7 @@ func (c *CertFiles) MakeTLSConfig() *tls.Config {
 	tlsConfig := &tls.Config{
 		Certificates:       []tls.Certificate{cert},
 		RootCAs:            caCertPool,
+		ClientCAs:          caCertPool,
 		ClientAuth:         tls.RequireAndVerifyClientCert, // server side setting
 		InsecureSkipVerify: false,                          // client side setting
 	}
