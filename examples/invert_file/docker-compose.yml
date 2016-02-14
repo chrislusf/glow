@@ -25,7 +25,7 @@ agent2:
 master:
   read_only: true
   image: glow
-  command: master --ip 0.0.0.0
+  command: master --address 0.0.0.0:8930
   expose:
     - "8930"
 
