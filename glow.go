@@ -22,10 +22,9 @@ import (
 var (
 	app = kingpin.New("glow", "A command-line net channel.")
 
-	master      = app.Command("master", "Start a master process")
-	masterPort  = master.Flag("port", "listening port").Default("8930").Int()
-	masterIp    = master.Flag("ip", "listening IP adress").Default("").String()
-	masterCerts = netchan.CertFiles{}
+	master        = app.Command("master", "Start a master process")
+	masterAddress = master.Flag("address", "listening address host:port").Default(":8930").String()
+	masterCerts   = netchan.CertFiles{}
 
 	agent       = app.Command("agent", "Channel Agent")
 	agentOption = &a.AgentServerOption{
@@ -75,8 +74,8 @@ func main() {
 
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
 	case master.FullCommand():
-		println("listening on", (*masterIp)+":"+strconv.Itoa(*masterPort))
-		m.RunMaster(masterCerts.MakeTLSConfig(), (*masterIp)+":"+strconv.Itoa(*masterPort))
+		println("listening on", *masterAddress)
+		m.RunMaster(masterCerts.MakeTLSConfig(), *masterAddress)
 	case sender.FullCommand():
 		tlsConfig := senderCerts.MakeTLSConfig()
 		util.SetupHttpClient(tlsConfig)
