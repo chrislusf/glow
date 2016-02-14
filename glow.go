@@ -30,6 +30,7 @@ var (
 	agent       = app.Command("agent", "Channel Agent")
 	agentOption = &a.AgentServerOption{
 		Dir:          agent.Flag("dir", "agent folder to store computed data").Default(os.TempDir()).String(),
+		Host:         agent.Flag("host", "agent listening host address. Required in 2-way SSL mode.").Default("").String(),
 		Port:         agent.Flag("port", "agent listening port").Default("8931").Int(),
 		Master:       agent.Flag("master", "master address").Default("localhost:8930").String(),
 		DataCenter:   agent.Flag("dataCenter", "data center name").Default("defaultDataCenter").String(),
@@ -41,11 +42,11 @@ var (
 		CertFiles:    netchan.CertFiles{},
 	}
 
-	sender          = app.Command("send", "Send data to a channel")
-	sendToChanName  = sender.Flag("to", "Name of a channel").Required().String()
-	sendFile        = sender.Flag("file", "file to post.").ExistingFile()
-	senderAgentPort = sender.Flag("port", "agent listening port").Default("8931").Int()
-	senderCerts     = netchan.CertFiles{}
+	sender             = app.Command("send", "Send data to a channel")
+	sendToChanName     = sender.Flag("to", "Name of a channel").Required().String()
+	sendFile           = sender.Flag("file", "file to post.").ExistingFile()
+	senderAgentAddress = sender.Flag("agent", "agent host:port").Default("localhost:8931").String()
+	senderCerts        = netchan.CertFiles{}
 	// sendDelimiter  = sender.Flag("delimiter", "Verbose mode.").Short('d').String()
 
 	receiver            = app.Command("receive", "Receive data from a channel")
@@ -81,7 +82,7 @@ func main() {
 		util.SetupHttpClient(tlsConfig)
 
 		var wg sync.WaitGroup
-		sendChan, err := s.NewSendChannel(tlsConfig, *sendToChanName, *senderAgentPort, &wg)
+		sendChan, err := s.NewDirectSendChannel(tlsConfig, *sendToChanName, *senderAgentAddress, &wg)
 		if err != nil {
 			panic(err)
 		}
@@ -122,6 +123,11 @@ func main() {
 		}
 
 	case agent.FullCommand():
+		if agentOption.CertFiles.IsEnabled() {
+			if *agentOption.Host == "" {
+				log.Fatalf("Usage Note: --host option is needed in 2-way SSL mode and must match CN in the certificate.")
+			}
+		}
 		agentServer := a.NewAgentServer(agentOption)
 		agentServer.Run()
 	}

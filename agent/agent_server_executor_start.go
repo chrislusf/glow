@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/chrislusf/glow/driver/cmd"
@@ -68,9 +69,17 @@ func (as *AgentServer) handleStart(conn net.Conn,
 
 func (as *AgentServer) adjustArgs(args []string, requestId uint32) (ret []string) {
 	if as.Option.CertFiles.IsEnabled() {
-		for i := 0; i < len(args); i++ {
-			ret = append(ret, args[i])
-			switch args[i] {
+		var cleanedArgs []string
+		for _, arg := range args {
+			if strings.Contains(arg, "=") {
+				cleanedArgs = append(cleanedArgs, strings.SplitN(arg, "=", 2)...)
+			} else {
+				cleanedArgs = append(cleanedArgs, arg)
+			}
+		}
+		for i := 0; i < len(cleanedArgs); i++ {
+			ret = append(ret, cleanedArgs[i])
+			switch cleanedArgs[i] {
 			case "-cert.file":
 				ret = append(ret, as.Option.CertFiles.CertFile)
 				i++
@@ -87,6 +96,8 @@ func (as *AgentServer) adjustArgs(args []string, requestId uint32) (ret []string
 	}
 	ret = append(ret, "-glow.request.id")
 	ret = append(ret, fmt.Sprintf("%d", requestId))
+
+	// fmt.Printf("cmd: %v\n", ret)
 	return
 }
 

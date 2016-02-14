@@ -22,7 +22,7 @@ func (s *Scheduler) remoteExecuteOnLocation(flowContext *flow.FlowContext, taskG
 	s.setupInputChannels(flowContext, tasks[0], allocation.Location, wg)
 
 	for _, shard := range tasks[len(tasks)-1].Outputs {
-		s.shardLocator.SetShardLocation(s.option.ExecutableFileHash+"-"+shard.Name(), allocation.Location)
+		s.shardLocator.SetShardLocation(s.Option.ExecutableFileHash+"-"+shard.Name(), allocation.Location)
 	}
 	s.setupOutputChannels(tasks[len(tasks)-1].Outputs, wg)
 
@@ -35,8 +35,8 @@ func (s *Scheduler) remoteExecuteOnLocation(flowContext *flow.FlowContext, taskG
 		strconv.Itoa(taskGroup.Id),
 		"-glow.task.name",
 		tasks[0].Name(),
-		"-glow.agent.port",
-		strconv.Itoa(allocation.Location.Port),
+		"-glow.agent.address",
+		allocation.Location.URL(),
 		"-glow.taskGroup.inputs",
 		s.shardLocator.allInputLocations(tasks[0]),
 		"-glow.exe.hash",
@@ -50,11 +50,12 @@ func (s *Scheduler) remoteExecuteOnLocation(flowContext *flow.FlowContext, taskG
 	request := NewStartRequest(
 		"./"+filepath.Base(os.Args[0]),
 		// filepath.Join(".", filepath.Base(os.Args[0])),
-		s.option.Module,
+		s.Option.Module,
 		args,
 		allocation.Allocated,
 		os.Environ(),
-		int32(s.option.DriverPort),
+		s.Option.DriverHost,
+		int32(s.Option.DriverPort),
 	)
 
 	requestId := request.StartRequest.GetHashCode()
@@ -68,8 +69,8 @@ func (s *Scheduler) remoteExecuteOnLocation(flowContext *flow.FlowContext, taskG
 	taskGroup.RequestId = requestId
 
 	// fmt.Printf("starting on %s: %v\n", allocation.Allocated, request)
-	if err := RemoteDirectExecute(allocation.Location.URL(), request); err != nil {
-		log.Printf("exeuction error %v: %v", err, request)
+	if err := RemoteDirectExecute(s.Option.TlsConfig, allocation.Location.URL(), request); err != nil {
+		log.Printf("remote exeuction error %v: %v", err, request)
 	}
 	status.StopTime = time.Now()
 }
@@ -85,10 +86,10 @@ func (s *Scheduler) setupInputChannels(fc *flow.FlowContext, task *flow.Task, lo
 	// connect local typed chan to remote raw chan
 	// write to the dataset location in the cluster so that the task can be retried if needed.
 	for i, inChan := range ds.ExternalInputChans {
-		inputChanName := fmt.Sprintf("%s-ct-%d-input-%d-p-%d", s.option.ExecutableFileHash, fc.Id, ds.Id, i)
+		inputChanName := fmt.Sprintf("%s-ct-%d-input-%d-p-%d", s.Option.ExecutableFileHash, fc.Id, ds.Id, i)
 		// println("setup input channel for", task.Name(), "on", location.URL())
 		s.shardLocator.SetShardLocation(inputChanName, location)
-		rawChan, err := netchan.GetDirectSendChannel(s.option.TlsConfig, inputChanName, location.URL(), waitGroup)
+		rawChan, err := netchan.GetDirectSendChannel(s.Option.TlsConfig, inputChanName, location.URL(), waitGroup)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -104,9 +105,9 @@ func (s *Scheduler) setupOutputChannels(shards []*flow.DatasetShard, waitGroup *
 			continue
 		}
 		// connect remote raw chan to local typed chan
-		readChanName := s.option.ExecutableFileHash + "-" + shard.Name()
+		readChanName := s.Option.ExecutableFileHash + "-" + shard.Name()
 		location, _ := s.shardLocator.GetShardLocation(readChanName)
-		rawChan, err := netchan.GetDirectReadChannel(s.option.TlsConfig, readChanName, location.URL(), 1024)
+		rawChan, err := netchan.GetDirectReadChannel(s.Option.TlsConfig, readChanName, location.URL(), 1024)
 		if err != nil {
 			log.Panic(err)
 		}

@@ -3,6 +3,7 @@
 package rsync
 
 import (
+	"crypto/tls"
 	"encoding/hex"
 	"hash/crc32"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/chrislusf/glow/util"
@@ -23,6 +25,7 @@ type FileHash struct {
 }
 
 type RsyncServer struct {
+	Ip             string
 	Port           int
 	listenOn       string
 	ExecutableFile string
@@ -31,9 +34,8 @@ type RsyncServer struct {
 	fileHashes []FileHash
 }
 
-func NewRsyncServer(listenOn string, file string, relatedFiles []string) (*RsyncServer, error) {
+func NewRsyncServer(file string, relatedFiles []string) (*RsyncServer, error) {
 	rs := &RsyncServer{
-		listenOn:       listenOn,
 		ExecutableFile: file,
 		RelatedFiles:   relatedFiles,
 	}
@@ -85,17 +87,25 @@ func (rs *RsyncServer) fileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // go start a http server locally that will respond predictably to ranged requests
-func (rs *RsyncServer) Start() {
+func (rs *RsyncServer) StartRsyncServer(tlsConfig *tls.Config, listenOn string) {
 	s := http.NewServeMux()
 	s.HandleFunc("/list", rs.listHandler)
 	s.HandleFunc("/file/", rs.fileHandler)
 
-	listener, err := net.Listen("tcp", rs.listenOn)
+	var listener net.Listener
+	var err error
+	if tlsConfig == nil {
+		listener, err = net.Listen("tcp", listenOn)
+	} else {
+		listener, err = tls.Listen("tcp", listenOn, tlsConfig)
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	rs.Port = listener.Addr().(*net.TCPAddr).Port
+	addr := listener.Addr().(*net.TCPAddr)
+	rs.Ip = addr.String()[:strings.LastIndex(addr.String(), ":")]
+	rs.Port = addr.Port
 
 	go func() {
 		http.Serve(listener, s)

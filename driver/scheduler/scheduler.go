@@ -17,7 +17,7 @@ type Scheduler struct {
 	Leader                 string
 	EventChan              chan interface{}
 	Market                 *market.Market
-	option                 *SchedulerOption
+	Option                 *SchedulerOption
 	shardLocator           *DatasetShardLocator
 	RemoteExecutorStatuses map[uint32]*RemoteExecutorStatus
 }
@@ -37,6 +37,7 @@ type SchedulerOption struct {
 	DataCenter         string
 	Rack               string
 	TaskMemoryMB       int
+	DriverHost         string
 	DriverPort         int
 	Module             string
 	ExecutableFile     string
@@ -50,7 +51,7 @@ func NewScheduler(leader string, option *SchedulerOption) *Scheduler {
 		EventChan:              make(chan interface{}),
 		Market:                 market.NewMarket(),
 		shardLocator:           NewDatasetShardLocator(option.ExecutableFileHash),
-		option:                 option,
+		Option:                 option,
 		RemoteExecutorStatuses: make(map[uint32]*RemoteExecutorStatus),
 	}
 	s.Market.SetScoreFunction(s.Score).SetFetchFunction(s.Fetch)

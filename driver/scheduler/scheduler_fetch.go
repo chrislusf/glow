@@ -24,7 +24,7 @@ func (s *Scheduler) Fetch(demands []market.Demand) {
 			ComputeResource: resource.ComputeResource{
 				CPUCount: 1,
 				CPULevel: 1,
-				MemoryMB: int64(s.option.TaskMemoryMB),
+				MemoryMB: int64(s.Option.TaskMemoryMB),
 			},
 			Inputs: s.findTaskGroupInputs(demand),
 		})
@@ -52,7 +52,7 @@ func (s *Scheduler) Fetch(demands []market.Demand) {
 func (s *Scheduler) findTaskGroupInputs(tg *plan.TaskGroup) (ret []resource.DataResource) {
 	firstTask := tg.Tasks[0]
 	for _, input := range firstTask.Inputs {
-		dataLocation, found := s.shardLocator.GetShardLocation(s.option.ExecutableFileHash + "-" + input.Name())
+		dataLocation, found := s.shardLocator.GetShardLocation(s.Option.ExecutableFileHash + "-" + input.Name())
 		if !found {
 			// log.Printf("Strange2: %s not allocated yet.", input.Name())
 			continue

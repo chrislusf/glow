@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"math/rand"
-	"net"
 	"time"
 
 	"github.com/chrislusf/glow/resource/service_discovery/client"
@@ -59,30 +58,15 @@ func (rc *ReceiveChannel) GetDirectChannel(target string, chanBufferSize int) (c
 }
 
 func (rc *ReceiveChannel) receiveTopicFrom(target string) {
-	var readWriter io.ReadWriter
 
-	// connect to a TCP server
-	network := "tcp"
-	raddr, err := net.ResolveTCPAddr(network, target)
+	readWriter, err := util.Dial(rc.tlsConfig, target)
 	if err != nil {
-		log.Printf("Fail to resolve %s:%v", target, err)
+		log.Printf("Fail to dial receive %s: %v", target, err)
 		return
 	}
+	defer readWriter.Close()
 
-	// println("dial tcp", raddr.String())
-	conn, err := net.DialTCP(network, nil, raddr)
-	if err != nil {
-		log.Printf("Fail to dial receive %s:%v", raddr, err)
-		time.Sleep(time.Second)
-		return
-	}
-	defer conn.Close()
-
-	if rc.tlsConfig != nil {
-		readWriter = tls.Client(conn, rc.tlsConfig)
-	} else {
-		readWriter = conn
-	}
+	// println("receiving", rc.name, "from", target)
 
 	buf := make([]byte, 4)
 

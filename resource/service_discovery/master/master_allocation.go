@@ -25,7 +25,7 @@ func (tl *TeamMaster) allocate(req *resource.AllocationRequest) (result *resourc
 func (tl *TeamMaster) allocateServersOnRack(dc *resource.DataCenter, rack *resource.Rack, requests []*resource.ComputeRequest) (
 	allocated []resource.Allocation, remainingRequests []*resource.ComputeRequest) {
 	var j = -1
-	for _, agent := range rack.Agents() {
+	for _, agent := range rack.GetAgents() {
 		if j >= len(requests) {
 			break
 		}
@@ -63,7 +63,7 @@ func (tl *TeamMaster) allocateServersOnRack(dc *resource.DataCenter, rack *resou
 func (tl *TeamMaster) findServers(dc *resource.DataCenter, req *resource.AllocationRequest) (ret []resource.Allocation) {
 	// sort racks by unallocated resources
 	var racks []*resource.Rack
-	for _, rack := range dc.Racks() {
+	for _, rack := range dc.GetRacks() {
 		racks = append(racks, rack)
 	}
 	sort.Sort(ByAvailableResources(racks))
@@ -114,7 +114,7 @@ func (tl *TeamMaster) findDataCenter(req *resource.AllocationRequest) (*resource
 	// weighted reservior sampling
 	var selectedDc *resource.DataCenter
 	var seenWeight int64
-	for _, dc := range tl.MasterResource.Topology.DataCenters() {
+	for _, dc := range tl.MasterResource.Topology.GetDataCenters() {
 		available := dc.Resource.Minus(dc.Allocated)
 		weight := available.MemoryMB
 		if weight > 0 {

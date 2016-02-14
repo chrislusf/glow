@@ -60,12 +60,12 @@ func (s *Scheduler) EventLoop() {
 				for _, taskGroup := range event.TaskGroups {
 					tasks := taskGroup.Tasks
 					for _, ds := range tasks[len(tasks)-1].Outputs {
-						shardName := s.option.ExecutableFileHash + "-" + ds.Name()
+						shardName := s.Option.ExecutableFileHash + "-" + ds.Name()
 						location, _ := s.shardLocator.GetShardLocation(shardName)
 						request := NewDeleteDatasetShardRequest(shardName)
 						// println("deleting", ds.Name(), "on", location.URL())
-						if err := RemoteDirectExecute(location.URL(), request); err != nil {
-							println("exeuction error:", err.Error())
+						if err := RemoteDirectExecute(s.Option.TlsConfig, location.URL(), request); err != nil {
+							println("Purging dataset error:", err.Error())
 						}
 					}
 				}

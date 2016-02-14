@@ -4,38 +4,21 @@ package sender
 import (
 	"crypto/tls"
 	"fmt"
-	"io"
-	"net"
-	"strconv"
 	"sync"
 
 	"github.com/chrislusf/glow/util"
 )
 
-// Talk with local agent
 func NewDirectSendChannel(tlsConfig *tls.Config, name string, target string, wg *sync.WaitGroup) (chan []byte, error) {
-
-	var readerWriter io.ReadWriteCloser
 
 	ch := make(chan []byte)
 
-	// connect to a TCP server
-	network := "tcp"
-	raddr, err := net.ResolveTCPAddr(network, target)
+	readerWriter, err := util.Dial(tlsConfig, target)
 	if err != nil {
-		return ch, fmt.Errorf("Fail to resolve %s: %v", target, err)
+		return ch, fmt.Errorf("Fail to dial send %s: %v", target, err)
 	}
 
-	conn, err := net.DialTCP(network, nil, raddr)
-	if err != nil {
-		return ch, fmt.Errorf("Fail to dial send %s: %v", raddr, err)
-	}
-
-	if tlsConfig != nil {
-		readerWriter = tls.Client(conn, tlsConfig)
-	} else {
-		readerWriter = conn
-	}
+	// println("writing to", name, "on", target)
 
 	wg.Add(1)
 	go func() {
@@ -52,8 +35,4 @@ func NewDirectSendChannel(tlsConfig *tls.Config, name string, target string, wg 
 	}()
 
 	return ch, nil
-}
-
-func NewSendChannel(tlsConfig *tls.Config, name string, port int, wg *sync.WaitGroup) (chan []byte, error) {
-	return NewDirectSendChannel(tlsConfig, name, "localhost:"+strconv.Itoa(port), wg)
 }

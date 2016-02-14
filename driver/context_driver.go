@@ -28,12 +28,14 @@ type DriverOption struct {
 	Module        string
 	RelatedFiles  string
 	ShowFlowStats bool
-	ListenOn      string
+	Host          string
+	Port          int
 	CertFiles     netchan.CertFiles
 }
 
+var driverOption DriverOption
+
 func init() {
-	var driverOption DriverOption
 	flag.BoolVar(&driverOption.ShouldStart, "glow", false, "start in driver mode")
 	flag.StringVar(&driverOption.Leader, "glow.leader", "localhost:8930", "leader server")
 	flag.StringVar(&driverOption.DataCenter, "glow.dataCenter", "", "preferred data center name")
@@ -44,7 +46,8 @@ func init() {
 	flag.StringVar(&driverOption.Module, "glow.module", "", "a name to group related jobs together on agent")
 	flag.StringVar(&driverOption.RelatedFiles, "glow.related.files", "", strconv.QuoteRune(os.PathListSeparator)+" separated list of files")
 	flag.BoolVar(&driverOption.ShowFlowStats, "glow.flow.stat", false, "show flow details at the end of execution")
-	flag.StringVar(&driverOption.ListenOn, "glow.driver.listenOn", ":0", "listen on this address to copy itself and related files to agents")
+	flag.StringVar(&driverOption.Host, "glow.driver.host", "", "driver runs on this host address. Required in 2-way SSL mode.")
+	flag.IntVar(&driverOption.Port, "glow.driver.port", 0, "driver listens on this port to copy files to agents. Required to specify and open this port.")
 	flag.StringVar(&driverOption.CertFiles.CertFile, "cert.file", "", "A PEM eoncoded certificate file")
 	flag.StringVar(&driverOption.CertFiles.KeyFile, "key.file", "", "A PEM encoded private key file")
 	flag.StringVar(&driverOption.CertFiles.CaFile, "ca.file", "", "A PEM eoncoded CA's certificate file")
@@ -53,22 +56,30 @@ func init() {
 }
 
 type FlowContextDriver struct {
-	option *DriverOption
+	Option *DriverOption
 
 	stepGroups []*plan.StepGroup
 	taskGroups []*plan.TaskGroup
 }
 
 func NewFlowContextDriver(option *DriverOption) *FlowContextDriver {
-	return &FlowContextDriver{option: option}
+	return &FlowContextDriver{Option: option}
 }
 
 func (fcd *FlowContextDriver) IsDriverMode() bool {
-	return fcd.option.ShouldStart
+	return fcd.Option.ShouldStart
 }
 
 func (fcd *FlowContextDriver) IsDriverPlotMode() bool {
-	return fcd.option.PlotOutput
+	return fcd.Option.PlotOutput
+}
+
+func (fcd *FlowContextDriver) checkParameters() {
+	if fcd.Option.CertFiles.IsEnabled() {
+		if fcd.Option.Host == "" {
+			log.Fatalf("Usage Note: -glow.driver.host option is needed and must match CN in the certificate.")
+		}
+	}
 }
 
 func (fcd *FlowContextDriver) Plot(fc *flow.FlowContext) {
@@ -79,33 +90,38 @@ func (fcd *FlowContextDriver) Plot(fc *flow.FlowContext) {
 // driver runs on local, controlling all tasks
 func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 
+	fcd.checkParameters()
+
 	// task fusion to minimize disk IO
 	fcd.stepGroups, fcd.taskGroups = plan.GroupTasks(fc)
 	// plot the execution graph
-	if fcd.option.PlotOutput {
+	if fcd.Option.PlotOutput {
 		plan.PlotGraph(fcd.taskGroups, fc)
 		return
 	}
 
-	tlsConfig := fcd.option.CertFiles.MakeTLSConfig()
+	tlsConfig := fcd.Option.CertFiles.MakeTLSConfig()
 	util.SetupHttpClient(tlsConfig)
 
 	// start server to serve files to agents to run exectuors
-	rsyncServer, err := rsync.NewRsyncServer(fcd.option.ListenOn, os.Args[0], fcd.option.RelatedFileNames())
+	rsyncServer, err := rsync.NewRsyncServer(os.Args[0], fcd.Option.RelatedFileNames())
 	if err != nil {
 		log.Fatalf("Failed to start local server: %v", err)
 	}
-	rsyncServer.Start()
+	rsyncServer.StartRsyncServer(tlsConfig, fcd.Option.Host+":"+strconv.Itoa(fcd.Option.Port))
+
+	driverHost := fcd.Option.Host
 
 	// create thes cheduler
 	sched := scheduler.NewScheduler(
-		fcd.option.Leader,
+		fcd.Option.Leader,
 		&scheduler.SchedulerOption{
-			DataCenter:         fcd.option.DataCenter,
-			Rack:               fcd.option.Rack,
-			TaskMemoryMB:       fcd.option.TaskMemoryMB,
+			DataCenter:         fcd.Option.DataCenter,
+			Rack:               fcd.Option.Rack,
+			TaskMemoryMB:       fcd.Option.TaskMemoryMB,
+			DriverHost:         driverHost,
 			DriverPort:         rsyncServer.Port,
-			Module:             fcd.option.Module,
+			Module:             fcd.Option.Module,
 			ExecutableFile:     os.Args[0],
 			ExecutableFileHash: rsyncServer.ExecutableFileHash(),
 			TlsConfig:          tlsConfig,
@@ -131,7 +147,7 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 		sched.EventChan <- scheduler.SubmitTaskGroup{
 			FlowContext: fc,
 			TaskGroup:   taskGroup,
-			Bid:         fcd.option.FlowBid / float64(len(fcd.taskGroups)),
+			Bid:         fcd.Option.FlowBid / float64(len(fcd.taskGroups)),
 			WaitGroup:   &wg,
 		}
 	}
@@ -141,7 +157,7 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 
 	fcd.CloseOutputChannels(fc)
 
-	if fcd.option.ShowFlowStats {
+	if fcd.Option.ShowFlowStats {
 		fcd.ShowFlowStatus(fc, sched)
 	}
 

@@ -45,9 +45,12 @@ func (tl *TeamMaster) listChannelsHandler(w http.ResponseWriter, r *http.Request
 // put agent information list under a path
 func (tl *TeamMaster) updateChannelHandler(w http.ResponseWriter, r *http.Request) {
 	servicePort := r.FormValue("servicePort")
-	host := r.Host
-	if strings.Contains(host, ":") {
-		host = host[0:strings.Index(host, ":")]
+	host := r.FormValue("serviceIp")
+	if host == "" {
+		host = r.Host
+		if strings.Contains(host, ":") {
+			host = host[0:strings.LastIndex(host, ":")]
+		}
 	}
 	location := host + ":" + servicePort
 	path := r.URL.Path[len("/channel/"):]

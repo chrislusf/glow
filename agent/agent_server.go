@@ -26,6 +26,7 @@ import (
 
 type AgentServerOption struct {
 	Master       *string
+	Host         *string
 	Port         *int
 	Dir          *string
 	DataCenter   *string
@@ -40,7 +41,6 @@ type AgentServerOption struct {
 type AgentServer struct {
 	Option                *AgentServerOption
 	Master                string
-	Port                  int
 	wg                    sync.WaitGroup
 	listener              net.Listener
 	computeResource       *resource.ComputeResource
@@ -61,7 +61,6 @@ func NewAgentServer(option *AgentServerOption) *AgentServer {
 	as := &AgentServer{
 		Option:         option,
 		Master:         *option.Master,
-		Port:           *option.Port,
 		storageBackend: NewLocalDatasetShardsManager(*option.Dir, *option.Port),
 		computeResource: &resource.ComputeResource{
 			CPUCount: *option.MaxExecutor,
@@ -80,27 +79,23 @@ func NewAgentServer(option *AgentServerOption) *AgentServer {
 	return as
 }
 
-// Start starts to listen on a port, returning the listening port
-// r.Port can be pre-set or leave it as zero
-// The actual port set to r.Port
 func (r *AgentServer) init() (err error) {
 	tlsConfig := r.Option.CertFiles.MakeTLSConfig()
 	if tlsConfig == nil {
-		r.listener, err = net.Listen("tcp", ":"+strconv.Itoa(r.Port))
+		r.listener, err = net.Listen("tcp", *r.Option.Host+":"+strconv.Itoa(*r.Option.Port))
 	} else {
-		r.listener, err = tls.Listen("tcp", ":"+strconv.Itoa(r.Port), tlsConfig)
+		r.listener, err = tls.Listen("tcp", *r.Option.Host+":"+strconv.Itoa(*r.Option.Port), tlsConfig)
 	}
+	util.SetupHttpClient(tlsConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
-	util.SetupHttpClient(tlsConfig)
 
-	r.Port = r.listener.Addr().(*net.TCPAddr).Port
-	fmt.Println("AgentServer starts on:", r.Port)
+	fmt.Println("AgentServer starts on", *r.Option.Host+":"+strconv.Itoa(*r.Option.Port))
 
 	if *r.Option.CleanRestart {
 		if fileInfos, err := ioutil.ReadDir(r.storageBackend.dir); err == nil {
-			suffix := fmt.Sprintf("-%d.dat", r.Port)
+			suffix := fmt.Sprintf("-%d.dat", *r.Option.Port)
 			for _, fi := range fileInfos {
 				name := fi.Name()
 				if !fi.IsDir() && strings.HasSuffix(name, suffix) {
@@ -117,7 +112,7 @@ func (r *AgentServer) init() (err error) {
 func (as *AgentServer) Run() {
 	//register agent
 	killHeartBeaterChan := make(chan bool, 1)
-	go client.NewHeartBeater(as.Port, as.Master).StartAgentHeartBeat(killHeartBeaterChan, func(values url.Values) {
+	go client.NewHeartBeater(*as.Option.Host, *as.Option.Port, as.Master).StartAgentHeartBeat(killHeartBeaterChan, func(values url.Values) {
 		resource.AddToValues(values, as.computeResource, as.allocatedResource)
 		values.Add("dataCenter", *as.Option.DataCenter)
 		values.Add("rack", *as.Option.Rack)
@@ -151,6 +146,16 @@ func (r *AgentServer) handleRequest(conn net.Conn) {
 	buf := make([]byte, 4)
 
 	f, message, err := util.ReadBytes(conn, buf)
+
+	tlscon, ok := conn.(*tls.Conn)
+	if ok {
+		state := tlscon.ConnectionState()
+		if !state.HandshakeComplete {
+			log.Printf("Failed to tls handshake with: %+v", tlscon.RemoteAddr())
+			return
+		}
+	}
+
 	if f != util.Data {
 		//strange if this happens
 		println("read", len(message.Bytes()), "request flag:", f, "data", string(message.Data()))

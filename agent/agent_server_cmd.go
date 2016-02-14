@@ -13,10 +13,13 @@ func (as *AgentServer) handleCommandConnection(conn net.Conn,
 	switch command.GetType() {
 	case cmd.ControlMessage_StartRequest:
 		reply.Type = cmd.ControlMessage_StartResponse.Enum()
-		remoteAddress := conn.RemoteAddr().String()
-		// println("remote address is", remoteAddress)
-		host := remoteAddress[:strings.LastIndex(remoteAddress, ":")]
-		command.StartRequest.Host = &host
+		// println("start from", *command.StartRequest.Host)
+		if *command.StartRequest.Host == "" {
+			remoteAddress := conn.RemoteAddr().String()
+			// println("remote address is", remoteAddress)
+			host := remoteAddress[:strings.LastIndex(remoteAddress, ":")]
+			command.StartRequest.Host = &host
+		}
 		reply.StartResponse = as.handleStart(conn, command.StartRequest)
 		// return nil to avoid writing the response to the connection.
 		// Currently the connection is used for reading outputs

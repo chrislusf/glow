@@ -42,6 +42,10 @@ func (tr *TaskRunner) Run(fc *flow.FlowContext) {
 	}
 	fc.ChannelBufferSize = tr.option.ChannelBufferSize
 
+	// using driverOption, not so clean way
+	tr.option.TaskTlsConfig = driverOption.CertFiles.MakeTLSConfig()
+	util.SetupHttpClient(tr.option.TaskTlsConfig)
+
 	_, taskGroups := plan.GroupTasks(fc)
 	tr.Tasks = taskGroups[tr.option.TaskGroupId].Tasks
 	tr.FlowContext = fc
@@ -116,7 +120,7 @@ func (tr *TaskRunner) connectExternalInputs(wg *sync.WaitGroup, name2Location ma
 		d := shard.Parent
 		readChanName := tr.option.ExecutableFileHash + "-" + shard.Name()
 		// println("taskGroup", tr.option.TaskGroupId, "firstTask", firstTask.Name(), "trying to read from:", readChanName, len(firstTask.InputChans))
-		rawChan, err := netchan.GetDirectReadChannel(tr.option.TlsConfig, readChanName, name2Location[readChanName], tr.FlowContext.ChannelBufferSize)
+		rawChan, err := netchan.GetDirectReadChannel(tr.option.TaskTlsConfig, readChanName, name2Location[readChanName], tr.FlowContext.ChannelBufferSize)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -135,7 +139,7 @@ func (tr *TaskRunner) connectExternalInputChannels(wg *sync.WaitGroup) {
 	ds := firstTask.Outputs[0].Parent
 	for i, _ := range ds.ExternalInputChans {
 		inputChanName := fmt.Sprintf("%s-ct-%d-input-%d-p-%d", tr.option.ExecutableFileHash, tr.option.ContextId, ds.Id, i)
-		rawChan, err := netchan.GetLocalReadChannel(tr.option.TlsConfig, inputChanName, tr.FlowContext.ChannelBufferSize)
+		rawChan, err := netchan.GetDirectReadChannel(tr.option.TaskTlsConfig, inputChanName, tr.option.AgentAddress, tr.FlowContext.ChannelBufferSize)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -150,8 +154,8 @@ func (tr *TaskRunner) connectExternalOutputs(wg *sync.WaitGroup) {
 	lastTask := tr.Tasks[len(tr.Tasks)-1]
 	for _, shard := range lastTask.Outputs {
 		writeChanName := tr.option.ExecutableFileHash + "-" + shard.Name()
-		// println("taskGroup", tr.option.TaskGroupId, "step", lastTask.Step.Id, "lastTask", lastTask.Id, "writing to:", writeChanName)
-		rawChan, err := netchan.GetLocalSendChannel(tr.option.TlsConfig, writeChanName, wg)
+		// println("taskGroup", tr.option.TaskGroupId, "step", lastTask.Step.Id, "lastTask", lastTask.Id, "writing to:", writeChanName, "on", tr.option.AgentAddress)
+		rawChan, err := netchan.GetDirectSendChannel(tr.option.TaskTlsConfig, writeChanName, tr.option.AgentAddress, wg)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -162,7 +166,7 @@ func (tr *TaskRunner) connectExternalOutputs(wg *sync.WaitGroup) {
 }
 
 func (tr *TaskRunner) reportLocalExecutorStatusOnce() {
-	scheduler.RemoteDirectCommand(fmt.Sprintf("localhost:%d", netchan.Option.AgentPort), &cmd.ControlMessage{
+	scheduler.RemoteDirectCommand(tr.option.TaskTlsConfig, tr.option.AgentAddress, &cmd.ControlMessage{
 		Type: cmd.ControlMessage_LocalStatusReportRequest.Enum(),
 		LocalStatusReportRequest: &cmd.LocalStatusReportRequest{
 			StartRequestHash: proto.Uint32(uint32(tr.option.RequestId)),

@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"crypto/tls"
 	"fmt"
 	"sync"
 	"time"
@@ -40,7 +41,7 @@ func (fcd *FlowContextDriver) OnExit(
 				return
 			}
 			// println("checking", request.Allocation.Location.URL(), requestId)
-			if err := askExecutorToStopRequest(request.Allocation.Location.URL(), requestId); err != nil {
+			if err := askExecutorToStopRequest(sched.Option.TlsConfig, request.Allocation.Location.URL(), requestId); err != nil {
 				fmt.Printf("Error to stop request %d on %s: %v\n", request.Allocation.Location.URL(), requestId, err)
 				return
 			}
@@ -99,7 +100,7 @@ func (fcd *FlowContextDriver) collectStatusFromRemoteExecutors(sched *scheduler.
 				return
 			}
 			// println("checking", request.Allocation.Location.URL(), requestId)
-			stat, err := askExecutorStatusForRequest(request.Allocation.Location.URL(), requestId)
+			stat, err := askExecutorStatusForRequest(sched.Option.TlsConfig, request.Allocation.Location.URL(), requestId)
 			if err != nil {
 				fmt.Printf("Error to request status from %s: %v\n", request.Allocation.Location.URL(), err)
 				return
@@ -114,9 +115,9 @@ func (fcd *FlowContextDriver) collectStatusFromRemoteExecutors(sched *scheduler.
 	return stats
 }
 
-func askExecutorStatusForRequest(server string, requestId uint32) (*RemoteExecutorStatus, error) {
+func askExecutorStatusForRequest(tlsConfig *tls.Config, server string, requestId uint32) (*RemoteExecutorStatus, error) {
 
-	reply, err := scheduler.RemoteDirectCommand(server, scheduler.NewGetStatusRequest(requestId))
+	reply, err := scheduler.RemoteDirectCommand(tlsConfig, server, scheduler.NewGetStatusRequest(requestId))
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +135,7 @@ func askExecutorStatusForRequest(server string, requestId uint32) (*RemoteExecut
 	}, nil
 }
 
-func askExecutorToStopRequest(server string, requestId uint32) (err error) {
-	_, err = scheduler.RemoteDirectCommand(server, scheduler.NewStopRequest(requestId))
+func askExecutorToStopRequest(tlsConfig *tls.Config, server string, requestId uint32) (err error) {
+	_, err = scheduler.RemoteDirectCommand(tlsConfig, server, scheduler.NewStopRequest(requestId))
 	return
 }

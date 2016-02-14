@@ -47,7 +47,7 @@ func ReadBytes(r io.Reader, lenBuf []byte) (flag ControlFlag, m *Message, err er
 	size := BytesToUint32(lenBuf)
 	data := make([]byte, int(size))
 	_, err = io.ReadAtLeast(r, data, int(size))
-	if err != nil {
+	if err != nil || size == 0 {
 		return CloseChannel, NewMessage(CloseChannel, nil), err
 	}
 	message := LoadMessage(data)

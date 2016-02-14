@@ -44,9 +44,13 @@ func (tl *TeamMaster) updateAgentHandler(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		log.Printf("Strange: servicePort not found: %s, %v", servicePortString, err)
 	}
-	host := r.RemoteAddr
-	if strings.Contains(host, ":") {
-		host = host[0:strings.Index(host, ":")]
+	// print("agent address:", r.RemoteAddr)
+	host := r.FormValue("serviceIp")
+	if host == "" {
+		host = r.RemoteAddr
+		if strings.Contains(host, ":") {
+			host = host[0:strings.LastIndex(host, ":")]
+		}
 	}
 	// println("received agent update from", host+":"+servicePort)
 	res, alloc := resource.NewComputeResourceFromRequest(r)

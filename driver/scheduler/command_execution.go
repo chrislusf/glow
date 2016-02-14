@@ -2,10 +2,11 @@ package scheduler
 
 import (
 	"bufio"
+	"crypto/tls"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
-	"net"
 	"time"
 
 	"github.com/chrislusf/glow/driver/cmd"
@@ -15,7 +16,7 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-func NewStartRequest(path string, dir string, args []string, allocated resource.ComputeResource, envs []string, port int32) *cmd.ControlMessage {
+func NewStartRequest(path string, dir string, args []string, allocated resource.ComputeResource, envs []string, host string, port int32) *cmd.ControlMessage {
 	request := &cmd.ControlMessage{
 		Type: cmd.ControlMessage_StartRequest.Enum(),
 		StartRequest: &cmd.StartRequest{
@@ -28,6 +29,7 @@ func NewStartRequest(path string, dir string, args []string, allocated resource.
 				Memory:   proto.Int32(int32(allocated.MemoryMB)),
 			},
 			Envs:     envs,
+			Host:     proto.String(host),
 			Port:     proto.Int32(port),
 			HashCode: proto.Uint32(0),
 		},
@@ -71,18 +73,18 @@ func NewDeleteDatasetShardRequest(name string) *cmd.ControlMessage {
 	}
 }
 
-func RemoteDirectExecute(server string, command *cmd.ControlMessage) error {
-	conn, err := getDirectCommandConnection(server)
+func RemoteDirectExecute(tlsConfig *tls.Config, server string, command *cmd.ControlMessage) error {
+	conn, err := getDirectCommandConnection(tlsConfig, server)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 
-	return doExecute(conn, command)
+	return doExecute(server, conn, command)
 }
 
 // doExecute() sends a request and expects the output from the connection
-func doExecute(conn net.Conn, command *cmd.ControlMessage) error {
+func doExecute(server string, conn io.ReadWriteCloser, command *cmd.ControlMessage) error {
 
 	buf := make([]byte, 4)
 
@@ -92,11 +94,9 @@ func doExecute(conn net.Conn, command *cmd.ControlMessage) error {
 		return fmt.Errorf("marshaling execute request error: %v", err)
 	}
 
-	remoteAddress := conn.RemoteAddr().String()
-
 	// send the command
 	if err = util.WriteData(conn, buf, []byte("CMD "), data); err != nil {
-		return fmt.Errorf("failed to write to %s: %v", remoteAddress, err)
+		return fmt.Errorf("failed to write to %s: %v", server, err)
 	}
 
 	// println("command sent")
@@ -104,7 +104,7 @@ func doExecute(conn net.Conn, command *cmd.ControlMessage) error {
 	// read output and print it to stdout
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
-		fmt.Printf("%s>%s\n", remoteAddress, scanner.Text())
+		fmt.Printf("%s>%s\n", server, scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
 		return fmt.Errorf("Failed to scan output: %v", err)
@@ -113,18 +113,18 @@ func doExecute(conn net.Conn, command *cmd.ControlMessage) error {
 	return err
 }
 
-func RemoteDirectCommand(server string, command *cmd.ControlMessage) (response *cmd.ControlMessage, err error) {
-	conn, err := getDirectCommandConnection(server)
+func RemoteDirectCommand(tlsConfig *tls.Config, server string, command *cmd.ControlMessage) (response *cmd.ControlMessage, err error) {
+	conn, err := getDirectCommandConnection(tlsConfig, server)
 	if err != nil {
 		return nil, err
 	}
 	defer conn.Close()
 
-	return doCommand(conn, command)
+	return doCommand(server, conn, command)
 }
 
 // doCommand() sends a request and expects a response object
-func doCommand(conn net.Conn, command *cmd.ControlMessage) (response *cmd.ControlMessage, err error) {
+func doCommand(server string, conn io.ReadWriteCloser, command *cmd.ControlMessage) (response *cmd.ControlMessage, err error) {
 
 	buf := make([]byte, 4)
 
@@ -134,11 +134,9 @@ func doCommand(conn net.Conn, command *cmd.ControlMessage) (response *cmd.Contro
 		return nil, fmt.Errorf("marshaling command error: %v", err)
 	}
 
-	remoteAddress := conn.RemoteAddr().String()
-
 	// send the command
 	if err = util.WriteData(conn, buf, []byte("CMD "), data); err != nil {
-		return nil, fmt.Errorf("failed to write command to %s: %v", remoteAddress, err)
+		return nil, fmt.Errorf("failed to write command to %s: %v", server, err)
 	}
 
 	// println("command sent")
@@ -159,7 +157,7 @@ func doCommand(conn net.Conn, command *cmd.ControlMessage) (response *cmd.Contro
 	return response, err
 }
 
-func getCommandConnection(leader string, agentName string) (net.Conn, error) {
+func getCommandConnection(tlsConfig *tls.Config, leader string, agentName string) (io.ReadWriteCloser, error) {
 	l := client.NewNameServiceProxy(leader)
 
 	// looking for the agentName
@@ -177,22 +175,9 @@ func getCommandConnection(leader string, agentName string) (net.Conn, error) {
 		}
 	}
 
-	return getDirectCommandConnection(target)
+	return getDirectCommandConnection(tlsConfig, target)
 }
 
-func getDirectCommandConnection(target string) (net.Conn, error) {
-	// connect to a TCP server
-	network := "tcp"
-	raddr, err := net.ResolveTCPAddr(network, target)
-	if err != nil {
-		return nil, fmt.Errorf("Fail to resolve %s:%v", target, err)
-	}
-
-	// println("dial tcp", raddr.String())
-	conn, err := net.DialTCP(network, nil, raddr)
-	if err != nil {
-		return nil, fmt.Errorf("Fail to dial command %s:%v", raddr, err)
-	}
-
-	return conn, err
+func getDirectCommandConnection(tlsConfig *tls.Config, target string) (io.ReadWriteCloser, error) {
+	return util.Dial(tlsConfig, target)
 }

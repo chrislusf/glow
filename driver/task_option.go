@@ -15,7 +15,8 @@ type TaskOption struct {
 	ExecutableFileHash string
 	ChannelBufferSize  int
 	RequestId          uint64
-	TlsConfig          *tls.Config
+	AgentAddress       string
+	TaskTlsConfig      *tls.Config
 }
 
 var taskOption TaskOption
@@ -28,6 +29,7 @@ func init() {
 	flag.StringVar(&taskOption.ExecutableFileHash, "glow.exe.hash", "", "hash of executable binary file")
 	flag.IntVar(&taskOption.ChannelBufferSize, "glow.channel.bufferSize", 0, "channel buffer size for reading inputs")
 	flag.Uint64Var(&taskOption.RequestId, "glow.request.id", 0, "request id received from agent")
+	flag.StringVar(&taskOption.AgentAddress, "glow.agent.address", "", "agent hostname:port")
 
 	flow.RegisterTaskRunner(NewTaskRunner(&taskOption))
 }
