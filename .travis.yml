@@ -15,7 +15,7 @@ services:
 
 env:
 - GOMAXPROCS=4 GORACE="halt_on_error=1"
-- DOCKER_REPO=alpetest/glow
+- DOCKER_REPO=chrislusf/glow
 
 before_install:
  - export PATH=/home/travis/gopath/bin:$PATH
