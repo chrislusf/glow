@@ -15,12 +15,13 @@ services:
 
 env:
 - GOMAXPROCS=4 GORACE="halt_on_error=1"
-- DOCKER_REPO=chrislusf/glow
 
 before_install:
+ - echo $$TRAVIS_GO_VERSION
  - export PATH=/home/travis/gopath/bin:$PATH
  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install bzr     ; fi
+ - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install docker  ; fi
 
 install:
  - go get ./...
@@ -28,11 +29,11 @@ install:
 script:
  - go test -race -timeout=90s ./...
  - GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build .
- - docker build -f Dockerfile -t $DOCKER_REPO:$COMMIT .
+ - docker build -f Dockerfile -t $DOCKER_REPO:$TRAVIS_COMMIT .
 
 after_success:
   - docker login -e $DOCKER_EMAIL -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
   - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo "$TRAVIS_BRANCH" ; fi`
-  - docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:$TAG
-  - docker tag $DOCKER_REPO:$COMMIT $DOCKER_REPO:travis-$TRAVIS_BUILD_NUMBER
-  - if [["$TRAVIS_GO_VERSION" == "1.5"]] && [["$TRAVIS_OS_NAME" == "linux"]]; then docker push $DOCKER_REPO ;fi
+  - docker tag $DOCKER_REPO:$TRAVIS_COMMIT $DOCKER_REPO:$TAG
+  - docker tag $DOCKER_REPO:$TRAVIS_COMMIT $DOCKER_REPO:travis-$TRAVIS_BUILD_NUMBER
+  - if [["$TRAVIS_GO_VERSION" == "go1.5"]] && [["$TRAVIS_OS_NAME" == "linux"]]; then docker push $DOCKER_REPO ;fi
