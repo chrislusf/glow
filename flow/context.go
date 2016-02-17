@@ -6,7 +6,7 @@ import (
 	"reflect"
 )
 
-// reference by task runner on remote mode
+// reference by task runner on exectutors
 var Contexts []*FlowContext
 
 type FlowContext struct {
