@@ -29,11 +29,12 @@ install:
 script:
  - go test -race -timeout=90s ./...
  - GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build .
- - docker build -f Dockerfile -t $DOCKER_REPO:$TRAVIS_COMMIT .
+ - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker build -f Dockerfile -t $DOCKER_REPO:$TRAVIS_COMMIT .  ; fi
 
 after_success:
-  - docker login -e $DOCKER_EMAIL -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-  - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo "$TRAVIS_BRANCH" ; fi`
-  - docker tag $DOCKER_REPO:$TRAVIS_COMMIT $DOCKER_REPO:$TAG
-  - docker tag $DOCKER_REPO:$TRAVIS_COMMIT $DOCKER_REPO:travis-$TRAVIS_BUILD_NUMBER
-  - if [["$TRAVIS_GO_VERSION" == "go1.5"]] && [["$TRAVIS_OS_NAME" == "linux"]]; then docker push $DOCKER_REPO ;fi
+  - if [["$TRAVIS_GO_VERSION" == "1.5"]] && [["$TRAVIS_OS_NAME" == "linux"]] && [[ "$TRAVIS_BRANCH" == "master" ]]; then \
+      docker login -e $DOCKER_EMAIL -u $DOCKER_USERNAME -p $DOCKER_PASSWORD \
+      docker tag $DOCKER_REPO:$TRAVIS_COMMIT $DOCKER_REPO:latest \
+      docker tag $DOCKER_REPO:$TRAVIS_COMMIT $DOCKER_REPO:travis-$TRAVIS_BUILD_NUMBER \
+      docker push $DOCKER_REPO \
+    ;fi
