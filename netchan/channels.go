@@ -3,9 +3,7 @@
 package netchan
 
 import (
-	"bytes"
 	"crypto/tls"
-	"encoding/gob"
 	"log"
 	"reflect"
 	"sync"
@@ -32,12 +30,11 @@ func ConnectRawReadChannelToTyped(c chan []byte, out chan reflect.Value, t refle
 		status.ReportStart()
 
 		for data := range c {
-			dec := gob.NewDecoder(bytes.NewBuffer(data))
-			v := reflect.New(t)
-			if err := dec.DecodeValue(v); err != nil {
-				log.Fatal("data type:", v.Kind(), " decode error:", err)
+			decodedData, err := DecodeData(data, t)
+			if err != nil {
+				log.Fatal("Read from raw channel:", err)
 			} else {
-				out <- reflect.Indirect(v)
+				out <- decodedData
 				status.ReportAdd(1)
 			}
 		}
@@ -58,12 +55,11 @@ func ConnectTypedWriteChannelToRaw(writeChan reflect.Value, c chan []byte, wg *s
 		var t reflect.Value
 		for ok := true; ok; {
 			if t, ok = writeChan.Recv(); ok {
-				var buf bytes.Buffer
-				enc := gob.NewEncoder(&buf)
-				if err := enc.EncodeValue(t); err != nil {
-					log.Fatal("data type:", t.Type().String(), " ", t.Kind(), " encode error:", err)
+				data, err := EncodeData(t)
+				if err != nil {
+					log.Fatal("Write to raw channel:", err)
 				}
-				c <- buf.Bytes()
+				c <- data
 				status.ReportAdd(1)
 			}
 		}
