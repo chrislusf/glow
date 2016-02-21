@@ -7,6 +7,10 @@ import (
 	"reflect"
 )
 
+func Register(i interface{}) {
+	gob.Register(i)
+}
+
 func DecodeData(data []byte, t reflect.Type) (reflect.Value, error) {
 	dec := gob.NewDecoder(bytes.NewBuffer(data))
 	v := reflect.New(t)
