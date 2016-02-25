@@ -3,12 +3,16 @@ package flow
 import (
 	"log"
 	"reflect"
+	"time"
 )
 
 func _getLessThanComparatorByKeyValue(key reflect.Value) (funcPointer interface{}) {
 	dt := key.Type()
 	if key.Kind() == reflect.Interface {
 		dt = reflect.TypeOf(key.Interface())
+	}
+	if dt.String() == "time.Time" {
+		return func(a, b time.Time) bool { return a.Before(b) }
 	}
 	switch dt.Kind() {
 	case reflect.Int:
