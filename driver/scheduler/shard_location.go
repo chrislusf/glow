@@ -10,9 +10,10 @@ import (
 
 type DatasetShardLocator struct {
 	sync.Mutex
-	executableFileHash    string
-	datasetShard2Location map[string]resource.Location
-	waitForAllInputs      *sync.Cond
+	executableFileHash        string
+	datasetShard2Location     map[string]resource.Location
+	datasetShard2LocationLock sync.Mutex
+	waitForAllInputs          *sync.Cond
 }
 
 func NewDatasetShardLocator(executableFileHash string) *DatasetShardLocator {
@@ -25,6 +26,9 @@ func NewDatasetShardLocator(executableFileHash string) *DatasetShardLocator {
 }
 
 func (l *DatasetShardLocator) GetShardLocation(shardName string) (resource.Location, bool) {
+	l.datasetShard2LocationLock.Lock()
+	defer l.datasetShard2LocationLock.Unlock()
+
 	loc, hasValue := l.datasetShard2Location[shardName]
 	return loc, hasValue
 }
@@ -33,12 +37,15 @@ func (l *DatasetShardLocator) SetShardLocation(name string, location resource.Lo
 	l.Lock()
 	defer l.Unlock()
 
+	l.datasetShard2LocationLock.Lock()
+	defer l.datasetShard2LocationLock.Unlock()
 	// fmt.Printf("shard %s is at %s\n", name, location.URL())
 	l.datasetShard2Location[name] = location
 	l.waitForAllInputs.Broadcast()
 }
 
 func (l *DatasetShardLocator) allInputsAreRegistered(task *flow.Task) bool {
+
 	for _, input := range task.Inputs {
 		if _, hasValue := l.GetShardLocation(l.executableFileHash + "-" + input.Name()); !hasValue {
 			// fmt.Printf("%s's input %s is not ready\n", task.Name(), input.Name())

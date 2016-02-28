@@ -103,11 +103,14 @@ func (l *RotatingFileStore) ReadAt(data []byte, offset int64) (int, error) {
 		return l.readFullFromOldSegmentsAt(data, offset)
 	}
 
+	// fmt.Printf("Read: l.Offset=%d, offset=%d\n", l.Offset, offset)
+
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	// create the file does not exist
 	if l.file == nil {
+		// fmt.Printf("Read: creating new file...\n")
 		if err := l.openNew(); err != nil {
 			return 0, err
 		}
@@ -120,9 +123,11 @@ func (l *RotatingFileStore) ReadAt(data []byte, offset int64) (int, error) {
 
 	// wait for data not written yet
 	for offset == l.Position {
+		// fmt.Printf("Read: wait for reading...\n")
 		l.waitForReading.Wait()
 	}
 
+	// fmt.Printf("Read: file reading...\n")
 	return l.file.ReadAt(data, offset-l.Offset)
 }
 
@@ -347,8 +352,12 @@ func deleteAll(dir string, files []logInfo) {
 
 func (l *RotatingFileStore) Destroy() {
 	for _, seg := range l.Segments {
+		// println("removing segment:", seg.File.Name())
+		seg.File.Close()
 		os.Remove(seg.File.Name())
 	}
+	// println("removing file", l.filename())
+	l.Close()
 	os.Remove(l.filename())
 }
 
