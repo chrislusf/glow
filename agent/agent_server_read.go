@@ -53,4 +53,7 @@ func (as *AgentServer) handleReadConnection(conn net.Conn, name string, offset i
 		}
 	}
 
+	// wait for the close ack
+	util.ReadBytes(conn, buf)
+
 }

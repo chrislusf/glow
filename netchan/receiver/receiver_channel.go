@@ -74,18 +74,6 @@ func (rc *ReceiveChannel) receiveTopicFrom(target string) {
 
 	util.WriteUint64(readWriter, rc.offset)
 
-	util.WriteBytes(readWriter, buf, util.NewMessage(util.Data, []byte("ok")))
-
-	ticker := time.NewTicker(time.Millisecond * 1100)
-	defer ticker.Stop()
-	go func() {
-		buf := make([]byte, 4)
-		for range ticker.C {
-			util.WriteBytes(readWriter, buf, util.NewMessage(util.Data, []byte("ok")))
-			// print(".")
-		}
-	}()
-
 	for {
 		f, data, err := util.ReadBytes(readWriter, buf)
 		if err == io.EOF {
@@ -93,12 +81,13 @@ func (rc *ReceiveChannel) receiveTopicFrom(target string) {
 			break
 		}
 		if err != nil {
-			log.Printf("receive error:%v", err)
+			log.Printf("receive %s error:%v", rc.name, err)
 			continue
 		}
 		rc.offset += 4 + 1
 		if f != util.Data {
 			// print("recieve close chan1: ", string([]byte{byte(f)}))
+			util.WriteBytes(readWriter, buf, util.NewMessage(f, []byte("ack")))
 			break
 		}
 		// println("receive raw data :", string(data.Bytes()))
