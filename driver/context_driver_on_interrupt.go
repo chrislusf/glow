@@ -42,7 +42,7 @@ func (fcd *FlowContextDriver) OnExit(
 			}
 			// println("checking", request.Allocation.Location.URL(), requestId)
 			if err := askExecutorToStopRequest(sched.Option.TlsConfig, request.Allocation.Location.URL(), requestId); err != nil {
-				fmt.Printf("Error to stop request %d on %s: %v\n", request.Allocation.Location.URL(), requestId, err)
+				fmt.Printf("Error to stop request %d on %s: %v\n", requestId, request.Allocation.Location.URL(), err)
 				return
 			}
 		}(tg)
