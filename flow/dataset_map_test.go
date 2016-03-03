@@ -21,6 +21,7 @@ func TestMapSingleParameter(t *testing.T) {
 
 func TestGroupByKeyMap(t *testing.T) {
 
+	t.Logf("group by result mapping testing start...")
 	New().Slice(
 		[]int{1, 1, 1, 1, 1, 2, 2, 2, 2,
 			3, 3, 3, 4, 4, 5,
@@ -39,6 +40,7 @@ func TestGroupByKeyMap(t *testing.T) {
 
 func TestCoGroupMap(t *testing.T) {
 
+	t.Logf("cogroup testing start...")
 	f := New()
 	left := f.Slice(
 		[]int{1, 1, 1, 1, 1, 2, 2, 2, 2,
