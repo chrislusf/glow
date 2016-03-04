@@ -21,7 +21,7 @@ func TestMapSingleParameter(t *testing.T) {
 
 func TestGroupByKeyMap(t *testing.T) {
 
-	t.Logf("group by result mapping testing start...")
+	fmt.Println("group by result mapping testing start...")
 	New().Slice(
 		[]int{1, 1, 1, 1, 1, 2, 2, 2, 2,
 			3, 3, 3, 4, 4, 5,
@@ -34,13 +34,13 @@ func TestGroupByKeyMap(t *testing.T) {
 		fmt.Printf("key: %d values: %v\n", key, values)
 	}).Run()
 
-	t.Logf("group by result mapping runs well")
+	fmt.Println("group by result mapping runs well")
 
 }
 
 func TestCoGroupMap(t *testing.T) {
 
-	t.Logf("cogroup testing start...")
+	fmt.Println("cogroup testing start...")
 	f := New()
 	left := f.Slice(
 		[]int{1, 1, 1, 1, 1, 2, 2, 2, 2,
@@ -62,6 +62,6 @@ func TestCoGroupMap(t *testing.T) {
 		fmt.Printf("key: %d left: %v, right: %v\n", key, lefts, rights)
 	}).Run()
 
-	t.Logf("cogroup runs well")
+	fmt.Println("cogroup runs well")
 
 }
