@@ -31,6 +31,8 @@ func main() {
 		testInputOutputChannels()
 	case 6:
 		testUnrolledStaticLoop()
+	case 7:
+		testSaveToFile()
 	}
 
 }
@@ -223,4 +225,19 @@ func testUnrolledStaticLoop() {
 	close(ch)
 
 	wg.Wait()
+}
+
+func testSaveToFile() {
+	flow.New().TextFile(
+		"/etc/passwd", 3,
+	).Map(func(line string, ch chan string) {
+		for _, token := range strings.Split(line, ":") {
+			ch <- token
+		}
+	}).Sort(func(a string, b string) bool {
+		if strings.Compare(strings.ToLower(a), strings.ToLower(b)) < 0 {
+			return true
+		}
+		return false
+	}).SaveTextToFile("test7.output")
 }
