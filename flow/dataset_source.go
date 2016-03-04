@@ -94,7 +94,7 @@ func (fc *FlowContext) Slice(slice interface{}) (ret *Dataset) {
 	sliceValue, sliceType := reflect.ValueOf(slice), reflect.TypeOf(slice)
 	sliceLen := sliceValue.Len()
 	chType := reflect.ChanOf(reflect.BothDir, sliceType.Elem())
-	chValue := reflect.MakeChan(chType, 0)
+	chValue := reflect.MakeChan(chType, 16)
 
 	go func() {
 		for i := 0; i < sliceLen; i++ {
