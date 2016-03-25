@@ -64,6 +64,9 @@ func (d *Dataset) MergeSorted(f interface{}) (ret *Dataset) {
 				pq.Enqueue(x.Interface(), shardId)
 			}
 		}
+		if pq == nil {
+			return
+		}
 		for pq.Len() > 0 {
 			t, shardId := pq.Dequeue()
 			outChan.Send(reflect.ValueOf(t))
