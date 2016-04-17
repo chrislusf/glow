@@ -70,7 +70,8 @@ func (tl *TeamMaster) findServers(dc *resource.DataCenter, req *resource.Allocat
 
 	requests := make([]*resource.ComputeRequest, 0, len(req.Requests))
 	for _, request := range req.Requests {
-		requests = append(requests, &request)
+		req := &request
+		requests = append(requests, req)
 	}
 	sort.Sort(ByRequestedResources(requests))
 
