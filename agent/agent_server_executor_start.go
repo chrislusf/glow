@@ -68,6 +68,8 @@ func (as *AgentServer) handleStart(conn net.Conn,
 }
 
 func (as *AgentServer) adjustArgs(args []string, requestId uint32) (ret []string) {
+	ret = []string{"-glow.request.id", fmt.Sprintf("%d", requestId)}
+
 	if as.Option.CertFiles.IsEnabled() {
 		var cleanedArgs []string
 		for _, arg := range args {
@@ -92,10 +94,8 @@ func (as *AgentServer) adjustArgs(args []string, requestId uint32) (ret []string
 			}
 		}
 	} else {
-		ret = args
+		ret = append(ret, args...)
 	}
-	ret = append(ret, "-glow.request.id")
-	ret = append(ret, fmt.Sprintf("%d", requestId))
 
 	// fmt.Printf("cmd: %v\n", ret)
 	return
