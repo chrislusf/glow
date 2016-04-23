@@ -50,12 +50,12 @@ func main() {
 
 ```
 
-Try it. 
+Try it.
 ```
   > ./word_count
 ```
 
-It will run the input text file, '/etc/passwd', in 3 go routines, filter/map/map, and then reduced to one number in one goroutine (not exactly one goroutine, but let's skip the details for now.) and print it out. 
+It will run the input text file, '/etc/passwd', in 3 go routines, filter/map/map, and then reduced to one number in one goroutine (not exactly one goroutine, but let's skip the details for now.) and print it out.
 
 This is useful already, saving lots of idiomatic but repetitive code on channels, sync wait, etc, to fully utilize more CPU cores.
 
@@ -81,7 +81,14 @@ To leap from one computer to clusters of computers, add this line to the import 
 ```
 	_ "github.com/chrislusf/glow/driver"
 ```
-This will "steroidize" the code to run in cluster mode! 
+
+And put this line as the first statement in the main() function:
+
+```
+	flag.Parse()
+```
+
+This will "steroidize" the code to run in cluster mode!
 
 ```
 > ./word_count -glow -glow.leader="localhost:8930"
