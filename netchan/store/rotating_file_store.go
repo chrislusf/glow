@@ -60,29 +60,8 @@ type RotatingFileStore struct {
 	Position int64 // offset for current tail, write position
 }
 
-// load existing files, return current offset
-func (l *RotatingFileStore) init() (err error) {
-	l.Segments = nil
-	var oldFiles []logInfo
-	if oldFiles, err = l.listOldLogFiles(); err != nil {
-		return fmt.Errorf("Failed to list old files: %v", err)
-	}
-	for _, oldFile := range oldFiles {
-		size := oldFile.Size()
-		file, err := os.Open(oldFile.Name())
-		if err != nil {
-			return fmt.Errorf("Failed to open %s: %v", oldFile.Name(), err)
-		}
-		l.Segments = append(l.Segments, &Segment{
-			Offset: l.Offset,
-			Size:   size,
-			File:   file,
-		})
-		l.Offset += size
-	}
-
+func (l *RotatingFileStore) init() {
 	l.waitForReading = sync.NewCond(&l.mu)
-	return
 }
 
 var (

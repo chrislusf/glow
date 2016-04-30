@@ -18,7 +18,7 @@ type LocalFileDataStore struct {
 	store *RotatingFileStore
 }
 
-func NewLocalFileDataStore(dir, name string) (ds *LocalFileDataStore, err error) {
+func NewLocalFileDataStore(dir, name string) (ds *LocalFileDataStore) {
 	ds = &LocalFileDataStore{
 		dir:  dir,
 		name: name,
@@ -30,7 +30,7 @@ func NewLocalFileDataStore(dir, name string) (ds *LocalFileDataStore, err error)
 			LocalTime:   true,
 		},
 	}
-	err = ds.store.init()
+	ds.store.init()
 	return
 }
 
