@@ -2,7 +2,6 @@ package agent
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/chrislusf/glow/netchan/store"
@@ -57,11 +56,7 @@ func (m *LocalDatasetShardsManager) CreateNamedDatasetShard(name string) store.D
 		m.doDelete(name)
 	}
 
-	s, err := store.NewLocalFileDataStore(m.dir, fmt.Sprintf("%s-%d", name, m.port))
-	if err != nil {
-		log.Printf("Failed to create a queue on disk: %v", err)
-		return nil
-	}
+	s := store.NewLocalFileDataStore(m.dir, fmt.Sprintf("%s-%d", name, m.port))
 
 	m.name2Store[name] = s
 	// println(name, "is broadcasting...")
