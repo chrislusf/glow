@@ -1,0 +1,51 @@
+hash: 78a051ac2528d3a6143a0cb48cce40512d71dc59393def34bcff60a08ca75873
+updated: 2016-05-23T15:00:21.192370861-07:00
+imports:
+- name: github.com/alecthomas/template
+  version: a0175ee3bccc567396460bf5acd36800cb10c49c
+  subpackages:
+  - parse
+- name: github.com/alecthomas/units
+  version: 2efee857e7cfd4f3d0138cc3cbb1b4966962b93a
+- name: github.com/colinmarc/hdfs
+  version: 1ab3163168da441b1aae06014dfbd05244d2ecfe
+  subpackages:
+  - protocol/hadoop_hdfs
+  - rpc
+  - protocol/hadoop_common
+- name: github.com/go-sql-driver/mysql
+  version: 7ebe0a500653eeb1859664bed5e48dec1e164e73
+- name: github.com/golang/protobuf
+  version: e51d002c610dbe8c136679a67a6ded5df4d49b5c
+  subpackages:
+  - proto
+- name: github.com/petar/GoLLRB
+  version: 53be0d36a84c2a886ca057d34b6aa4468df9ccb4
+  subpackages:
+  - llrb
+- name: github.com/psilva261/timsort
+  version: 4537dc9bd679bfb730b72f2e8c33b46676521337
+- name: github.com/Redundancy/go-sync
+  version: 8931874cad5cacc627b94fcbcb182460e174aeef
+  subpackages:
+  - filechecksum
+  - index
+  - indexbuilder
+  - blocksources
+  - chunks
+  - comparer
+  - patcher
+  - patcher/sequential
+  - rollsum
+  - circularbuffer
+- name: gopkg.in/alecthomas/kingpin.v2
+  version: 8cccfa8eb2e3183254457fb1749b2667fbc364c7
+- name: gopkg.in/mgo.v2
+  version: b6e2fa371e64216a45e61072a96d4e3859f169da
+  subpackages:
+  - bson
+  - internal/sasl
+  - internal/scram
+- name: gopkg.in/v2/mgo
+  version: b6e2fa371e64216a45e61072a96d4e3859f169da
+devImports: []

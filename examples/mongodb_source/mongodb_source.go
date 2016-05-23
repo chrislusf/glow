@@ -9,7 +9,7 @@ import (
 	_ "github.com/chrislusf/glow/driver"
 	"github.com/chrislusf/glow/flow"
 	_ "github.com/go-sql-driver/mysql"
-	"labix.org/v2/mgo"
+	"gopkg.in/mgo.v2"
 )
 
 type Attachment struct {

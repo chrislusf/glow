@@ -1,0 +1,15 @@
+package: github.com/chrislusf/glow
+import:
+- package: github.com/Redundancy/go-sync
+  subpackages:
+  - filechecksum
+  - index
+  - indexbuilder
+- package: github.com/colinmarc/hdfs
+- package: github.com/go-sql-driver/mysql
+- package: github.com/golang/protobuf
+  subpackages:
+  - proto
+- package: github.com/psilva261/timsort
+- package: gopkg.in/alecthomas/kingpin.v2
+- package: gopkg.in/v2/mgo
