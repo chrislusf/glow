@@ -8,6 +8,10 @@ import (
 	"testing"
 )
 
+// TODO(yaxiongzhao): These 2 tests are flaky. Sometimes fail with:
+// --- FAIL: TestDialWithTlsConfig (0.02s)
+// network_util_test.go:15: accept tcp [::]:8000: use of closed network connection
+
 func acceptAndWrite(listener net.Listener, text string, t *testing.T) {
 	for {
 		conn, err := listener.Accept()
