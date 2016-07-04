@@ -1,7 +1,6 @@
 package netchan
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
@@ -18,7 +17,6 @@ type StrangeType struct {
 }
 
 func TestStruct(t *testing.T) {
-
 	x := StrangeType{
 		X: true,
 		Y: 100.0,
@@ -31,19 +29,19 @@ func TestStruct(t *testing.T) {
 	in := map[string]StrangeType{"x": x}
 
 	bytes, err := EncodeData(reflect.ValueOf(in))
-
 	if err != nil {
 		t.Fatalf("encoding error: %v", err)
 	}
 
 	value, err := DecodeData(bytes, reflect.TypeOf(in))
 
-	fmt.Printf("Value: %v\n", value)
-
+	if err != nil || !reflect.DeepEqual(value.Interface(), in) {
+		t.Errorf("Got: %v want: %v error: %v", value, in, err)
+	}
 }
 
+// Tests registration is needed to encode/decode objects with gob.
 func TestNormal(t *testing.T) {
-
 	x := StrangeType{
 		X: true,
 		Y: 100.0,
@@ -72,10 +70,7 @@ func TestNormal(t *testing.T) {
 
 	value, err := DecodeData(bytes, reflect.TypeOf(in))
 
-	if err != nil {
-		t.Fatalf("decoding error: %v", err)
+	if err != nil || !reflect.DeepEqual(value.Interface(), in) {
+		t.Fatalf("decoding error: %v, got: %v want %v", err, value, in)
 	}
-
-	fmt.Printf("Value: %v\n", value)
-
 }
