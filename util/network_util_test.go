@@ -13,16 +13,14 @@ import (
 // network_util_test.go:15: accept tcp [::]:8000: use of closed network connection
 
 func acceptAndWrite(listener net.Listener, text string, t *testing.T) {
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			t.Error(err)
-			break
-		}
-		defer conn.Close()
-		if n, err := conn.Write([]byte(text)); n != len(text) || err != nil {
-			t.Errorf("Wrote %d bytes, error: %v", n, err)
-		}
+	conn, err := listener.Accept()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	if n, err := conn.Write([]byte(text)); n != len(text) || err != nil {
+		t.Errorf("Wrote %d bytes, error: %v", n, err)
 	}
 }
 
@@ -37,16 +35,21 @@ func TestDialWithTlsConfig(t *testing.T) {
 		Rand:         rand.Reader,
 	}
 
-	listener, err := tls.Listen("tcp", ":8000", &config)
+	listener, err := tls.Listen("tcp", ":0", &config)
 	if err != nil {
 		t.Fatal(err)
 	}
+	addr := listener.Addr().String()
 	defer listener.Close()
 
 	go acceptAndWrite(listener, "abc", t)
 
-	config.InsecureSkipVerify = true
-	conn, err := Dial(&config, "127.0.0.1:8000")
+	clientConfig := tls.Config{
+		Certificates:       []tls.Certificate{cert},
+		Rand:               rand.Reader,
+		InsecureSkipVerify: true,
+	}
+	conn, err := Dial(&clientConfig, addr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,17 +62,18 @@ func TestDialWithTlsConfig(t *testing.T) {
 }
 
 func TestDialWithoutTlsConfig(t *testing.T) {
-	listener, err := net.Listen("tcp", "127.0.0.1:8008")
+	listener, err := net.Listen("tcp", ":0")
 	if err != nil || listener == nil {
 		t.Fatal(err)
 	}
+	addr := listener.Addr().String()
 	defer listener.Close()
 
 	go acceptAndWrite(listener, "abc", t)
 
-	conn, err := Dial(nil, ":8008")
+	conn, err := Dial(nil, addr)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	defer conn.Close()
 
