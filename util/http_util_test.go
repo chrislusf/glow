@@ -43,7 +43,10 @@ func TestPost(t *testing.T) {
 	SetupHttpClient(nil)
 
 	listner := listenAndServeAtRoot(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost {
+		// Travis CI sometimes reports build failure:
+		// undefined: http.MethodPost
+		// So use an string comparison directly.
+		if r.Method == "POST" {
 			io.WriteString(w, "got post")
 		}
 	}, t)
