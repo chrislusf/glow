@@ -3,6 +3,7 @@ package util
 import (
 	"crypto/rand"
 	"crypto/tls"
+	"fmt"
 	"log"
 	"net"
 	"testing"
@@ -12,15 +13,15 @@ import (
 // --- FAIL: TestDialWithTlsConfig (0.02s)
 // network_util_test.go:15: accept tcp [::]:8000: use of closed network connection
 
-func acceptAndWrite(listener net.Listener, text string, t *testing.T) {
+func acceptAndWrite(listener net.Listener, text string) {
 	conn, err := listener.Accept()
 	if err != nil {
-		t.Fatal(err)
+		panic(fmt.Sprint(err))
 	}
 	defer conn.Close()
 
 	if n, err := conn.Write([]byte(text)); n != len(text) || err != nil {
-		t.Errorf("Wrote %d bytes, error: %v", n, err)
+		panic(fmt.Sprintf("Wrote %d bytes, error: %v", n, err))
 	}
 }
 
@@ -42,7 +43,7 @@ func TestDialWithTlsConfig(t *testing.T) {
 	addr := listener.Addr().String()
 	defer listener.Close()
 
-	go acceptAndWrite(listener, "abc", t)
+	go acceptAndWrite(listener, "abc")
 
 	clientConfig := tls.Config{
 		Certificates:       []tls.Certificate{cert},
@@ -56,7 +57,8 @@ func TestDialWithTlsConfig(t *testing.T) {
 	defer conn.Close()
 
 	reply := make([]byte, 3)
-	if n, err := conn.Read(reply); n != 3 || err != nil {
+	n, err := conn.Read(reply)
+	if n != 3 {
 		t.Errorf("Read %d bytes, error: %v", n, err)
 	}
 }
@@ -69,7 +71,7 @@ func TestDialWithoutTlsConfig(t *testing.T) {
 	addr := listener.Addr().String()
 	defer listener.Close()
 
-	go acceptAndWrite(listener, "abc", t)
+	go acceptAndWrite(listener, "abc")
 
 	conn, err := Dial(nil, addr)
 	if err != nil {
@@ -78,7 +80,8 @@ func TestDialWithoutTlsConfig(t *testing.T) {
 	defer conn.Close()
 
 	reply := make([]byte, 3)
-	if n, err := conn.Read(reply); n != 3 || err != nil {
+	n, err := conn.Read(reply)
+	if n != 3 {
 		t.Errorf("Read %d bytes, error: %v", n, err)
 	}
 }
