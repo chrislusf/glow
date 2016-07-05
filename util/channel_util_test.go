@@ -2,6 +2,7 @@ package util
 
 import (
 	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -26,11 +27,12 @@ func TestMergeChannel(t *testing.T) {
 	outChan := make(chan reflect.Value, 2)
 	MergeChannelTo([]chan reflect.Value{chan1, chan2}, doubleIt, outChan)
 
-	got := make([]int64, 0, 2)
+	got := make([]int, 0, 2)
 	for v := range outChan {
-		got = append(got, v.Int())
+		got = append(got, int(v.Int()))
 	}
-	want := []int64{2, 4}
+	sort.Ints(got)
+	want := []int{2, 4}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Got %v want %v", got, want)
 	}
