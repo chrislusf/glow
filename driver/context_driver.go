@@ -103,7 +103,7 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 	tlsConfig := fcd.Option.CertFiles.MakeTLSConfig()
 	util.SetupHttpClient(tlsConfig)
 
-	// start server to serve files to agents to run exectuors
+	// start server to serve files to agents to run executors
 	rsyncServer, err := rsync.NewRsyncServer(os.Args[0], fcd.Option.RelatedFileNames())
 	if err != nil {
 		log.Fatalf("Failed to start local server: %v", err)
@@ -112,7 +112,7 @@ func (fcd *FlowContextDriver) Run(fc *flow.FlowContext) {
 
 	driverHost := fcd.Option.Host
 
-	// create thes cheduler
+	// create the scheduler
 	sched := scheduler.NewScheduler(
 		fcd.Option.Leader,
 		&scheduler.SchedulerOption{
