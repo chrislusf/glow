@@ -8,8 +8,8 @@ Glow is providing a library to easily compute in parallel threads or distributed
 
 # Installation
 ```
-go get github.com/chrislusf/glow
-go get github.com/chrislusf/glow/flow
+$ go get github.com/chrislusf/glow
+$ go get github.com/chrislusf/glow/flow
 ```
 
 # One minute tutorial
@@ -18,7 +18,7 @@ go get github.com/chrislusf/glow/flow
 
 Here is a simple full example:
 
-```
+```go
 package main
 
 import (
@@ -52,7 +52,7 @@ func main() {
 
 Try it.
 ```
-  > ./word_count
+  $ ./word_count
 ```
 
 It will run the input text file, '/etc/passwd', in 3 go routines, filter/map/map, and then reduced to one number in one goroutine (not exactly one goroutine, but let's skip the details for now.) and print it out.
@@ -65,33 +65,33 @@ However, there is one more thing! It can run across a Glow cluster, which can be
 To setup the Glow cluster, we do not need experts on Zookeeper/HDFS/Mesos/YARN etc. Just build or download one binary file.
 
 ### Setup the cluster
-```
-  // fetch and install via go, or just download it from somewhere
-  > go get github.com/chrislusf/glow
-  // start a master on one computer
-  > glow master
-  // run one or more agents on computers
-  > glow agent --dir . --max.executors=16 --memory=2048 --master="localhost:8930" --port 8931
+```shell
+  # fetch and install via go, or just download it from somewhere
+  $ go get github.com/chrislusf/glow
+  # start a master on one computer
+  $ glow master
+  # run one or more agents on computers
+  $ glow agent --dir . --max.executors=16 --memory=2048 --master="localhost:8930" --port 8931
 ```
 Glow Master and Glow Agent run very efficiently. They take about 6.5MB and 5.5MB memory respectively in my environments. I would recommend set up agents on any server you can find. You can tap into the computing power whenever you need to.
 
 ### Start the driver program
 To leap from one computer to clusters of computers, add this line to the import list:
 
-```
+```go
 	_ "github.com/chrislusf/glow/driver"
 ```
 
 And put this line as the first statement in the main() function:
 
-```
+```go
 	flag.Parse()
 ```
 
 This will "steroidize" the code to run in cluster mode!
 
 ```
-> ./word_count -glow -glow.leader="localhost:8930"
+$ ./word_count -glow -glow.leader="localhost:8930"
 ```
 The word_count program will become a driver program, dividing the execution into a directed acyclic graph(DAG), and send tasks to agents.
 
@@ -99,8 +99,8 @@ The word_count program will become a driver program, dividing the execution into
 
 To understand how each executor works, you can visualize the flow by generating a dot file of the flow, and render it to png file via "dot" command provided from graphviz.
 ```
-> ./word_count -glow -glow.flow.plot > x.dot
-> dot -Tpng -otestSelfJoin.png x.dot
+$ ./word_count -glow -glow.flow.plot > x.dot
+$ dot -Tpng -otestSelfJoin.png x.dot
 ```
 
 ![Glow Hello World Execution Plan](https://raw.githubusercontent.com/chrislusf/glow/master/etc/helloworld.png)
@@ -116,10 +116,10 @@ To understand how each executor works, you can visualize the flow by generating 
 Docker is not required. But if you like docker, here are instructions.
 
 ```
-// Cross compile artefact for docker
-GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build .
-// build container
-docker build -t glow .
+# Cross compile artefact for docker
+$ GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build .
+# build container
+$ docker build -t glow .
 ```
 See `examples/` directory for docker-compose setups.
 
