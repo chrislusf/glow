@@ -68,9 +68,11 @@ func TestCoGroupMap(t *testing.T) {
 
 	outChan := make(chan result, 0)
 	cogroup_result.AddOutput(outChan)
+	t.Log("Starting cogroup_result.Run()")
 	go cogroup_result.Run()
 
 	got := make([]result, 0, 2)
+	t.Log("Collecting result")
 	for item := range outChan {
 		got = append(got, item)
 	}
