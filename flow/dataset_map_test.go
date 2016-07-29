@@ -2,6 +2,7 @@ package flow
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 )
 
@@ -39,29 +40,54 @@ func TestGroupByKeyMap(t *testing.T) {
 }
 
 func TestCoGroupMap(t *testing.T) {
-
-	fmt.Println("cogroup testing start...")
 	f := New()
 	left := f.Slice(
-		[]int{1, 1, 1, 1, 1, 2, 2, 2, 2,
-			3, 3, 3, 4, 4, 5,
-			100, 234, 43, 100, 43, 43, 43},
+		[]int{1, 1, 2},
 	).Map(func(t int) (int, int) {
 		return t, t * 2
 	})
 
 	right := f.Slice(
-		[]int{1, 1, 2, 2,
-			3, 3, 3, 4, 4, 5,
-			100, 234, 43, 99, 44, 44, 50},
+		[]int{1, 2, 2},
 	).Map(func(t int) (int, int) {
 		return t, t * 5
 	})
 
-	left.CoGroup(right).Map(func(key int, lefts, rights []int) {
-		fmt.Printf("key: %d left: %v, right: %v\n", key, lefts, rights)
-	}).Run()
+	type result struct {
+		key   int
+		left  []int
+		right []int
+	}
+	cogroup_result := left.CoGroup(right).Map(func(key int, lefts, rights []int) result {
+		return result{
+			key:   key,
+			left:  lefts,
+			right: rights,
+		}
+	})
 
-	fmt.Println("cogroup runs well")
+	outChan := make(chan result, 0)
+	cogroup_result.AddOutput(outChan)
+	go cogroup_result.Run()
 
+	got := make([]result, 0, 2)
+	for item := range outChan {
+		got = append(got, item)
+	}
+
+	want := []result{
+		{
+			key:   1,
+			left:  []int{2, 2},
+			right: []int{5},
+		}, {
+			key:   2,
+			left:  []int{4},
+			right: []int{10, 10},
+		},
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("Got %v want %v", got, want)
+	}
 }
