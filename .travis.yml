@@ -3,11 +3,9 @@ os:
   - linux
   - osx
   - windows
-  - freebsd
 
 language: go
-go: 
- - 1.5
+go:
  - 1.6
  - tip
 
