@@ -35,7 +35,6 @@ func (s *Scheduler) EventLoop() {
 		case SubmitTaskGroup:
 			// fmt.Printf("processing %+v\n", event)
 			taskGroup := event.TaskGroup
-			pickedServerChan := make(chan market.Supply, 1)
 			go func() {
 				defer event.WaitGroup.Done()
 				tasks := event.TaskGroup.Tasks
@@ -44,6 +43,7 @@ func (s *Scheduler) EventLoop() {
 				s.shardLocator.waitForInputDatasetShardLocations(tasks[0])
 				// fmt.Printf("inputs of %s is %s\n", tasks[0].Name(), s.allInputLocations(tasks[0]))
 
+				pickedServerChan := make(chan market.Supply, 1)
 				s.Market.AddDemand(market.Requirement(taskGroup), event.Bid, pickedServerChan)
 
 				// get assigned executor location
