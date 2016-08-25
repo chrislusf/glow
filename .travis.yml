@@ -6,7 +6,7 @@ os:
 
 language: go
 go:
- - 1.6
+ - 1.7
  - tip
 
 services:
