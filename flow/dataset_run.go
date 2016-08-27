@@ -50,22 +50,20 @@ func (d *Dataset) Run() {
 func (d *Dataset) connectExternalInputChansToRead(wg *sync.WaitGroup) {
 	for _, ch := range d.ExternalInputChans {
 		wg.Add(1)
-		go func() {
+		go func(inputChan reflect.Value) {
 			defer wg.Done()
 			var t reflect.Value
 			for ok := true; ok; {
-				if t, ok = ch.Recv(); ok {
+				if t, ok = inputChan.Recv(); ok {
 					for _, shard := range d.Shards {
-						// fmt.Printf("dataset shard %s emit:%v\n", shard.Name(), t)
 						shard.SendForRead(t)
 					}
 				}
 			}
 			for _, shard := range d.Shards {
-				// println("dataset shard", shard.Name(), "closing read channels")
 				shard.CloseRead()
 			}
-		}()
+		}(ch)
 	}
 }
 
