@@ -6,7 +6,7 @@ import (
 )
 
 func TestRunFlowInStandAloneMode(t *testing.T) {
-	fCtx := New()
+	fCtx := newFlowContext()
 	got := make([]int, 0, 3)
 	fCtx.Slice([]int{1, 2, 3}).Map(func(v int) {
 		got = append(got, v)
