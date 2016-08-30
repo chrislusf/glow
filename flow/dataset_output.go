@@ -16,7 +16,7 @@ func (d *Dataset) AddOutput(ch interface{}) *Dataset {
 func assertChannelOf(ch interface{}, dsType reflect.Type) {
 	chType := reflect.TypeOf(ch)
 	if chType.Kind() != reflect.Chan {
-		panic(fmt.Sprintf("%v should be a channel", ch))
+		panic(fmt.Sprintf("%v should be a channel, got: %v, want: %v", ch, chType.Kind(), reflect.Chan))
 	}
 	if chType.Elem() == dsType {
 		return
@@ -82,4 +82,30 @@ func (d *Dataset) SaveTextToFile(fname string) {
 	}()
 
 	wg.Wait()
+}
+
+// collectOutput collects the output of d and returns them as a slice of the
+// input type outputType.
+//
+// collectOutput intends to be used in tests. The implementation does not optimize
+// for performance or guarantee correctness under a wide range of use cases.
+func collectOutput(d *Dataset, outputType reflect.Type) interface{} {
+	outChan := reflect.MakeChan(reflect.ChanOf(reflect.BothDir, outputType), 0)
+	d.AddOutput(outChan.Interface())
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	got := reflect.MakeSlice(reflect.SliceOf(outputType), 0, 1)
+	go func() {
+		defer wg.Done()
+		for v, ok := outChan.Recv(); ok; v, ok = outChan.Recv() {
+			got = reflect.Append(got, v)
+		}
+	}()
+
+	d.Run()
+	wg.Wait()
+
+	return got.Interface()
 }
