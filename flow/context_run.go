@@ -78,10 +78,10 @@ func (fc *FlowContext) runFlowContextInStandAloneMode() {
 		for _, input := range step.Inputs {
 			if _, ok := isDatasetStarted[input.Id]; !ok {
 				wg.Add(1)
-				go func(input *Dataset, step *Step) {
+				go func(input *Dataset) {
 					defer wg.Done()
 					input.RunDatasetInStandAloneMode()
-				}(input, step)
+				}(input)
 				isDatasetStarted[input.Id] = true
 			}
 		}
@@ -96,7 +96,6 @@ func (fc *FlowContext) runFlowContextInStandAloneMode() {
 				wg.Add(1)
 				go func(step *Step) {
 					defer wg.Done()
-					// println(step.Name, "start output dataset", step.Output.Id)
 					step.Output.RunDatasetInStandAloneMode()
 				}(step)
 				isDatasetStarted[step.Output.Id] = true
