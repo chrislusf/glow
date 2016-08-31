@@ -4,11 +4,11 @@
 # tests only. Run this script in a separate shell window under the root
 # directory of the git repo. Press ctrl-c to kill all started processes.
 
-declare -r MASTER_PORT=8390
+declare -r MASTER_PORT=8930
 declare -r MASTER_ADDRESS="localhost:${MASTER_PORT}"
-declare -r AGENT_PORT1=8391
-declare -r AGENT_PORT2=8392
-declare -r AGENT_PORT3=8393
+declare -r AGENT_PORT1=8931
+declare -r AGENT_PORT2=8932
+declare -r AGENT_PORT3=8933
 
 declare -r GLOW_BASE_DIR=/tmp/glow
 
