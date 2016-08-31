@@ -85,18 +85,18 @@ func (d *Dataset) SaveTextToFile(fname string) {
 }
 
 // collectOutput collects the output of d and returns them as a slice of the
-// input type outputType.
+// type specified in d.Type.
 //
-// collectOutput intends to be used in tests. The implementation does not optimize
-// for performance or guarantee correctness under a wide range of use cases.
-func collectOutput(d *Dataset, outputType reflect.Type) interface{} {
-	outChan := reflect.MakeChan(reflect.ChanOf(reflect.BothDir, outputType), 0)
+// Intends to be used in tests. The implementation does not optimize for performance
+// or guarantee correctness under a wide range of use cases.
+func collectOutput(d *Dataset) interface{} {
+	outChan := reflect.MakeChan(reflect.ChanOf(reflect.BothDir, d.Type), 0)
 	d.AddOutput(outChan.Interface())
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	got := reflect.MakeSlice(reflect.SliceOf(outputType), 0, 1)
+	got := reflect.MakeSlice(reflect.SliceOf(d.Type), 0, 1)
 	go func() {
 		defer wg.Done()
 		for v, ok := outChan.Recv(); ok; v, ok = outChan.Recv() {
