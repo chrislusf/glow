@@ -66,12 +66,10 @@ To setup the Glow cluster, we do not need experts on Zookeeper/HDFS/Mesos/YARN e
 
 ### Setup the cluster
 ```shell
-  # fetch and install via go, or just download it from somewhere
+  # Fetch and install via go, or just download it from somewhere.
   $ go get github.com/chrislusf/glow
-  # start a master on one computer
-  $ glow master
-  # run one or more agents on computers
-  $ glow agent --dir . --max.executors=16 --memory=2048 --master="localhost:8930" --port 8931
+  # Run a script from the root directory of the repo to start a test cluster.
+  $ etc/start_local_glow_cluster.sh
 ```
 Glow Master and Glow Agent run very efficiently. They take about 6.5MB and 5.5MB memory respectively in my environments. I would recommend set up agents on any server you can find. You can tap into the computing power whenever you need to.
 
