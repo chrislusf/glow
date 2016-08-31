@@ -13,7 +13,7 @@ func TestMapSingleParameter(t *testing.T) {
 	}).Map(func(x, y int) int {
 		return x + y
 	})
-	got := collectOutput(dataset, reflect.TypeOf(int(1)))
+	got := collectOutput(dataset)
 
 	if want := []int{2, 4, 6}; !reflect.DeepEqual(got, want) {
 		t.Errorf("Got: %v want: %v", got, want)
@@ -29,7 +29,7 @@ func TestGroupByKeyMap(t *testing.T) {
 		return append([]int{key}, values...)
 	})
 
-	got := collectOutput(dataset, reflect.TypeOf([]int{}))
+	got := collectOutput(dataset)
 
 	if want := [][]int{{1, 2, 2}, {2, 4, 4}, {3, 6, 6}}; !reflect.DeepEqual(got, want) {
 		t.Errorf("Got %v want %v", got, want)
@@ -63,7 +63,7 @@ func TestCoGroupMap(t *testing.T) {
 		}
 	})
 
-	got := collectOutput(cogroupResult, reflect.TypeOf(result{}))
+	got := collectOutput(cogroupResult)
 	want := []result{
 		{
 			key:   1,

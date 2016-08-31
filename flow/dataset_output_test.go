@@ -13,7 +13,7 @@ func TestCollectOutput(t *testing.T) {
 		output <- "c"
 	}, 1)
 
-	got := collectOutput(dataset, reflect.TypeOf(""))
+	got := collectOutput(dataset)
 
 	if want := []string{"a", "b", "c"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("Got %v want %v", got, want)
