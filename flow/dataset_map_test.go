@@ -1,42 +1,39 @@
 package flow
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
 
 func TestMapSingleParameter(t *testing.T) {
-
-	New().Slice(
-		[]int{1, 2, 3, 4, 5},
+	dataset := New().Slice(
+		[]int{1, 2, 3},
 	).Map(func(t int) (int, int) {
-		return t, t * 7
-	}).Map(func(x, y int) {
-		fmt.Println("x=", x, "7*x=", y)
-	}).Run()
+		return t, t
+	}).Map(func(x, y int) int {
+		return x + y
+	})
+	got := collectOutput(dataset, reflect.TypeOf(int(1)))
 
-	t.Logf("single parameter mapping runs well")
-
+	if want := []int{2, 4, 6}; !reflect.DeepEqual(got, want) {
+		t.Errorf("Got: %v want: %v", got, want)
+	}
 }
 
 func TestGroupByKeyMap(t *testing.T) {
-
-	fmt.Println("group by result mapping testing start...")
-	New().Slice(
-		[]int{1, 1, 1, 1, 1, 2, 2, 2, 2,
-			3, 3, 3, 4, 4, 5,
-			100, 234, 43, 100, 43, 43, 43},
+	dataset := New().Slice(
+		[]int{1, 1, 2, 2, 3, 3},
 	).Map(func(t int) (int, int) {
 		return t, t * 2
-	}).Map(func(key, value int) (int, int) {
-		return key, value * 3
-	}).GroupByKey().Map(func(key int, values []int) {
-		fmt.Printf("key: %d values: %v\n", key, values)
-	}).Run()
+	}).GroupByKey().Map(func(key int, values []int) []int {
+		return append([]int{key}, values...)
+	})
 
-	fmt.Println("group by result mapping runs well")
+	got := collectOutput(dataset, reflect.TypeOf([]int{}))
 
+	if want := [][]int{{1, 2, 2}, {2, 4, 4}, {3, 6, 6}}; !reflect.DeepEqual(got, want) {
+		t.Errorf("Got %v want %v", got, want)
+	}
 }
 
 func TestCoGroupMap(t *testing.T) {
@@ -58,7 +55,7 @@ func TestCoGroupMap(t *testing.T) {
 		left  []int
 		right []int
 	}
-	cogroup_result := left.CoGroup(right).Map(func(key int, lefts, rights []int) result {
+	cogroupResult := left.CoGroup(right).Map(func(key int, lefts, rights []int) result {
 		return result{
 			key:   key,
 			left:  lefts,
@@ -66,15 +63,7 @@ func TestCoGroupMap(t *testing.T) {
 		}
 	})
 
-	outChan := make(chan result, 0)
-	cogroup_result.AddOutput(outChan)
-	go cogroup_result.Run()
-
-	got := make([]result, 0, 2)
-	for item := range outChan {
-		got = append(got, item)
-	}
-
+	got := collectOutput(cogroupResult, reflect.TypeOf(result{}))
 	want := []result{
 		{
 			key:   1,
