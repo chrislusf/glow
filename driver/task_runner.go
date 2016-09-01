@@ -17,6 +17,8 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+// TaskRunner groups the data structures that describe a group of tasks
+// that is run remotely on an glow agent.
 type TaskRunner struct {
 	option         *TaskOption
 	Tasks          []*flow.Task
