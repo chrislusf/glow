@@ -15,6 +15,13 @@ type Dataset struct {
 	Shards              []*DatasetShard
 	Step                *Step
 	ReadingSteps        []*Step
+	
+	// External[Input|Output]Chans are channels for reading and outputing
+	// data from and to external sources; meaning that they are not managed
+	// by other Dataset objects.
+	//
+	// They are used to setup in-memory input and output for a flow.
+	// See doChannel() and AddOutput().
 	ExternalInputChans  []reflect.Value
 	ExternalOutputChans []reflect.Value
 
