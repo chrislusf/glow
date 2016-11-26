@@ -16,7 +16,7 @@ type FlowContext struct {
 	ChannelBufferSize int // configurable channel buffer size for reading
 }
 
-func New() (fc *FlowContext) {
+func newFlowContext() (fc *FlowContext) {
 	fc = &FlowContext{Id: len(Contexts)}
 	Contexts = append(Contexts, fc)
 	return
