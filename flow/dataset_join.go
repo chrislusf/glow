@@ -4,7 +4,7 @@ import (
 	"reflect"
 )
 
-// assume nothing about these two dataset
+// Assumes nothing about these two dataset
 func (d *Dataset) Join(other *Dataset) *Dataset {
 	sorted_d := d.Partition(len(d.Shards)).LocalSort(nil)
 	var sorted_other *Dataset
@@ -16,7 +16,7 @@ func (d *Dataset) Join(other *Dataset) *Dataset {
 	return sorted_d.JoinPartitionedSorted(sorted_other, nil, false, false)
 }
 
-// Join multiple datasets that are sharded by the same key, and locally sorted within the shard
+// Joins multiple datasets that are sharded by the same key, and locally sorted within the shard
 func (this *Dataset) JoinPartitionedSorted(that *Dataset,
 	compareFunc interface{}, isLeftOuterJoin, isRightOuterJoin bool,
 ) (ret *Dataset) {

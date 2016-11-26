@@ -1,4 +1,5 @@
-// Package flow contains data structure for computation.
+// Package flow contains data structures for representing various abstractions of a computation,
+// which can either be executed locally among multiple goroutines, or distributed by multiple agents.
 // Mostly Dataset operations such as Map/Reduce/Join/Sort etc.
 package flow
 

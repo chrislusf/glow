@@ -4,7 +4,7 @@ import (
 	"reflect"
 )
 
-// map can work with multiple kinds of inputs and outputs
+// Map can work with multiple kinds of inputs and outputs
 // Input Types:
 //   1. single value
 //   2. (key, value) : Most common format for key value pair
@@ -46,8 +46,7 @@ func _buildMapperFunction(f interface{}, task *Task) func(input reflect.Value) {
 	return _buildMapperFunctionWithoutChannel(fn, outChan)
 }
 
-// if last parameter in the function is a channel
-// use the channel element type as output type
+// If the last parameter of the function is a channel use the channel element type as output type.
 func _buildMapperFunctionWithChannel(fn, outChan reflect.Value) func(input reflect.Value) {
 	return func(input reflect.Value) {
 		switch input.Type() {
@@ -138,8 +137,8 @@ func add1ShardTo1Step(d *Dataset, nextDataType reflect.Type) (ret *Dataset, step
 	return
 }
 
-// the value over the outChan is always reflect.Value
-// but the inner values are always actual interface{} object
+// The value over the outChan is always reflect.Value,
+// but the inner values are always actual interface{} object.
 func sendMapOutputs(outChan reflect.Value, values []reflect.Value) {
 	if !outChan.IsValid() {
 		return

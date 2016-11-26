@@ -7,7 +7,7 @@ import (
 	"github.com/chrislusf/glow/util"
 )
 
-// hash data or by data key, return a new dataset
+// Hash data or by data key, return a new dataset
 // This is devided into 2 steps:
 // 1. Each record is sharded to a local shard
 // 2. The destination shard will collect its child shards and merge into one

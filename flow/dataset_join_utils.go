@@ -103,8 +103,8 @@ type valuesWithSameKey struct {
 	Values []interface{}
 }
 
-// create a channel to aggregate values of the same key
-// automatically close original sorted channel
+// Creates a channel to aggregate values of the same key.
+// Automatically closes original sorted channel.
 func newChannelOfValuesWithSameKey(sortedChan chan reflect.Value, compareFunc interface{}) chan valuesWithSameKey {
 	outChan := make(chan valuesWithSameKey)
 	go func() {
