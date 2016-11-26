@@ -5,14 +5,15 @@ import (
 	"sync"
 )
 
-/*
-There are 3 running mode:
-1. as normal program
-	If not in distributed mode, it should not be intercepted.
-2. "-driver" mode to drive in distributed mode
-	context runner will register
-3. "-task.[context|taskGroup].id" mode to run task in distributed mode
-*/
+// There are 3 running mode:
+// 1. Standalone mode, i.e., without the -glow flag.
+//    If not in distributed mode, it should not be intercepted.
+// 2. "-driver" mode to drive in distributed mode. This is the mode when invoking the binary
+//    with -glow flag. Context runner will register. It schedules the tasks to run on the
+//    agents.
+// 3. "-task.[context|taskGroup].id" mode to run task in distributed mode.
+//
+// TODO(yaxiongzhao): Clarify how driver informs tasks about their inputs and outputs.
 
 var contextRunner ContextRunner
 var taskRunner TaskRunner
