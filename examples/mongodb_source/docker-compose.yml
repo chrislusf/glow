@@ -1,0 +1,44 @@
+mongoDB:
+  image: mongo
+  expose:
+    - "27017"
+
+agent1:
+  read_only: true
+  image: glow
+  command: agent --dir /data --max.executors=2 --memory=768 --master="master:8930" --port 8931
+  expose:
+    - "8931"
+  links:
+    - master
+    - mongoDB
+  volumes:
+    - ./work/agent1:/data
+
+agent2:
+  read_only: true
+  image: glow
+  command: agent --dir /data --max.executors=2 --memory=768 --master="master:8930" --port 8932
+  expose:
+    - "8932"
+  links:
+    - master
+    - mongoDB
+  volumes:
+    - ./work/agent2:/data
+
+master:
+  read_only: true
+  image: glow
+  command: master --ip 0.0.0.0
+  expose:
+    - "8930"
+
+mongodb_source:
+  image: mongodb_source
+  command: mongoDBURL "mongodb://mongoDB:27017" -glow -glow.leader="master:8930"
+  links:
+    - master
+    - agent1
+    - agent2
+    - mongoDB

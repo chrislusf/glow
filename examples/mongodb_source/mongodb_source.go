@@ -49,10 +49,12 @@ type UserPosts struct {
 
 var (
 	f1 *flow.FlowContext
+	mongoDBURL = flag.String("mongoDBURL", "mongodb://127.0.0.1", "URL to the servers, format: [mongodb://][user:pass@]host1[:port1][,host2[:port2],...][/database][?options]")
 )
 
-func iterate(mongodbUrl, dbName, collectionName string, fn func(*mgo.Iter)) {
-	session, err := mgo.Dial(mongodbUrl)
+
+func iterate(mongoDBURL, dbName, collectionName string, fn func(*mgo.Iter)) {
+	session, err := mgo.Dial(mongoDBURL)
 	if err != nil {
 		println(err)
 		return
@@ -67,7 +69,7 @@ func iterate(mongodbUrl, dbName, collectionName string, fn func(*mgo.Iter)) {
 func init() {
 	f1 = flow.New()
 	users := f1.Source(func(out chan User) {
-		iterate("mongodb://127.0.0.1", "example", "users", func(iter *mgo.Iter) {
+		iterate(mongoDBURL, "example", "users", func(iter *mgo.Iter) {
 			var user User
 			for iter.Next(&user) {
 				out <- user
@@ -78,7 +80,7 @@ func init() {
 	}).Partition(3)
 
 	posts := f1.Source(func(out chan Post) {
-		iterate("mongodb://127.0.0.1", "example", "posts", func(iter *mgo.Iter) {
+		iterate(mongoDBURL, "example", "posts", func(iter *mgo.Iter) {
 			var post Post
 			for iter.Next(&post) {
 				out <- post
