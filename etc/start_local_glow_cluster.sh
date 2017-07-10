@@ -30,22 +30,22 @@ trap ctrl_c SIGINT
 echo "You may press ctrl-c to kill all started processes..."
 
 go build glow.go
-glow master --address="${MASTER_ADDRESS}" &>/dev/null &
+glow master --address="${MASTER_ADDRESS}" &
 pids+=($!)
 echo "Started glow master at ${MASTER_ADDRESS}, pid: $!"
 
 glow agent --dir="${GLOW_BASE_DIR}/agent1" --max.executors=5 --memory=500 \
-  --master="${MASTER_ADDRESS}" --port="${AGENT_PORT1}" &>/dev/null &
+  --master="${MASTER_ADDRESS}" --port="${AGENT_PORT1}" &
 pids+=($!)
 echo "Started glow agent, pid: $!"
 
 glow agent --dir="${GLOW_BASE_DIR}/agent2" --max.executors=5 --memory=500 \
-  --master="${MASTER_ADDRESS}" --port="${AGENT_PORT2}" &>/dev/null &
+  --master="${MASTER_ADDRESS}" --port="${AGENT_PORT2}" &
 pids+=($!)
 echo "Started glow agent, pid: $!"
 
 glow agent --dir="${GLOW_BASE_DIR}/agent3" --max.executors=5 --memory=500 \
-  --master="${MASTER_ADDRESS}" --port="${AGENT_PORT3}" &>/dev/null &
+  --master="${MASTER_ADDRESS}" --port="${AGENT_PORT3}" &
 pids+=($!)
 echo "Started glow agent, pid: $!"
 
