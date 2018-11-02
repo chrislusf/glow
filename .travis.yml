@@ -2,7 +2,7 @@ sudo: required
 os:
   - linux
   - osx
-  - windows
+  # - windows
 
 language: go
 go:
