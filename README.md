@@ -6,7 +6,7 @@
 
 Glow is providing a library to easily compute in parallel threads or distributed to clusters of machines. This is written in pure Go.
 
-I am also working on a Go+Luajit system, https://github.com/chrislusf/gleam , which is more flexible and more performant.
+I am also working on another pure-Go system, https://github.com/chrislusf/gleam , which is more flexible and more performant.
 
 # Installation
 ```
